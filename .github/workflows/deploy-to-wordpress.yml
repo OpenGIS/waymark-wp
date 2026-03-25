@@ -1,0 +1,50 @@
+name: Deploy to WordPress.org
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  deploy:
+    name: Deploy to WordPress.org SVN
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version_check
+        run: |
+          CURRENT_VERSION=$(grep -m1 'Version:' Waymark.php | awk '{print $NF}')
+
+          if git show HEAD~1:Waymark.php > /dev/null 2>&1; then
+            PREVIOUS_VERSION=$(git show HEAD~1:Waymark.php | grep -m1 'Version:' | awk '{print $NF}')
+          else
+            PREVIOUS_VERSION=""
+          fi
+
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "previous=$PREVIOUS_VERSION" >> $GITHUB_OUTPUT
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed: $PREVIOUS_VERSION → $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged ($CURRENT_VERSION), skipping deploy."
+          fi
+
+      - name: Strip waymark-js to dist/ only
+        if: steps.version_check.outputs.changed == 'true'
+        run: find waymark-js -mindepth 1 -maxdepth 1 ! -name 'dist' -exec rm -rf {} +
+
+      - name: Deploy to WordPress.org
+        if: steps.version_check.outputs.changed == 'true'
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          WORDPRESS_USERNAME: ${{ secrets.WORDPRESS_USERNAME }}
+          WORDPRESS_PASSWORD: ${{ secrets.WORDPRESS_PASSWORD }}
+          SLUG: waymark

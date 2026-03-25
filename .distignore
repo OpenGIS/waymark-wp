@@ -1,0 +1,13 @@
+.dist*
+.git
+.github
+.gitignore
+.gitmodules
+.DS_Store
+assets/less
+docs
+node_modules
+package.json
+package-lock.json
+Gruntfile.js
+readme.md
