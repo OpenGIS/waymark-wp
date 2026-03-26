@@ -13,7 +13,7 @@ Waymark adds powerful mapping features to WordPress that are easy to use. Create
 
 ## Description ##
 
-❤️ [Sponsor This Project](https://github.com/sponsors/OpenGIS) ❤️
+❤️ [Keep This Project Alive Through Sponsorship](https://github.com/sponsors/OpenGIS) ❤️
 
 ### Creating Maps
 
@@ -187,6 +187,10 @@ Built on the shoulders of giants, thank you Open-Source!
 
 
 ## Changelog ##
+
+### 1.5.12 ###
+
+Deploy to wordpress.org plugin directory via GitHub Actions
 
 ### 1.5.11 ###
 
