@@ -86,7 +86,7 @@ class Waymark_JS {
 
 		//Set basemap
 		if ($editor_basemap = Waymark_Config::get_setting('misc', 'editor_options', 'editor_basemap')) {
-			self::add_call('waymark_user_config.map_options.map_init_basemap = "' . $editor_basemap . '"');
+			self::add_call('waymark_user_config.map_options.map_init_basemap = ' . wp_json_encode($editor_basemap));
 		}
 
 		// Set up data container by adding ID

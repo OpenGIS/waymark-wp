@@ -137,6 +137,7 @@ class Waymark_Helper {
 					'meta_key' => $meta_key,
 					'meta_title' => $setting_meta['meta_title'],
 					'meta_group' => isset($setting_meta['meta_group']) ? $setting_meta['meta_group'] : '',
+					'meta_type' => isset($setting_meta['meta_type']) ? $setting_meta['meta_type'] : '',
 				];
 
 				//Select
@@ -215,7 +216,7 @@ class Waymark_Helper {
 				'meta_key' => 'collection_desc',
 				'meta_title' => '',
 				'meta_group' => '',
-				'meta_value' => $Collection->description,
+				'meta_value' => wp_kses_post($Collection->description),
 			];
 		}
 
@@ -334,10 +335,21 @@ class Waymark_Helper {
 			return $out;
 		}
 
+		//Escape the value by field type at output
+		$meta_value = $meta['meta_value'];
+
+		//Rich text fields allow HTML (sanitised against post content allowed HTML)
+		if (isset($meta['meta_type']) && in_array($meta['meta_type'], ['textarea_rich'])) {
+			$meta_value = wp_kses_post($meta_value);
+			//Internally generated HTML (thumbnail, collection links, export form) is trusted, leave as-is
+		} elseif (! in_array($meta['meta_key'], ['map_thumbnail', 'collection_list', 'collection_desc', 'export_data'])) {
+			$meta_value = esc_html($meta_value);
+		}
+
 		$out .= '	<div class="waymark-meta-item waymark-meta-' . $meta['meta_key'] . '">' . "\n";
 		//Special case
 		if ($meta['meta_key'] == 'map_description') {
-			$out .= '		<div colspan="3" class="waymark-meta-content">' . $meta['meta_value'] . '</div>' . "\n";
+			$out .= '		<div colspan="3" class="waymark-meta-content">' . $meta_value . '</div>' . "\n";
 		} else {
 			$out .= '		<div class="waymark-meta-info">' . "\n";
 			if (array_key_exists('meta_info', $meta) && ! empty($meta['meta_info'])) {
@@ -345,7 +357,7 @@ class Waymark_Helper {
 			}
 			$out .= '		</div>' . "\n";
 			$out .= '		<div class="waymark-meta-title" scope="row">' . $meta['meta_title'] . '</div>' . "\n";
-			$out .= '		<div class="waymark-meta-content">' . $meta['meta_value'] . '</div>' . "\n";
+			$out .= '		<div class="waymark-meta-content">' . $meta_value . '</div>' . "\n";
 		}
 		$out .= '	</div>' . "\n";
 

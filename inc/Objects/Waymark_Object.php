@@ -175,12 +175,107 @@ class Waymark_Object {
 				// Filter before update
 				$param_value = apply_filters('waymark_pre_update_post_meta', $param_value, $param_definition);
 
+				//Sanitise before update
+				$param_value = $this->sanitise_meta_value($param_definition, $param_value);
+
 				update_post_meta($post_id, $this->prefix($param_definition['name']), $param_value);
 				//No value exists
 			} else {
 				delete_post_meta($post_id, $this->prefix($param_definition['name']));
 			}
 		}
+	}
+
+	/**
+	 * Sanitise a meta value before it is stored
+	 *
+	 * @param  array $param_definition Parameter definition
+	 * @param  mixed $param_value      Parameter value
+	 * @return mixed                   Sanitised parameter value
+	 */
+	private function sanitise_meta_value($param_definition, $param_value) {
+		//Map data is GeoJSON, sanitise it separately
+		if (isset($param_definition['name']) && $param_definition['name'] === 'map_data') {
+			return $this->sanitise_map_data($param_value);
+		}
+
+		//Determine the field type
+		$type = (isset($param_definition['type'])) ? $param_definition['type'] : 'text';
+
+		//Rich text (kses, allows safe HTML)
+		if ($type == 'textarea_rich') {
+			return wp_kses_post((string) $param_value);
+		}
+
+		//Textarea (preserve newlines)
+		if ($type == 'textarea') {
+			return sanitize_textarea_field((string) $param_value);
+		}
+
+		//Default: plain text
+		return sanitize_text_field((string) $param_value);
+	}
+
+	/**
+	 * Sanitise GeoJSON map data before it is stored
+	 *
+	 * @param  string $map_data GeoJSON map data
+	 * @return string           Sanitised GeoJSON map data
+	 */
+	private function sanitise_map_data($map_data) {
+		//Attempt to decode (also try unslashed, for data from the admin form)
+		$decoded = json_decode($map_data, true);
+		if (! is_array($decoded)) {
+			$decoded = json_decode(wp_unslash((string) $map_data), true);
+		}
+
+		//Invalid JSON? Return an empty Feature Collection
+		if (! is_array($decoded) || ! isset($decoded['features']) || ! is_array($decoded['features'])) {
+			return wp_json_encode([
+				'type' => 'FeatureCollection',
+				'features' => [],
+			]);
+		}
+
+		//Sanitise each feature's properties
+		foreach ($decoded['features'] as &$feature) {
+			//No properties to sanitise
+			if (! isset($feature['properties']) || ! is_array($feature['properties'])) {
+				continue;
+			}
+
+			//Title is plain text
+			if (isset($feature['properties']['title'])) {
+				$feature['properties']['title'] = wp_strip_all_tags((string) $feature['properties']['title']);
+			}
+
+			//Description is rich HTML (kses)
+			if (isset($feature['properties']['description'])) {
+				$feature['properties']['description'] = wp_kses_post((string) $feature['properties']['description']);
+			}
+
+			//Image URLs must be http(s) only
+			foreach (['image_large_url', 'image_medium_url', 'image_thumbnail_url'] as $image_key) {
+				if (! isset($feature['properties'][$image_key])) {
+					continue;
+				}
+
+				$image_url = $feature['properties'][$image_key];
+				$scheme = wp_parse_url($image_url, PHP_URL_SCHEME);
+
+				if (! is_string($image_url) || ! filter_var($image_url, FILTER_VALIDATE_URL) || ! in_array($scheme, ['http', 'https'], true)) {
+					unset($feature['properties'][$image_key]);
+				}
+			}
+		}
+		unset($feature);
+
+		$map_data_out = wp_json_encode($decoded);
+
+		return ($map_data_out) ? $map_data_out : wp_json_encode([
+			'type' => 'FeatureCollection',
+			'features' => [],
+		]);
 	}
 
 	function get_posts() {

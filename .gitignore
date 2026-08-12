@@ -5,3 +5,4 @@ package-lock.json
 .idea
 pnpm-lock.yaml
 temp/
+.opencode/

@@ -82,8 +82,8 @@ class Waymark_Submission {
 			// ======= Set redirect =======
 
 			//Valid URL provided
-			if (array_key_exists('waymark_redirect', $this->data) && filter_var($this->data['waymark_redirect'], FILTER_VALIDATE_URL)) {
-				$this->redirect_url = $this->data['waymark_redirect'];
+			if (array_key_exists('waymark_redirect', $this->data)) {
+				$this->redirect_url = wp_validate_redirect($this->data['waymark_redirect']);
 				//Default to home
 			} else {
 				$this->redirect_url = get_option('home');
@@ -228,7 +228,7 @@ class Waymark_Submission {
 
 		//Create Form
 		$Map = new Waymark_Map;
-		$content .= $Map->create_form();
+		$content .= wp_kses($Map->create_form(), Waymark_Helper::allowable_tags('parameter'));
 
 		$content .= '		<input type="submit" value="' . __('Submit', 'waymark') . '" class="button button-primary button-large" />' . "\n";
 
@@ -305,6 +305,11 @@ class Waymark_Submission {
 
 	public function do_redirect() {
 		$this->redirect_data['waymark_status'] = $this->status;
+
+		//No valid redirect URL? Do not redirect.
+		if (! $this->redirect_url) {
+			return;
+		}
 
 		if (sizeof($this->redirect_data)) {
 			//Append query string

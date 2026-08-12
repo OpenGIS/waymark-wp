@@ -220,12 +220,12 @@ class Waymark_Shortcode {
 
 			//Link
 			if (array_key_exists('link', $shortcode_header)) {
-				$out .= '		<a class="waymark-link" href="' . $shortcode_header['link'] . '">' . esc_html__('Details', 'waymark') . ' <i class="ion ion-android-open"></i></a>' . "\n";
+				$out .= '		<a class="waymark-link" href="' . esc_url($shortcode_header['link']) . '">' . esc_html__('Details', 'waymark') . ' <i class="ion ion-android-open"></i></a>' . "\n";
 			}
 
 			//Title
 			if (array_key_exists('title', $shortcode_header) && ! empty($shortcode_header['title'])) {
-				$out .= '		<div class="waymark-title">' . $shortcode_header['title'] . '</div>' . "\n";
+				$out .= '		<div class="waymark-title">' . esc_html($shortcode_header['title']) . '</div>' . "\n";
 			} else {
 				$out .= '		<div class="waymark-title waymark-empty">&nbsp;</div>' . "\n";
 
@@ -236,7 +236,7 @@ class Waymark_Shortcode {
 			if (sizeof($shortcode_meta)) {
 				$out .= '	<div class="waymark-meta">' . "\n";
 				$out .= Waymark_Helper::map_meta_html($shortcode_meta, false);
-				$out .= '		<a class="waymark-link" href="' . $shortcode_header['link'] . '">' . esc_html__('More Details', 'waymark') . ' <i class="ion ion-android-open"></i></a>' . "\n";
+				$out .= '		<a class="waymark-link" href="' . esc_url($shortcode_header['link']) . '">' . esc_html__('More Details', 'waymark') . ' <i class="ion ion-android-open"></i></a>' . "\n";
 				$out .= '	</div>' . "\n";
 			}
 
@@ -423,11 +423,17 @@ class Waymark_Shortcode {
 			if ($i === 1 || 'embed' === Waymark_Config::get_setting('misc', 'collection_options', 'load_method')) {
 				//If map data exists
 				if (isset($map_output['map_data'])) {
-					$out .= '	waymark_viewer.load_json(' . $map_output['map_data'] . ');' . "\n";
+					//Re-encode for safe output (json_encode does not escape </script>)
+					$map_json = json_decode($map_output['map_data'], true);
+					if (! is_array($map_json)) {
+						$map_json = array('type' => 'FeatureCollection', 'features' => array());
+					}
+
+					$out .= '	waymark_viewer.load_json(' . wp_json_encode($map_json) . ');' . "\n";
 
 					if (Waymark_Helper::is_debug()) {
 						$out .= '	waymark_viewer.debug("Shortcode #' . esc_js($shortcode_hash) . ' Map Loaded");' . "\n";
-						$out .= '	waymark_viewer.debug(' . $map_output['map_data'] . ');' . "\n";
+						$out .= '	waymark_viewer.debug(' . wp_json_encode($map_json) . ');' . "\n";
 					}
 
 					//Done loading
