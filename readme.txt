@@ -4,7 +4,7 @@ Tags: GIS, Map maker, GPX, Track, Elevation
 Requires at least: 4.6
 Tested up to: 7.0
 Requires PHP: 5.2
-Stable tag: 1.5.16
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://github.com/sponsors/OpenGIS
@@ -186,6 +186,10 @@ Built on the shoulders of giants, thank you Open-Source!
 10. Documentation and Help is available from the <a href="https://www.ogis.org/waymark-wp/">Waymark</a> website.
 
 == Changelog ==
+
+= 1.6.0 =
+
+* Security update. Thanks to [Nils](https://github.com/Crow729) for [reporting this](https://github.com/OpenGIS/waymark-wp/issues/74).
 
 = 1.5.16 = 
 

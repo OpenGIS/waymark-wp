@@ -343,10 +343,6 @@ class Waymark_Config {
 		$tile_layers = Waymark_Config::get_item('tiles', 'layers');
 		$tile_layers = Waymark_Helper::convert_values_to_single_value($tile_layers);
 
-		//Process for output
-		foreach ($tile_layers as &$tl) {
-			$tl = htmlspecialchars_decode($tl);
-		}
 		$tile_layers = Waymark_Helper::convert_single_value_to_array($tile_layers);
 
 		//Map Options

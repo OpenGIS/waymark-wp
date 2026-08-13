@@ -44,17 +44,17 @@ class Waymark_Input {
 		$add_class .= ' ' . $field['id'] . '-container';
 
 		//Container
-		$out .= '<div class="waymark-control-group waymark-control-type-' . $field['type'] . $add_class . '">' . "\n";
+		$out .= '<div class="waymark-control-group ' . esc_attr('waymark-control-type-' . $field['type'] . $add_class) . '">' . "\n";
 
 		//Label
 		if ($show_label && isset($field['title'])) {
-			$out .= '	<label class="waymark-control-label" for="' . $field['name'] . '">' . $field['title'] . '</label>' . "\n";
+			$out .= '	<label class="waymark-control-label" for="' . esc_attr($field['name']) . '">' . esc_html($field['title']) . '</label>' . "\n";
 		}
 		$out .= '	<div class="waymark-controls">' . "\n";
 
 		//Prepend?
 		if (array_key_exists('prepend', $field)) {
-			$out .= $field['prepend'];
+			$out .= wp_kses($field['prepend'], Waymark_Helper::allowable_tags('parameter'));
 		}
 
 		//Create input
@@ -62,7 +62,7 @@ class Waymark_Input {
 
 		//Append?
 		if (array_key_exists('append', $field)) {
-			$out .= $field['append'];
+			$out .= wp_kses($field['append'], Waymark_Helper::allowable_tags('parameter'));
 		}
 
 		//Tip
@@ -75,7 +75,7 @@ class Waymark_Input {
 
 			$out .= ' <a data-title="' . esc_attr($field['tip']) . '';
 			if (array_key_exists('tip_link', $field)) {
-				$out .= ' ' . esc_attr__('Click here for more details.', 'waymark') . '" href="' . $field['tip_link'] . '" target="_blank" class="waymark-tooltip waymark-link"';
+				$out .= ' ' . esc_attr__('Click here for more details.', 'waymark') . '" href="' . esc_url($field['tip_link']) . '" target="_blank" class="waymark-tooltip waymark-link"';
 			} else {
 				$out .= '" href="#" onclick="return false;" class="waymark-tooltip"';
 			}
@@ -127,13 +127,13 @@ class Waymark_Input {
 				$set_value = $field['default'];
 			}
 
-			$out .= '		<select data-multi-value="' . $set_value . '" class="waymark-input waymark-input-' . $field['id'] . '" name="' . $field['name'] . '" data-id="' . $field['id'] . '">' . "\n";
+			$out .= '		<select data-multi-value="' . esc_attr($set_value) . '" class="waymark-input waymark-input-' . esc_attr($field['id']) . '" name="' . esc_attr($field['name']) . '" data-id="' . esc_attr($field['id']) . '">' . "\n";
 			if (isset($field['options'])) {
 				foreach ($field['options'] as $value => $description) {
 					//Always use strings
 					$value = (string) $value;
 
-					$out .= '			<option value="' . $value . '"';
+					$out .= '			<option value="' . esc_attr($value) . '"';
 					//Has this value already been set
 					if ($set_value === $value) {
 						$out .= ' selected="selected"';
@@ -141,7 +141,7 @@ class Waymark_Input {
 					} elseif ($set_value == null && (array_key_exists('default', $field) && $field['default'] == $value)) {
 						$out .= ' selected="selected"';
 					}
-					$out .= '>' . $description . '</option>' . "\n";
+					$out .= '>' . esc_html($description) . '</option>' . "\n";
 				}
 			}
 			$out .= '		</select>' . "\n";
@@ -163,7 +163,7 @@ class Waymark_Input {
 				$set_value = explode(Waymark_Config::get_item('multi_value_seperator'), $field['default']);
 			}
 
-			$out .= '		<select multiple="multiple" class="waymark-input waymark-input-' . $field['id'] . '" name="' . $field['name'] . '[]" data-id="' . $field['id'] . '">' . "\n";
+			$out .= '		<select multiple="multiple" class="waymark-input waymark-input-' . esc_attr($field['id']) . '" name="' . esc_attr($field['name']) . '[]" data-id="' . esc_attr($field['id']) . '">' . "\n";
 
 			//If we have options
 			if (isset($field['options'])) {
@@ -173,7 +173,7 @@ class Waymark_Input {
 
 					//Waymark_Helper::debug($set_value);
 
-					$out .= '			<option value="' . $value . '"';
+					$out .= '			<option value="' . esc_attr($value) . '"';
 
 					//Has this value already been set
 					if (is_array($set_value) && in_array($value, $set_value)) {
@@ -182,20 +182,20 @@ class Waymark_Input {
 						$out .= ' selected="selected"';
 					}
 
-					$out .= '>' . $description . '</option>' . "\n";
+					$out .= '>' . esc_html($description) . '</option>' . "\n";
 				}
 			}
 			$out .= '		</select>' . "\n";
 
 			break;
 		case 'textarea':
-			$out .= '		<textarea class="waymark-input waymark-input-' . $field['id'] . '" name="' . $field['name'] . '" data-id="' . $field['id'] . '">';
+			$out .= '		<textarea class="waymark-input waymark-input-' . esc_attr($field['id']) . '" name="' . esc_attr($field['name']) . '" data-id="' . esc_attr($field['id']) . '">';
 			//Do we have a value for this post?
 			if (! is_null($set_value) && $value = htmlspecialchars($set_value)) {
 				$out .= $value;
 				//Do we have a default?
 			} elseif (array_key_exists('default', $field)) {
-				$out .= $field['default'];
+				$out .= esc_textarea($field['default']);
 			}
 			$out .= '</textarea>' . "\n";
 
@@ -226,25 +226,25 @@ class Waymark_Input {
 			break;
 		case 'submit':
 			$value = explode(' ', $field['title'])[0];
-			$out .= '		<input type="submit" name="' . $field['name'] . '" value="' . $value . '" data-id="' . $field['id'] . '" class="waymark-input waymark-input-' . $field['id'] . ' button-secondary" />' . "\n";
+			$out .= '		<input type="submit" name="' . esc_attr($field['name']) . '" value="' . esc_attr($value) . '" data-id="' . esc_attr($field['id']) . '" class="waymark-input waymark-input-' . esc_attr($field['id']) . ' button-secondary" />' . "\n";
 
 			break;
 		case 'file':
-			$out .= '		<input class="waymark-input waymark-input-' . $field['id'] . '" type="file" name="' . $field['name'] . '" data-id="' . $field['id'] . '" />' . "\n";
+			$out .= '		<input class="waymark-input waymark-input-' . esc_attr($field['id']) . '" type="file" name="' . esc_attr($field['name']) . '" data-id="' . esc_attr($field['id']) . '" />' . "\n";
 
 			break;
 		case 'text':
 		default:
-			$out .= '		<input class="waymark-input waymark-input-' . $field['id'] . '" type="text" name="' . $field['name'] . '" data-id="' . $field['id'] . '"';
+			$out .= '		<input class="waymark-input waymark-input-' . esc_attr($field['id']) . '" type="text" name="' . esc_attr($field['name']) . '" data-id="' . esc_attr($field['id']) . '"';
 			//Do we have a value for this post?
 			if ($set_value !== null) {
-				$out .= ' value="' . $set_value . '"';
+				$out .= ' value="' . esc_attr($set_value) . '"';
 //					$out .= ' value="' . htmlspecialchars($set_value) . '"';
 				//Do we have a default?
 			} elseif (array_key_exists('default', $field)) {
 				$value = $field['default'];
 
-				$out .= ' value="' . $value . '"';
+				$out .= ' value="' . esc_attr($value) . '"';
 			}
 			$out .= ' />' . "\n";
 
@@ -314,11 +314,11 @@ class Waymark_Input {
 					$out .= '<!-- END Parameter Group -->' . "\n";
 				}
 				$out .= '<!-- START Parameter Group -->' . "\n";
-				$out .= '	<div class="waymark-parameter-group waymark-accordion-group waymark-parameter-group-' . $group_id . '" id="waymark-parameter-group-' . $group_id . '">' . "\n";
-				$out .= '		<legend title="Click to expand">' . $group['group_title'] . '</legend>' . "\n";
+				$out .= '	<div class="waymark-parameter-group waymark-accordion-group waymark-parameter-group-' . esc_attr($group_id) . '" id="waymark-parameter-group-' . esc_attr($group_id) . '">' . "\n";
+				$out .= '		<legend title="Click to expand">' . esc_html($group['group_title']) . '</legend>' . "\n";
 				$out .= '		<div class="waymark-accordion-group-content">' . "\n";
 				if (array_key_exists('group_description', $group)) {
-					$out .= '			<p class="waymark-parameter-group-description">' . $group['group_description'] . '</p>' . "\n";
+					$out .= '			<p class="waymark-parameter-group-description">' . esc_html($group['group_description']) . '</p>' . "\n";
 				}
 				$current_group = $group_id;
 			}

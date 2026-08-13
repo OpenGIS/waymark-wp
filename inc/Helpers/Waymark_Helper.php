@@ -42,7 +42,7 @@ class Waymark_Helper {
 		if (! $title) {
 			$title = Waymark_Config::get_name();
 		}
-		return '<img class="waymark-logo" alt="' . Waymark_Config::get_name() . '" src="' . self::asset_url('img/waymark-icon-' . $colour . '.png') . '" width="' . $width . '" height="' . $height . '" />';
+		return '<img class="waymark-logo" alt="' . esc_attr(Waymark_Config::get_name()) . '" src="' . self::asset_url('img/waymark-icon-' . $colour . '.png') . '" width="' . $width . '" height="' . $height . '" />';
 	}
 
 	public static function site_url($url_path = '') {
@@ -105,7 +105,7 @@ class Waymark_Helper {
 		]);
 		if ($map_thumbnail) {
 			if ($context == 'shortcode') {
-				$map_thumbnail = '<a href="' . get_permalink($Map->post_id) . '">' . $map_thumbnail . '</a>';
+				$map_thumbnail = '<a href="' . esc_url(get_permalink($Map->post_id)) . '">' . $map_thumbnail . '</a>';
 			}
 
 			$map_meta['map_thumbnail'] = [
@@ -300,12 +300,12 @@ class Waymark_Helper {
 				foreach ($meta_groups as $group_key => $meta_groups) {
 					//Do we have meta for this group?
 					if (isset($meta_grouped[$group_key])) {
-						$out .= '		<div class="waymark-meta-group waymark-accordion-group waymark-meta-group-' . $group_key . '">' . "\n";
+						$out .= '		<div class="waymark-meta-group waymark-accordion-group waymark-meta-group-' . esc_attr($group_key) . '">' . "\n";
 
 						$group_meta = $meta_grouped[$group_key];
 
 						//Container
-						$out .= '			<legend class="waymark-meta-group-title" title="Click to expand">' . $meta_groups['group_title'] . '</legend>' . "\n";
+						$out .= '			<legend class="waymark-meta-group-title" title="Click to expand">' . esc_html($meta_groups['group_title']) . '</legend>' . "\n";
 						$out .= '			<div class="waymark-accordion-group-content">' . "\n";
 
 						//Each meta in group
@@ -346,7 +346,7 @@ class Waymark_Helper {
 			$meta_value = esc_html($meta_value);
 		}
 
-		$out .= '	<div class="waymark-meta-item waymark-meta-' . $meta['meta_key'] . '">' . "\n";
+		$out .= '	<div class="waymark-meta-item waymark-meta-' . esc_attr($meta['meta_key']) . '">' . "\n";
 		//Special case
 		if ($meta['meta_key'] == 'map_description') {
 			$out .= '		<div colspan="3" class="waymark-meta-content">' . $meta_value . '</div>' . "\n";
@@ -356,7 +356,7 @@ class Waymark_Helper {
 				$out .= $meta['meta_info'];
 			}
 			$out .= '		</div>' . "\n";
-			$out .= '		<div class="waymark-meta-title" scope="row">' . $meta['meta_title'] . '</div>' . "\n";
+			$out .= '		<div class="waymark-meta-title" scope="row">' . esc_html($meta['meta_title']) . '</div>' . "\n";
 			$out .= '		<div class="waymark-meta-content">' . $meta_value . '</div>' . "\n";
 		}
 		$out .= '	</div>' . "\n";
@@ -506,7 +506,7 @@ class Waymark_Helper {
 		$map_title = ($map_title) ? $map_title : esc_html__('Map', 'waymark');
 
 		// Add link to Map
-		$desc_append .= '	<span class="waymark-map-link"><a href="' . get_permalink($map_id) . '">' . $map_title . '</a></span>';
+		$desc_append .= '	<span class="waymark-map-link"><a href="' . esc_url(get_permalink($map_id)) . '">' . esc_html($map_title) . '</a></span>';
 
 		// Is Map part of the waymark_collection taxonomy?
 		$collections = wp_get_post_terms($map_id, 'waymark_collection');
@@ -519,7 +519,7 @@ class Waymark_Helper {
 			});
 
 			// Add link to first
-			$desc_append .= '	<span class="waymark-collection-link"><a href="' . get_term_link($collections[0]) . '">' . $collections[0]->name . '</a></span>';
+			$desc_append .= '	<span class="waymark-collection-link"><a href="' . esc_url(get_term_link($collections[0])) . '">' . esc_html($collections[0]->name) . '</a></span>';
 		}
 
 		$desc_append .= '</div>';
@@ -668,7 +668,7 @@ class Waymark_Helper {
 
 		$element = (is_admin()) ? 'div' : 'form';
 
-		$out = '<' . $element . ' action="' . self::http_url() . '" method="post" id="waymark-map-export-' . $Map->post_id . '" class="waymark-map-export" data-map_id="' . $Map->post_id . '" data-map_slug="' . sanitize_title($Map->post_title) . '">' . "\n";
+		$out = '<' . $element . ' action="' . esc_url(self::http_url()) . '" method="post" id="waymark-map-export-' . $Map->post_id . '" class="waymark-map-export" data-map_id="' . $Map->post_id . '" data-map_slug="' . sanitize_title($Map->post_title) . '">' . "\n";
 		$out .= '	<select name="export_format">' . "\n";
 		$out .= '		<option value="gpx">GPX</option>' . "\n";
 		$out .= '		<option value="kml">KML</option>' . "\n";
@@ -694,7 +694,7 @@ class Waymark_Helper {
 
 		$element = (is_admin()) ? 'div' : 'form';
 
-		$out = '<' . $element . ' action="' . self::http_url() . '" method="post" id="waymark-map-export-' . $Collection->collection_id . '" class="waymark-map-export" data-collection_id="' . $Collection->collection_id . '" data-collection_slug="' . $Collection->slug . '">' . "\n";
+		$out = '<' . $element . ' action="' . esc_url(self::http_url()) . '" method="post" id="waymark-map-export-' . $Collection->collection_id . '" class="waymark-map-export" data-collection_id="' . $Collection->collection_id . '" data-collection_slug="' . $Collection->slug . '">' . "\n";
 		$out .= '	<select name="export_format">' . "\n";
 		$out .= '		<option value="gpx">GPX</option>' . "\n";
 		$out .= '		<option value="kml">KML</option>' . "\n";
@@ -1035,7 +1035,7 @@ class Waymark_Helper {
 		$icon_css = 'color:' . $type['icon_colour'] . ';';
 
 		//HTML
-		$icon_data['html'] = '<div class="waymark-marker-background" style="' . $background_css . '"></div>';
+		$icon_data['html'] = '<div class="waymark-marker-background" style="' . esc_attr($background_css) . '"></div>';
 
 		//Classes
 		$icon_class = 'waymark-marker-icon';
@@ -1046,7 +1046,7 @@ class Waymark_Helper {
 		case 'text':
 			$icon_class .= ' waymark-icon-text';
 
-			$icon_data['html'] .= '<div style="' . $icon_css . '" class="' . $icon_class . '">' . $type['marker_icon'] . '</div>';
+			$icon_data['html'] .= '<div style="' . esc_attr($icon_css) . '" class="' . esc_attr($icon_class) . '">' . esc_html($type['marker_icon']) . '</div>';
 
 			break;
 
@@ -1055,9 +1055,9 @@ class Waymark_Helper {
 			$icon_class .= ' waymark-icon-html';
 
 			//Decode HTML entities
-			$icon_html = html_entity_decode($type['marker_icon']);
+			$icon_html = wp_kses_post(html_entity_decode($type['marker_icon']));
 
-			$icon_data['html'] .= '<div class="' . $icon_class . '">' . $icon_html . '</div>';
+			$icon_data['html'] .= '<div class="' . esc_attr($icon_class) . '">' . $icon_html . '</div>';
 
 			break;
 
@@ -1080,7 +1080,7 @@ class Waymark_Helper {
 				$icon_class .= ' ion-' . $type['marker_icon'];
 			}
 
-			$icon_data['html'] .= '<i style="' . $icon_css . '" class="' . $icon_class . '"></i>';
+			$icon_data['html'] .= '<i style="' . esc_attr($icon_css) . '" class="' . esc_attr($icon_class) . '"></i>';
 
 			break;
 		}
@@ -1200,7 +1200,7 @@ class Waymark_Helper {
 		// Switch by feature_type
 		switch ($feature_type) {
 		case 'marker':
-			$content = '<div class="waymark-overlay-content waymark-overlay-marker" data-marker_latlng="' . $feature['geometry']['coordinates'][1] . ',' . $feature['geometry']['coordinates'][0] . '">' . "\n";
+			$content = '<div class="waymark-overlay-content waymark-overlay-marker" data-marker_latlng="' . esc_attr($feature['geometry']['coordinates'][1] . ',' . $feature['geometry']['coordinates'][0]) . '">' . "\n";
 
 			break;
 
@@ -1238,10 +1238,10 @@ class Waymark_Helper {
 
 				//We have a title
 				if ($title) {
-					$content .= '<strong>' . $feature['properties']['title'] . '</strong>';
+					$content .= '<strong>' . esc_html($feature['properties']['title']) . '</strong>';
 					//No description
 				} else {
-					$content .= '<strong>' . $type_data['type_title'] . '</strong>';
+					$content .= '<strong>' . esc_html($type_data['type_title']) . '</strong>';
 				}
 
 				break;
@@ -1255,6 +1255,7 @@ class Waymark_Helper {
 			//Description
 			case 'description':
 				$description = $feature['properties']['description'];
+				$description = wp_kses_post($description);
 
 				//We have a description
 				if ($description) {
@@ -1282,7 +1283,7 @@ class Waymark_Helper {
 						$thumb_url = $feature['properties']['image_medium_url'];
 					}
 
-					$content .= '<a href="' . $feature['properties']['image_large_url'] . '" target="_blank" style="background-image:url(' . $thumb_url . ')"></a>';
+					$content .= '<a href="' . esc_url($feature['properties']['image_large_url']) . '" target="_blank" style="background-image:url(' . esc_url($thumb_url) . ')"></a>';
 					//We don't have an image
 				} else {
 					$content .= '<p>&nbsp;</p>';
@@ -1334,7 +1335,7 @@ class Waymark_Helper {
 			break;
 		}
 
-		return '<' . $ele . ' class="' . $preview_class . '" style="' . $preview_style . '">' . $type_data[$feature_type . '_title'] . '</' . $ele . '>';
+		return '<' . $ele . ' class="' . esc_attr($preview_class) . '" style="' . esc_attr($preview_style) . '">' . esc_html($type_data[$feature_type . '_title']) . '</' . $ele . '>';
 	}
 
 	/**
@@ -1400,15 +1401,15 @@ class Waymark_Helper {
 					}
 
 					// Wrapper for Type
-					$out .= '		<div class="waymark-type waymark-type-' . $marker_type . '" data-type_key="' . $marker_type . '">' . "\n";
+					$out .= '		<div class="waymark-type waymark-type-' . esc_attr($marker_type) . '" data-type_key="' . esc_attr($marker_type) . '">' . "\n";
 
 					//Output Title, Icon and count
 					$icon_data = self::build_icon_data($type_data);
 					$icon_html = self::build_icon_html($icon_data);
 
-					$out .= '		<div class="waymark-header" style="background-color:' . $type_data['marker_colour'] . ';color:' . $type_data['icon_colour'] . ';">' . "\n";
+					$out .= '		<div class="waymark-header" style="background-color:' . esc_attr($type_data['marker_colour']) . ';color:' . esc_attr($type_data['icon_colour']) . ';">' . "\n";
 					$out .= '			<div class="waymark-type-icon">' . $icon_html . '</div>' . "\n";
-					$out .= '			<div class="waymark-type-title">' . $type_data['marker_title'] . '</div>' . "\n";
+					$out .= '			<div class="waymark-type-title">' . esc_html($type_data['marker_title']) . '</div>' . "\n";
 					$out .= '			<div class="waymark-type-count">' . sizeof($markers) . '</div>' . "\n";
 					$out .= '		</div>' . "\n";
 
@@ -1438,7 +1439,7 @@ class Waymark_Helper {
 						continue;
 					}
 
-					$out .= '<li>' . $line_type . ' (' . sizeof($lines) . ')</li>' . "\n";
+					$out .= '<li>' . esc_html($line_type) . ' (' . sizeof($lines) . ')</li>' . "\n";
 				}
 				$out .= '</div>' . "\n";
 
@@ -1458,7 +1459,7 @@ class Waymark_Helper {
 						continue;
 					}
 
-					$out .= '<li>' . $shape_type . ' (' . sizeof($shapes) . ')</li>' . "\n";
+					$out .= '<li>' . esc_html($shape_type) . ' (' . sizeof($shapes) . ')</li>' . "\n";
 				}
 				$out .= '</div>' . "\n";
 

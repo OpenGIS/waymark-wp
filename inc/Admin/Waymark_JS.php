@@ -76,12 +76,12 @@ class Waymark_JS {
 		if ($default_latlng = Waymark_Config::get_setting('misc', 'map_options', 'map_default_latlng')) {
 			// We have a valid LatLng
 			if ($default_latlng_array = Waymark_Helper::latlng_string_to_array($default_latlng)) {
-				self::add_call('waymark_user_config.map_options.map_init_latlng = [' . $default_latlng_array[0] . ', ' . $default_latlng_array[1] . ']');
+				self::add_call('waymark_user_config.map_options.map_init_latlng = ' . wp_json_encode([(float) $default_latlng_array[0], (float) $default_latlng_array[1]]));
 
 			}
 		}
 		if ($default_zoom = Waymark_Config::get_setting('misc', 'map_options', 'map_default_zoom')) {
-			self::add_call('waymark_user_config.map_options.map_init_zoom = ' . $default_zoom);
+			self::add_call('waymark_user_config.map_options.map_init_zoom = ' . wp_json_encode((int) $default_zoom));
 		}
 
 		//Set basemap

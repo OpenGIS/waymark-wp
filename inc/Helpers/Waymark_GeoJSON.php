@@ -228,7 +228,7 @@ class Waymark_GeoJSON {
 						if (array_key_exists($custom_prop['property_key'], $feature['properties'])) {
 
 							// Format
-							$feature['properties']['description'] .= '<p class="waymark-property waymark-property-' . $custom_prop['property_key'] . '"><b>' . $custom_prop['property_title'] . '</b><br>' . $feature['properties'][$custom_prop['property_key']] . '</p>';
+							$feature['properties']['description'] .= '<p class="waymark-property waymark-property-' . esc_attr($custom_prop['property_key']) . '"><b>' . esc_html($custom_prop['property_title']) . '</b><br>' . esc_html($feature['properties'][$custom_prop['property_key']]) . '</p>';
 						}
 					}
 				}

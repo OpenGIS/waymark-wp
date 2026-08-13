@@ -8,7 +8,7 @@ class Waymark_HTTP {
 
 		//Setup AJAX
 		Waymark_JS::add_chunk('//HTTP');
-		Waymark_JS::add_chunk('var waymark_http_endpoint = "' . Waymark_Helper::http_url() . '";');
+		Waymark_JS::add_chunk('var waymark_http_endpoint = ' . wp_json_encode(Waymark_Helper::http_url()) . ';');
 	}
 
 	public function query_vars($vars) {
@@ -25,6 +25,11 @@ class Waymark_HTTP {
 		}
 
 		$request_data = wp_unslash($_REQUEST);
+
+		//Validate export format
+		if (! isset($request_data['export_format']) || ! in_array($request_data['export_format'], ['gpx', 'kml', 'geojson'])) {
+			$request_data['export_format'] = 'geojson';
+		}
 
 		//Action
 		if (array_key_exists('waymark_action', $request_data)) {
@@ -105,7 +110,7 @@ class Waymark_HTTP {
 					}
 
 					//File download name
-					$export_filename = $Collection->slug . '-' . $Collection->collection_id . '.' . esc_attr($request_data['export_format']);
+					$export_filename = sanitize_file_name($Collection->slug) . '-' . $Collection->collection_id . '.' . esc_attr($request_data['export_format']);
 
 					break;
 
@@ -121,7 +126,7 @@ class Waymark_HTTP {
 					}
 
 					//File download name
-					$export_filename = get_post_field('post_name', $Map->post_id) . '-' . $Map->post_id . '.' . esc_attr($request_data['export_format']);
+					$export_filename = sanitize_file_name(get_post_field('post_name', $Map->post_id)) . '-' . $Map->post_id . '.' . esc_attr($request_data['export_format']);
 
 					break;
 				}

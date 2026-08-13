@@ -2,9 +2,9 @@
 # This file is distributed under the GPLv2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Waymark 1.5.16\n"
+"Project-Id-Version: Waymark 1.6.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-06-11 18:01:17+00:00\n"
+"POT-Creation-Date: 2026-08-13 00:10:51+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -88,8 +88,8 @@ msgstr ""
 msgid "Shortcode"
 msgstr ""
 
-#: inc/Admin/Waymark_Meta.php:13 inc/Helpers/Waymark_Helper.php:197
-#: inc/Helpers/Waymark_Helper.php:226
+#: inc/Admin/Waymark_Meta.php:13 inc/Helpers/Waymark_Helper.php:198
+#: inc/Helpers/Waymark_Helper.php:227
 msgid "Export"
 msgstr ""
 
@@ -229,7 +229,7 @@ msgid "Overlays"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:35 inc/Admin/Waymark_Settings.php:138
-#: inc/Helpers/Waymark_Helper.php:1373 inc/Helpers/Waymark_Lang.php:41
+#: inc/Helpers/Waymark_Helper.php:1386 inc/Helpers/Waymark_Lang.php:41
 #. translators: The name of the tab for customising Markers
 msgid "Markers"
 msgstr ""
@@ -1625,23 +1625,23 @@ msgstr ""
 msgid "Thanks"
 msgstr ""
 
-#: inc/Helpers/Waymark_Helper.php:182 inc/Waymark_Taxonomies.php:21
+#: inc/Helpers/Waymark_Helper.php:183 inc/Waymark_Taxonomies.php:21
 #: inc/Waymark_Taxonomies.php:22
 msgid "Collection"
 msgstr ""
 
-#: inc/Helpers/Waymark_Helper.php:199 inc/Helpers/Waymark_Helper.php:228
+#: inc/Helpers/Waymark_Helper.php:200 inc/Helpers/Waymark_Helper.php:229
 msgid ""
 "This will download the Overlays currently displayed by the Map in the "
 "selected format."
 msgstr ""
 
-#: inc/Helpers/Waymark_Helper.php:494 inc/Waymark_Types.php:14
+#: inc/Helpers/Waymark_Helper.php:506 inc/Waymark_Types.php:14
 #: inc/Waymark_Types.php:18 inc/Waymark_Types.php:20
 msgid "Map"
 msgstr ""
 
-#: inc/Helpers/Waymark_Helper.php:670 inc/Helpers/Waymark_Helper.php:695
+#: inc/Helpers/Waymark_Helper.php:682 inc/Helpers/Waymark_Helper.php:707
 msgid "Download"
 msgstr ""
 

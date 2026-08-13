@@ -183,7 +183,7 @@ class Waymark_Submission {
 					//Custom message?
 					if (isset($get_data['waymark_map_id'])) {
 						// translators: %s: link to the published map
-						$content .= sprintf(__('Your submission has been <a href="%s">published</a>.', 'waymark'), get_permalink(esc_attr($get_data['waymark_map_id'])));
+						$content .= sprintf(__('Your submission has been <a href="%s">published</a>.', 'waymark'), esc_url(get_permalink((int) $get_data['waymark_map_id'])));
 					} else {
 						$content .= __('Your submission has been published.', 'waymark');
 					}
@@ -211,10 +211,10 @@ class Waymark_Submission {
 		}
 
 		// Submission Form
-		$content .= '	<form action="' . Waymark_Helper::http_url() . '" method="post" id="waymark-map-add" class="waymark-map-add">' . "\n";
+		$content .= '	<form action="' . esc_url(Waymark_Helper::http_url()) . '" method="post" id="waymark-map-add" class="waymark-map-add">' . "\n";
 		$content .= '		<input type="hidden" name="waymark_action" value="public_add_map" />' . "\n";
 		$content .= '		<input type="hidden" name="waymark_security" value="' . wp_create_nonce(Waymark_Config::get_item('nonce_string')) . '" />' . "\n";
-		$content .= '		<input type="hidden" name="waymark_redirect" value="' . get_permalink($post) . '" />' . "\n";
+		$content .= '		<input type="hidden" name="waymark_redirect" value="' . esc_attr(esc_url(get_permalink($post))) . '" />' . "\n";
 
 		//Title
 		if (in_array('title', $this->features)) {
