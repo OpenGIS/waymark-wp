@@ -2,9 +2,9 @@
 Contributors: morehawes
 Tags: GIS, Map maker, GPX, Track, Elevation
 Requires at least: 4.6
-Tested up to: 7.2
+Tested up to: 7.1
 Requires PHP: 5.2
-Stable tag: 1.6.2
+Stable tag: 1.6.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://github.com/sponsors/OpenGIS
