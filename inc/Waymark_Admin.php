@@ -34,6 +34,7 @@ class Waymark_Admin {
 		require_once 'Admin/Waymark_JS.php';
 		require_once 'Admin/Waymark_AJAX.php';
 		require_once 'Admin/Waymark_Meta.php';
+		require_once 'Admin/Waymark_Revisions.php';
 
 		//Add nonce
 		Waymark_JS::add_chunk('//Admin');

@@ -4,7 +4,7 @@
 **Requires at least:** 4.6  
 **Tested up to:** 7.0  
 **Requires PHP:** 5.2  
-**Stable tag:** 1.6.0  
+**Stable tag:** 1.6.1  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 **Donate link:** https://github.com/sponsors/OpenGIS  
@@ -205,7 +205,7 @@ Built on the shoulders of giants, thank you Open-Source!
 
 ## Changelog ##
 
-### 1.6.0 ###
+### 1.6.1 ###
 
 * Security update. Thanks to [Nils](https://github.com/Crow729) for [reporting this](https://github.com/OpenGIS/waymark-wp/issues/74).
 

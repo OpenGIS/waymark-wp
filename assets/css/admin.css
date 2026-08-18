@@ -645,6 +645,7 @@ div#waymark-notice-container.plugin-callout {
   position: relative;
   margin-top: 5px;
   padding: 5px 10px 5px 50px;
+  z-index: -1;
   align-items: center;
   border: 5px solid #b42714;
 }

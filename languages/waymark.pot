@@ -2,16 +2,16 @@
 # This file is distributed under the GPLv2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Waymark 1.6.0\n"
+"Project-Id-Version: Waymark 1.6.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-08-13 00:10:51+00:00\n"
+"POT-Creation-Date: 2026-08-18 16:25:10+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "PO-Revision-Date: 2026-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"X-Generator: grunt-wp-i18n 1.0.3\n"
+"X-Generator: grunt-wp-i18n 1.0.4\n"
 
 #: inc/Admin/Waymark_AJAX.php:32
 msgid "No image metadata available."
@@ -50,20 +50,20 @@ msgid "HTML"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:20 inc/Admin/Waymark_Menu.php:69
-#: inc/Admin/Waymark_Settings.php:26 inc/Waymark_Admin.php:184
+#: inc/Admin/Waymark_Settings.php:26 inc/Waymark_Admin.php:185
 #: inc/Waymark_Install.php:64 inc/Waymark_Types.php:17 inc/Waymark_Types.php:19
 #. translators: %s: URL to the Waymark documentation
 msgid "Maps"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:21 inc/Admin/Waymark_Menu.php:63
-#: inc/Waymark_Admin.php:210 inc/Waymark_Types.php:27
+#: inc/Waymark_Admin.php:211 inc/Waymark_Types.php:27
 #. translators: Creating a new map
 msgid "New Map"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:24 inc/Admin/Waymark_Menu.php:71
-#: inc/Waymark_Admin.php:176 inc/Waymark_Taxonomies.php:20
+#: inc/Waymark_Admin.php:177 inc/Waymark_Taxonomies.php:20
 #. translators: Collection is a group of maps
 msgid "Collections"
 msgstr ""
@@ -84,7 +84,7 @@ msgstr ""
 msgid "Map Editor"
 msgstr ""
 
-#: inc/Admin/Waymark_Meta.php:12 inc/Waymark_Admin.php:123
+#: inc/Admin/Waymark_Meta.php:12 inc/Waymark_Admin.php:124
 msgid "Shortcode"
 msgstr ""
 
@@ -170,6 +170,15 @@ msgstr ""
 #: inc/Admin/Waymark_Meta.php:168
 #. translators: %s: Link to Waymark Settings
 msgid "You can manage Meta fields in <a href=\"%s\">Settings</a>."
+msgstr ""
+
+#: inc/Admin/Waymark_Revisions.php:196
+msgid "Map Data"
+msgstr ""
+
+#: inc/Admin/Waymark_Revisions.php:246
+#. translators: %d: Number of features
+msgid "%d feature(s)"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:27 inc/Admin/Waymark_Settings.php:51
@@ -1731,7 +1740,7 @@ msgid ""
 "apps should Export to)"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:26 inc/Waymark_Admin.php:110
+#: inc/Helpers/Waymark_Lang.php:26 inc/Waymark_Admin.php:111
 msgid "Duplicate"
 msgstr ""
 
@@ -1815,23 +1824,23 @@ msgstr ""
 msgid "Reverse Direction"
 msgstr ""
 
-#: inc/Waymark_Admin.php:91
+#: inc/Waymark_Admin.php:92
 msgid "Can not duplicate, no post to supplied!"
 msgstr ""
 
-#: inc/Waymark_Admin.php:97
+#: inc/Waymark_Admin.php:98
 msgid "Security verification error!"
 msgstr ""
 
-#: inc/Waymark_Admin.php:110
+#: inc/Waymark_Admin.php:111
 msgid "Duplicate this post"
 msgstr ""
 
-#: inc/Waymark_Admin.php:143
+#: inc/Waymark_Admin.php:144
 msgid "Date"
 msgstr ""
 
-#: inc/Waymark_Admin.php:178
+#: inc/Waymark_Admin.php:179
 #. translators: %s: URL to the Waymark documentation
 msgid ""
 "Collections allow you to organise your Maps. Use the <a "
@@ -1839,19 +1848,19 @@ msgid ""
 "href=\"%2$s\" class=\"button waymark-right\">Read the Docs &raquo;</a>"
 msgstr ""
 
-#: inc/Waymark_Admin.php:186
+#: inc/Waymark_Admin.php:187
 #. translators: %s: URL to the Waymark documentation
 msgid ""
 "Create Maps here, then add them to your content using the <a "
 "href=\"%1$s\">Shortcode</a>."
 msgstr ""
 
-#: inc/Waymark_Admin.php:205
+#: inc/Waymark_Admin.php:206
 #. translators: Creating a new map
 msgid "Creating a Map"
 msgstr ""
 
-#: inc/Waymark_Admin.php:207
+#: inc/Waymark_Admin.php:208
 #. translators: %s: URL to the Waymark documentation
 msgid ""
 "<span class=\"waymark-lead\">Use the Map <a href=\"%1$s\">Editor</a> to "
@@ -1861,14 +1870,14 @@ msgid ""
 "<a href=\"%4$s\">Shortcode</a>."
 msgstr ""
 
-#: inc/Waymark_Admin.php:212 inc/Waymark_Admin.php:218
+#: inc/Waymark_Admin.php:213 inc/Waymark_Admin.php:219
 #. translators: %s: URL to the Waymark documentation
 msgid ""
 "You can add the Map to your content using the %1$s <a "
 "href=\"%2$s\">Shortcode</a>."
 msgstr ""
 
-#: inc/Waymark_Admin.php:216 inc/Waymark_Types.php:28
+#: inc/Waymark_Admin.php:217 inc/Waymark_Types.php:28
 #. translators: Editing a map
 msgid "Edit Map"
 msgstr ""
