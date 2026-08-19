@@ -178,7 +178,7 @@ class Waymark_Object {
 				//Sanitise before update
 				$param_value = $this->sanitise_meta_value($param_definition, $param_value);
 
-				update_post_meta($post_id, $this->prefix($param_definition['name']), $param_value);
+				update_post_meta($post_id, $this->prefix($param_definition['name']), wp_slash($param_value));
 				//No value exists
 			} else {
 				delete_post_meta($post_id, $this->prefix($param_definition['name']));
@@ -229,12 +229,9 @@ class Waymark_Object {
 			$decoded = json_decode(wp_unslash((string) $map_data), true);
 		}
 
-		//Invalid JSON? Return an empty Feature Collection
+		//Invalid JSON? Return the raw value rather than wiping all map data
 		if (! is_array($decoded) || ! isset($decoded['features']) || ! is_array($decoded['features'])) {
-			return wp_json_encode([
-				'type' => 'FeatureCollection',
-				'features' => [],
-			]);
+			return wp_unslash((string) $map_data);
 		}
 
 		//Sanitise each feature's properties
@@ -270,7 +267,7 @@ class Waymark_Object {
 		}
 		unset($feature);
 
-		$map_data_out = wp_json_encode($decoded);
+		$map_data_out = wp_json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
 		return ($map_data_out) ? $map_data_out : wp_json_encode([
 			'type' => 'FeatureCollection',
