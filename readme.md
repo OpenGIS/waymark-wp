@@ -5,7 +5,7 @@
 **Requires at least:** 4.6  
 **Tested up to:** 7.1  
 **Requires PHP:** 5.2  
-**Stable tag:** 1.6.5  
+**Stable tag:** 1.6.6  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 **Donate link:** https://github.com/sponsors/OpenGIS
@@ -79,6 +79,23 @@ For developers:
 Be sure to check out [Map First](https://github.com/opengis/map-first), a minimal WordPress theme with an _obsession_ for Maps (it's open-source too and contains lots of comments about customisations).
 
 **Waymark is free, open-source ([GPL v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)) and a labour of Love**. I try to keep the plugin well supported, so please feel free to <a href="https://wordpress.org/support/plugin/waymark/#new-topic-0">reach out</a> with any issues, questions or feedback.
+
+### User Examples
+
+- [Association Franc-Comtoise du Chemin de Compostelle – eGuide](https://www.af-ccc.fr/eguide/)
+- [Cres & Lošinj Trail – Lošinj Trail 2025](https://clt.remarkable.events/losinj-trail-en/)
+- [hikingTICINO](https://www.hikingticino.com/wanderungen/category-wanderung/)
+- [Horizontes – PT281](https://horizontes.pt/pt281/)
+- [Iggy's Hikes – Staze na Medvednici](https://www.iggyshikes.com/staze-na-medvednici/)
+- [Il Cammino del Lago Maggiore – Le 11 tappe](https://www.camminolagomaggiore.it/11-tappe-cammino-lago-maggiore/)
+- [Merritt Mountain Bike Association – Iron Mountain](https://merrittbike.ca/our-trails/iron-mountain/)
+- [The Island Walk – Island Walk Map](https://theislandwalk.ca/island-walk-map/)
+- [Trekkaholic – Trekking al lago Bianco in Alpe Veglia](https://www.trekkaholic.it/piemonte/trekking-lago-bianco-alpe-veglia/)
+- [Via Apsyrtides](https://viaapsyrtides.hr/stage-1/)
+- [Zadar Archipelago – Interactive Map](https://zadar-archipelago.hr/interactive-map/)
+- [Zagorje Outdoor – Konjička staza broj 10](https://zagorjeoutdoor.hr/sl/ride_staza/konjicka-staza-broj-10/)
+
+<small>Updated 10 September 2026</small>
 
 ### Development
 
