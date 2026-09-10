@@ -93,8 +93,6 @@ Be sure to check out [Map First](https://github.com/opengis/map-first), a minima
 - [Zadar Archipelago – Interactive Map](https://zadar-archipelago.hr/interactive-map/)
 - [Zagorje Outdoor – Konjička staza broj 10](https://zagorjeoutdoor.hr/sl/ride_staza/konjicka-staza-broj-10/)
 
-<small>Updated 10 September 2026</small>
-
 ### Development
 
 > [!NOTE]
