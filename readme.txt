@@ -140,8 +140,6 @@ This starts WordPress at **http://localhost:8888** and prints the credentials su
 
 == Installation ==
 
-[vimeo https://vimeo.com/349575095]
-
 With Waymark enabled, click on the "Maps" link in the sidebar to create and edit Maps. Once you are happy with your Map, copy the Waymark shortcode and add it to your content.
 
 <a href="https://www.ogis.org/waymark-wp/">Read the Docs &raquo;</a>

@@ -79,10 +79,6 @@ module.exports = function (grunt) {
 				},
 				options: {
 					screenshot_url: "https://ps.w.org/{plugin}/assets/{screenshot}.jpg",
-					post_convert: function (content) {
-						//Remove unsupported Vimeo tags
-						return content.replace(/\[vimeo(.*)\]\n*/g, "");
-					},
 				},
 			},
 		},
