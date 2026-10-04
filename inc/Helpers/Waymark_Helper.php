@@ -51,11 +51,11 @@ class Waymark_Helper {
 	}
 
 	public static function asset_url($file_path = '') {
-		return plugin_dir_url('') . 'waymark/assets/' . $file_path;
+		return plugin_dir_url(dirname(dirname(__DIR__)) . '/Waymark.php') . 'assets/' . $file_path;
 	}
 
 	public static function plugin_url($file_path = '') {
-		return plugin_dir_url('') . 'waymark/' . $file_path;
+		return plugin_dir_url(dirname(dirname(__DIR__)) . '/Waymark.php') . $file_path;
 	}
 
 	public static function http_url($data = []) {

@@ -7,65 +7,72 @@
  * ====================================
  */
 .waymark-shortcode {
-	overflow: hidden;
-	margin-bottom: 1.5em;
-	border: 1px solid #999;
+  overflow: hidden;
+  margin-bottom: 1.5em;
+  border: 1px solid #999;
 
-	.waymark-header {
-		position: relative;
-		padding: 10px;
-		// min-height: 40px;
-		background: #f7f7f7;
-		border-bottom: 1px solid #ccc;
+  .waymark-header {
+    position: relative;
+    padding: 10px;
+    // min-height: 40px;
+    // Translucent overlay adapts the header to the theme page colour (light pages → light header, dark pages → dark header)
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #ccc;
+    // Crisp 1px dark-grey outline keeps theme text readable on the adaptive header background
+    text-shadow:
+      1px 0 0 rgba(34, 34, 34, 0.25),
+      -1px 0 0 rgba(34, 34, 34, 0.25),
+      0 1px 0 rgba(34, 34, 34, 0.25),
+      0 -1px 0 rgba(34, 34, 34, 0.25);
 
-		.ion {
-			margin-left: 3px;
-			font-size: 18px;
-		}
+    .ion {
+      margin-left: 3px;
+      font-size: 18px;
+    }
 
-		.waymark-title {
-			font-weight: bold;
-		}
+    .waymark-title {
+      font-weight: bold;
+    }
 
-		.waymark-link {
-			float: right;
-		}
+    .waymark-link {
+      float: right;
+    }
 
-		.waymark-meta {
-			display: none;
-			position: absolute;
-			top: 0;
-			right: 0;
-			width: 320px;
-			max-width: 80%;
-			z-index: +1;
-			background: rgba(255, 255, 255, 0.95);
-			border-left: 1px solid #ccc;
-			padding: 15px 10px;
-			overflow: auto;
+    .waymark-meta {
+      display: none;
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 320px;
+      max-width: 80%;
+      z-index: +1;
+      background: rgba(255, 255, 255, 0.95);
+      border-left: 1px solid #ccc;
+      padding: 15px 10px;
+      overflow: auto;
 
-			.waymark-link {
-				position: absolute;
-				top: 10px;
-				right: 10px;
-			}
+      .waymark-link {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
 
-			.waymark-meta-close {
-				position: absolute;
-				top: 15px;
-				left: 10px;
-				cursor: pointer;
-			}
+      .waymark-meta-close {
+        position: absolute;
+        top: 15px;
+        left: 10px;
+        cursor: pointer;
+      }
 
-			.waymark-map-meta {
-				padding-top: 20px;
+      .waymark-map-meta {
+        padding-top: 20px;
 
-				legend {
-					font-size: 1.1em;
-				}
-			}
-		}
-	}
+        legend {
+          font-size: 1.1em;
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -74,18 +81,18 @@
  * ====================================
  */
 .waymark-message {
-	margin-bottom: 15px;
-	padding: 10px 15px;
-	border-width: 1px;
-	border-style: solid;
-	&.waymark-success {
-		color: @success_colour;
-		border-color: @success_colour;
-	}
-	&.waymark-error {
-		color: @error_colour;
-		border-color: @error_colour;
-	}
+  margin-bottom: 15px;
+  padding: 10px 15px;
+  border-width: 1px;
+  border-style: solid;
+  &.waymark-success {
+    color: @success_colour;
+    border-color: @success_colour;
+  }
+  &.waymark-error {
+    color: @error_colour;
+    border-color: @error_colour;
+  }
 }
 
 /**
@@ -102,83 +109,83 @@
  * ====================================
  */
 .waymark-map-meta {
-	font-size: 0.85em;
-	.waymark-map-meta-ungrouped {
-		margin-bottom: 15px;
-	}
-	.waymark-map-meta-grouped {
-		.waymark-meta-item {
-			&:last-child {
-			}
-		}
-	}
-	.waymark-meta-item {
-		// 		position: relative;
-		padding: 15px;
-		border-bottom: 1px solid #ddd;
-		&:first-child {
-		}
-		&:last-child {
-			border-bottom: 0;
-		}
-		&:nth-child(even) {
-			background-color: #fafafa;
-		}
-		.waymark-meta-title {
-			margin-bottom: 5px;
-			font-weight: bold;
-		}
-		.waymark-meta-content {
-			font-weight: normal;
-		}
-		.waymark-meta-info {
-			float: right;
-			// 			position: absolute;
-			// 			top: 15px;
-			// 			right: 15px;
-		}
+  font-size: 0.85em;
+  .waymark-map-meta-ungrouped {
+    margin-bottom: 15px;
+  }
+  .waymark-map-meta-grouped {
+    .waymark-meta-item {
+      &:last-child {
+      }
+    }
+  }
+  .waymark-meta-item {
+    // 		position: relative;
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    &:first-child {
+    }
+    &:last-child {
+      border-bottom: 0;
+    }
+    &:nth-child(even) {
+      background-color: #fafafa;
+    }
+    .waymark-meta-title {
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .waymark-meta-content {
+      font-weight: normal;
+    }
+    .waymark-meta-info {
+      float: right;
+      // 			position: absolute;
+      // 			top: 15px;
+      // 			right: 15px;
+    }
 
-		//Thumbnail
-		&.waymark-meta-map_thumbnail {
-			padding: 0;
-			.waymark-map-thumbnail {
-				max-width: 100%;
-				height: unset;
-			}
-		}
-	}
+    //Thumbnail
+    &.waymark-meta-map_thumbnail {
+      padding: 0;
+      .waymark-map-thumbnail {
+        max-width: 100%;
+        height: unset;
+      }
+    }
+  }
 }
 
 /* Phone */
 @media only screen and (min-width: 768px) {
-	//Map Details Meta
-	.single-waymark_map {
-		.waymark-map-meta {
-			.waymark-meta-item {
-				padding: 15px;
-				border-bottom: none;
-				//Thumbnail
-				&.waymark-meta-map_thumbnail {
-					width: 50%;
-					float: right;
-				}
-			}
+  //Map Details Meta
+  .single-waymark_map {
+    .waymark-map-meta {
+      .waymark-meta-item {
+        padding: 15px;
+        border-bottom: none;
+        //Thumbnail
+        &.waymark-meta-map_thumbnail {
+          width: 50%;
+          float: right;
+        }
+      }
 
-			//If only thumbnail
-			&.waymark-meta-count-1 {
-				.waymark-meta-map_thumbnail {
-					width: 100% !important;
-					float: unset !important;
-				}
-			}
-		}
-	}
+      //If only thumbnail
+      &.waymark-meta-count-1 {
+        .waymark-meta-map_thumbnail {
+          width: 100% !important;
+          float: unset !important;
+        }
+      }
+    }
+  }
 }
 
 .waymark-info-description {
-	.waymark-description-link {
-		padding-top: 10px;
-		margin-top: 10px;
-		border-top: 1px solid #999;
-	}
+  .waymark-description-link {
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid #999;
+  }
 }

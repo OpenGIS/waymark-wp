@@ -100,8 +100,9 @@ div.waymark-accordion-container .waymark-accordion-group .waymark-parameter-grou
 .waymark-shortcode .waymark-header {
   position: relative;
   padding: 10px;
-  background: #f7f7f7;
+  background: rgba(0, 0, 0, 0.1);
   border-bottom: 1px solid #ccc;
+  text-shadow: 1px 0 0 rgba(34, 34, 34, 0.25), -1px 0 0 rgba(34, 34, 34, 0.25), 0 1px 0 rgba(34, 34, 34, 0.25), 0 -1px 0 rgba(34, 34, 34, 0.25);
 }
 .waymark-shortcode .waymark-header .ion {
   margin-left: 3px;

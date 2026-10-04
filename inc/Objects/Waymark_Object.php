@@ -45,7 +45,7 @@ class Waymark_Object {
 	}
 
 	function set_data($data_in = []) {
-		if (! sizeof($data_in) || ! is_array($data_in)) {
+		if (! is_array($data_in) || ! sizeof($data_in)) {
 			return;
 		}
 
@@ -89,22 +89,6 @@ class Waymark_Object {
 		}
 
 		return $str;
-	}
-
-	function set_data_item($data_key, $data_value) {
-		$this->data[$data_key] = $data_value;
-	}
-
-	function get_data_item($data_key) {
-		if (array_key_exists($data_key, $this->data)) {
-			return $this->data[$data_key];
-		} else {
-			return null;
-		}
-	}
-
-	function get_data() {
-		return $this->data;
 	}
 
 	function get_post_type() {

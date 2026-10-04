@@ -4,7 +4,7 @@ class Waymark_Install {
 	private static $plugin_path;
 	
 	static function init() {
-		self::$plugin_path = str_replace('inc/Waymark_Install', 'Waymark', __FILE__);
+		self::$plugin_path = dirname(__DIR__) . '/Waymark.php';
 		
 		register_activation_hook(self::$plugin_path, array('Waymark_Install', 'do_install'));
 		register_uninstall_hook(self::$plugin_path, array('Waymark_Install', 'do_uninstall'));
@@ -12,21 +12,9 @@ class Waymark_Install {
 		add_action('admin_init', array('Waymark_Install', 'activation_redirect'));
 		add_action('admin_init', array('Waymark_Install', 'update_check'));
 		
-		add_filter('plugin_action_links_waymark/Waymark.php', array('Waymark_Install', 'add_action_links'));		
+		add_filter('plugin_action_links_' . plugin_basename(self::$plugin_path), array('Waymark_Install', 'add_action_links'));		
 	}
 
-	static function get_data_item($key) {
-		if(! is_array(self::$data)) {
-			return null;
-		}
-		
-		if(array_key_exists($key, self::$data)) {
-			return self::$data[$key];
-		} else {
-			return null;
-		}
-	}	
-	
 	//Thanks https://stackoverflow.com/a/2463514
 	static function activation_redirect() {
 		if(get_option('waymark_activation_redirect')) {
