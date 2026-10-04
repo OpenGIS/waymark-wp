@@ -224,12 +224,11 @@ class Waymark_Admin {
 
 		// START Plugin Callout
 		if ($title || $this->current_screen->base == 'waymark_page_waymark-settings') {
-			echo '<div id="waymark-notice-container" class="plugin-callout">' . "\n";
-			echo '	<div class="logo">' . Waymark_Helper::logo('primary', 32, 32) . ' </div>' . "\n";
-			echo '	<p class="lead">Waymark currently has <strong>TWO</strong> sponsors. Software takes time and effort to maintain. If you like this plugin:</p>' . "\n";
-			echo '	<p style="font-size:150%">Help <strong>keep it alive <a href="https://github.com/sponsors/OpenGIS">Through Sponsorship</a>.</strong></p>' . "\n";
-			echo '	<p>Thank you <a href="https://github.com/infester86">infester86</a> & <a href="https://github.com/jhmnieuwenhuis">jhmnieuwenhuis</a> ! ❤️</p>' . "\n";
-			echo '</div>' . "\n";
+			// echo '<div id="waymark-notice-container" class="plugin-callout">' . "\n";
+			// echo '	<div class="logo">' . Waymark_Helper::logo('primary', 32, 32) . ' </div>' . "\n";
+			// echo '	<p class="lead">...</p>' . "\n";
+			// echo '	<p style="font-size:150%">...</p>' . "\n";
+			// echo '</div>' . "\n";
 
 			return;
 		}
@@ -282,7 +281,7 @@ class Waymark_Admin {
 
 	public function upload_mimes($existing_mimes) {
 		//Don't filter if current_screen is not set (e.g., AJAX uploads)
-		if (!$this->current_screen) {
+		if (! $this->current_screen) {
 			return $existing_mimes;
 		}
 
