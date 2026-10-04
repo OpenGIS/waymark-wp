@@ -345,6 +345,14 @@ class Waymark_Config {
 
 		$tile_layers = Waymark_Helper::convert_single_value_to_array($tile_layers);
 
+		//Decode and sanitise the Basemap attribution; Leaflet renders it as HTML
+		foreach ($tile_layers as &$tile_layer) {
+			if (isset($tile_layer['layer_attribution'])) {
+				$tile_layer['layer_attribution'] = wp_kses(htmlspecialchars_decode($tile_layer['layer_attribution']), Waymark_Helper::allowable_tags('attribution'));
+			}
+		}
+		unset($tile_layer);
+
 		//Map Options
 		$map_config['map_options'] = [
 			'map_height' => Waymark_Config::get_setting('misc', 'map_options', 'map_height'),
@@ -397,7 +405,9 @@ class Waymark_Config {
 		// Waymark_Helper::debug($map_config);
 
 		if ($encode) {
-			return wp_json_encode($map_config);
+			//JSON_HEX_TAG keeps any HTML (e.g. the Basemap attribution) opaque to the
+			//wp_kses() pass that is applied when the config is output
+			return wp_json_encode($map_config, JSON_HEX_TAG);
 		} else {
 			return $map_config;
 		}

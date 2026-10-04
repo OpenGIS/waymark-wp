@@ -1561,6 +1561,23 @@ class Waymark_Helper {
 
 			break;
 
+		case 'attribution':
+			return [
+				'a' => [
+					'href' => [],
+					'title' => [],
+					'target' => [],
+					'rel' => [],
+					'class' => [],
+				],
+				'br' => [],
+				'strong' => [],
+				'em' => [],
+				'span' => [
+					'class' => [],
+				],
+			];
+
 		case 'kml':
 			return [
 				'kml' => [

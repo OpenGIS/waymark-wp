@@ -490,7 +490,7 @@ class Waymark_Input {
 			break;
 
 		case 'layer_attribution':
-			if (! strpos($value, "&")) {
+			if (strpos($value, "&") === false) {
 				$value = htmlspecialchars($value);
 			}
 
