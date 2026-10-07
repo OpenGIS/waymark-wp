@@ -2,7 +2,7 @@
 # This file is distributed under the GPLv2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Waymark 1.6.7\n"
+"Project-Id-Version: Waymark 1.6.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark-wp\n"
 "POT-Creation-Date: 2026-10-04 01:11:03+00:00\n"
 "MIME-Version: 1.0\n"

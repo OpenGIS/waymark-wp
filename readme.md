@@ -1,21 +1,18 @@
-# Waymark  #
+# Waymark
+
 **Contributors:** [morehawes](https://profiles.wordpress.org/morehawes/)  
 **Tags:** GIS, Map maker, GPX, Track, Elevation  
 **Requires at least:** 4.6  
 **Tested up to:** 7.1  
 **Requires PHP:** 5.2  
-**Stable tag:** 1.6.7  
+**Stable tag:** 1.6.8  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
-**Donate link:** https://github.com/sponsors/OpenGIS  
+**Donate link:** https://github.com/sponsors/OpenGIS
 
 Waymark adds powerful mapping features to WordPress that are easy to use. Create beautiful, interactive Maps customised to suit your needs.
 
-## Description ##
-
-❤️ [Keep This Project Alive Through Sponsorship](https://github.com/sponsors/OpenGIS) ❤️
-
-### Creating Maps
+## Description
 
 Use the intuitive Editor to create Maps with one, or thousands of interactive Overlays.
 
@@ -35,7 +32,7 @@ Use the intuitive Editor to create Maps with one, or thousands of interactive Ov
 - **Collections** - Group Maps together and display multiple Maps at once. Create complex Collection hierarchies to suit your needs and associate Maps with multiple Collections.
 - **Submissions** - Allow registered users, or guests to create Maps from the front-end of your site. You can control who can Submit Maps, what editor features are available and whether submissions should be approved before they are published.
 
-🌟 [GitHub](https://github.com/opengis/waymark)
+🌟 [GitHub](https://github.com/opengis/waymark-wp)
 👐 [WordPress](https://wordpress.org/plugins/waymark/)
 📖 [Demo & Docs](https://www.ogis.org/waymark-wp/)
 
@@ -59,9 +56,10 @@ Embed your Maps using the `[Waymark]` Shortcode, or link to the Map Details page
 Built to be flexible, Waymark has lots of [Settings](https://www.ogis.org/waymark-wp/customising/settings/) and Types provide one place to control how Overlays (Markers/Lines/Shapes) are displayed.
 
 Marker Icons can be provided as:
-  - Font Icons ([Ionic Icons v2](https://ionic.io/ionicons/v2/cheatsheet.html)/[Font Awesome v4](https://fontawesome.com/v4.7.0/cheatsheet/))
-  - Simple Text, or [Emojis](https://emojifinder.com/) (i.e. 🏕️, 🚩, 📸).
-  - Custom HTML (good ol' `<img src="https://example.com/icon.svg">`, or a more complex structure). So you can pretty much create any kind of Icon you want.
+
+- Font Icons ([Ionic Icons v2](https://ionic.io/ionicons/v2/cheatsheet.html)/[Font Awesome v4](https://fontawesome.com/v4.7.0/cheatsheet/))
+- Simple Text, or [Emojis](https://emojifinder.com/) (i.e. 🏕️, 🚩, 📸).
+- Custom HTML (good ol' `<img src="https://example.com/icon.svg">`, or a more complex structure). So you can pretty much create any kind of Icon you want.
 
 For developers:
 
@@ -73,8 +71,6 @@ For developers:
 - Geographical data is stored in [GeoJSON](https://geojson.org/) format. Types are specified using the `type` Property, i.e. `{feature: { geometry: { type: 'Point', coordinates: [0, 0] } }, properties: { type: 'Alert', title: 'Bridge Removed!' }`.
 - Specify which GeoJSON feature properties to store when importing (Settings > Overlays > Properties). These can be automatically appended to the Overlay Description, or accessed programatically via the `layer.feature.properties` Object.
 - Maps are displayed using the [Leaflet](https://leafletjs.com/) JavaScript library, which is bundled with Waymark and can be extended using the `waymark_loaded_callback` [callback function](https://www.ogis.org/waymark-wp/advanced/using-the-global-callback-function/.
-
-Be sure to check out [Map First](https://github.com/opengis/map-first), a minimal WordPress theme with an *obsession* for Maps (it's open-source too and contains lots of comments about customisations).
 
 **Waymark is free, open-source ([GPL v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)) and a labour of Love**. I try to keep the plugin well supported, so please feel free to <a href="https://wordpress.org/support/plugin/waymark/#new-topic-0">reach out</a> with any issues, questions or feedback.
 
@@ -100,124 +96,118 @@ Be sure to check out [Map First](https://github.com/opengis/map-first), a minima
 
 [Grunt](https://gruntjs.com/) is used to run the build script, which compiles the JavaScript and CSS and performs some other tasks.
 
+    # Clone the repository (and the Waymark JS submodule)
+    git clone --recurse-submodules https://github.com/opengis/waymark.git
 
-	# Clone the repository (and the Waymark JS submodule)
-	git clone --recurse-submodules https://github.com/opengis/waymark.git
-	
-	# Navigate to the Waymark directory
-	cd waymark
-	
-	# Install the dependencies (or pnpm/yarn install)
-	npm install
-	
-	# Run the build script
-	grunt
+    # Navigate to the Waymark directory
+    cd waymark
 
+    # Install the dependencies (or pnpm/yarn install)
+    npm install
+
+    # Run the build script
+    grunt
 
 The build script will watch for changes to the JavaScript and CSS files.
 
-Pull requests are welcome!
-
 > [!IMPORTANT]
-> [Waymark JS](https://www.ogis.org/waymark-js/) is responsible for the Viewer and Editor and is included as a Git submodule (`/waymark-js` directory). View on [GitHub](https://github.com/OpenGIS/Waymark-JS/).
+> [Waymark JS](https://www.ogis.org/waymark-js/) is responsible for the Viewer and Editor and is included as a Git submodule (`/waymark-js` directory). View on [GitHub](https://github.com/OpenGIS/waymark-js/).
 
 ### Dev Server
 
 A local WordPress environment is provided via [wp-env](https://www.npmjs.com/package/@wordpress/env). [Docker](https://www.docker.com/) must be running.
 
-
-	npm run dev
-
+    npm run dev
 
 This starts WordPress at **http://localhost:8888** and prints the credentials summary:
 
+    ────────────────────────────────────
+     MySQL  127.0.0.1  root / password
+     Admin  http://localhost:8888/wp-admin  admin / password
+    ────────────────────────────────────
 
-	────────────────────────────────────
-	 MySQL  127.0.0.1  root / password
-	 Admin  http://localhost:8888/wp-admin  admin / password
-	────────────────────────────────────
-
-
-## Installation ##
+## Installation
 
 With Waymark enabled, click on the "Maps" link in the sidebar to create and edit Maps. Once you are happy with your Map, copy the Waymark shortcode and add it to your content.
 
 <a href="https://www.ogis.org/waymark-wp/">Read the Docs &raquo;</a>
 
-## Frequently Asked Questions ##
+## Frequently Asked Questions
 
-### Is This Free? ###
-
-*Yes!*, however if you (or your organisation) benefit from Waymark, please consider supporting the continued development of the plugin through [sponsorship](https://github.com/sponsors/OpenGIS) 🙂
-
-### Is There a Demo? ###
+### Is There a Demo?
 
 Yes, <a href="https://www.ogis.org/waymark-wp/">here</a>.
 
-### Can I Get More Help? ###
+### Can I Get More Help?
 
-Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Documentation</a>. If you still need help, feel free to [reach out](https://wordpress.org/support/plugin/waymark/#new-topic-0).
+Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Documentation</a>.
 
-### How Can I Contribute? ###
+### How Can I Contribute?
 
-**If you find value in Waymark please consider supporting it's continued development through [sponsorship](https://github.com/sponsors/OpenGIS). Any amount is appreciated.**
+**Please**:
 
-You could also:
-
-* **[Translate the plugin](https://translate.wordpress.org/projects/wp-plugins/waymark/)** If you like the plugin and speak multiple languages, *please* consider becoming a [Translation Editor (PTE)](https://make.wordpress.org/polyglots/handbook/about/roles-and-capabilities/#project-translation-editor) for the plugin.
-* **Star**, create an Issue or Fork the project on [GitHub](https://github.com/opengis/waymark/).
-* [Add a Review](https://wordpress.org/support/plugin/waymark/reviews/#new-post).
-* [Report bugs or suggest new features](https://wordpress.org/support/plugin/waymark/#new-topic-0).
+- **[Translate the plugin](https://translate.wordpress.org/projects/wp-plugins/waymark/)** If you like the plugin and speak multiple languages, _please_ consider becoming a [Translation Editor (PTE)](https://make.wordpress.org/polyglots/handbook/about/roles-and-capabilities/#project-translation-editor) for the plugin.
+- **Star**, create an Issue or Fork the project on [GitHub](https://github.com/opengis/waymark-wp/).
+- [Add a Review](https://wordpress.org/support/plugin/waymark/reviews/#new-post).
 
 If you have anything bad to say, please <a href="https://wordpress.org/support/plugin/waymark/#new-topic-0">create an issue</a> before leaving a review, this is how the plugin gets better!
 
-### Does Waymark Support Google Maps? ###
+### Does Waymark Support Google Maps?
 
-Yes! While the Google Maps API is not used, <a href="https://gist.github.com/morehawes/f2982753074599363ca3a9f8582cd572">Google Basemaps can be added to Waymark</a> as raster tiles.  
+Yes! While the Google Maps API is not used, <a href="https://gist.github.com/morehawes/f2982753074599363ca3a9f8582cd572">Google Basemaps can be added to Waymark</a> as raster tiles.
 
-### Can I Translate the Plugin? ###
+### Can I Translate the Plugin?
 
 Please! Waymark is localization ready, <a href="https://translate.wordpress.org/projects/wp-plugins/waymark/">translation contributions</a> are greatly appreciated.
 
-### Acknowledgements? ###
+### Acknowledgements?
 
 Waymark relies on input from it's users, thank you to everyone for providing feedback :)
 
 Built on the shoulders of giants, thank you Open-Source!
 
-## Screenshots ##
+## Screenshots
 
-### 1. Add Overlays (Markers, Lines and Shapes) to create detailed interactive Maps. You can import/export from GPX/KML/GeoJSON. ###
+### 1. Add Overlays (Markers, Lines and Shapes) to create detailed interactive Maps. You can import/export from GPX/KML/GeoJSON.
+
 ![Add Overlays (Markers, Lines and Shapes) to create detailed interactive Maps. You can import/export from GPX/KML/GeoJSON.](https://ps.w.org/waymark/assets/screenshot-1.jpg)
 
-### 2. Every Overlay can be given a title, image and description. Marker images can be displayed as a gallery. ###
+### 2. Every Overlay can be given a title, image and description. Marker images can be displayed as a gallery.
+
 ![Every Overlay can be given a title, image and description. Marker images can be displayed as a gallery.](https://ps.w.org/waymark/assets/screenshot-2.jpg)
 
-### 3. Waymark features a clean, intuitive Editor for creating and editing your Maps. Overlays are customisable using Types, which allow you set styles once (colours/icons etc.), so you can simply select it when you are adding to the Map.  ###
+### 3. Waymark features a clean, intuitive Editor for creating and editing your Maps. Overlays are customisable using Types, which allow you set styles once (colours/icons etc.), so you can simply select it when you are adding to the Map.
+
 ![Waymark features a clean, intuitive Editor for creating and editing your Maps. Overlays are customisable using Types, which allow you set styles once (colours/icons etc.), so you can simply select it when you are adding to the Map. ](https://ps.w.org/waymark/assets/screenshot-3.jpg)
 
-### 4. If you have more than one Basemap, you can switch between them when viewing the Map. Overlays can be shown/hidden by Type. ###
+### 4. If you have more than one Basemap, you can switch between them when viewing the Map. Overlays can be shown/hidden by Type.
+
 ![If you have more than one Basemap, you can switch between them when viewing the Map. Overlays can be shown/hidden by Type.](https://ps.w.org/waymark/assets/screenshot-4.jpg)
 
-### 5. Use Meta to provide extra information about your Maps. Meta inputs are customisable and can be grouped.  ###
+### 5. Use Meta to provide extra information about your Maps. Meta inputs are customisable and can be grouped.
+
 ![Use Meta to provide extra information about your Maps. Meta inputs are customisable and can be grouped. ](https://ps.w.org/waymark/assets/screenshot-5.jpg)
 
-### 6. The Map Details page displays an image gallery, elevation profile, export options, featured image and all Meta provided for the Map. ###
+### 6. The Map Details page displays an image gallery, elevation profile, export options, featured image and all Meta provided for the Map.
+
 ![The Map Details page displays an image gallery, elevation profile, export options, featured image and all Meta provided for the Map.](https://ps.w.org/waymark/assets/screenshot-6.jpg)
 
-### 7. Add Maps to your content using the Waymark Shortcode. You can choose which Meta is displayed. ###
+### 7. Add Maps to your content using the Waymark Shortcode. You can choose which Meta is displayed.
+
 ![Add Maps to your content using the Waymark Shortcode. You can choose which Meta is displayed.](https://ps.w.org/waymark/assets/screenshot-7.jpg)
 
-### 8. Organise Maps with Collections and display multiple Maps at once using the Shortcode. Collections can be nested and Maps can be associated with multiple Collections. ###
+### 8. Organise Maps with Collections and display multiple Maps at once using the Shortcode. Collections can be nested and Maps can be associated with multiple Collections.
+
 ![Organise Maps with Collections and display multiple Maps at once using the Shortcode. Collections can be nested and Maps can be associated with multiple Collections.](https://ps.w.org/waymark/assets/screenshot-8.jpg)
 
-### 9. Waymark was designed to be very flexible, with lots of Settings to choose from. ###
+### 9. Waymark was designed to be very flexible, with lots of Settings to choose from.
+
 ![Waymark was designed to be very flexible, with lots of Settings to choose from.](https://ps.w.org/waymark/assets/screenshot-9.jpg)
 
-### 10. Documentation and Help is available from the <a href="https://www.ogis.org/waymark-wp/">Waymark</a> website. ###
+### 10. Documentation and Help is available from the <a href="https://www.ogis.org/waymark-wp/">Waymark</a> website.
+
 ![Documentation and Help is available from the <a href="https://www.ogis.org/waymark-wp/">Waymark</a> website.](https://ps.w.org/waymark/assets/screenshot-10.jpg)
 
-
-## Changelog ##
+## Changelog
 
 [View changes on GitHub &raquo;](https://github.com/OpenGIS/waymark-wp/commits/master/)

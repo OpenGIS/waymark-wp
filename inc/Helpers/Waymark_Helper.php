@@ -22,7 +22,7 @@ class Waymark_Helper {
 		// translators: Links to the WordPress plugin directory
 		$out .= '			<li>' . sprintf(__('Leaving a <strong><a href="%1$s">review</a></strong>, or creating a <a href="%2$s">support topic</a> on the WordPress plugin directory.', 'waymark'), 'https://wordpress.org/support/plugin/waymark/reviews/#new-post', 'https://wordpress.org/support/plugin/waymark/#new-topic-0') . '</li>' . "\n";
 		// translators: Links to the GitHub repository
-		$out .= '			<li>' . sprintf(__('Creating a <a href="%s">GitHub issue</a>.', 'waymark'), 'https://github.com/opengis/waymark/issues/new') . '</li>' . "\n";
+		$out .= '			<li>' . sprintf(__('Creating a <a href="%s">GitHub issue</a>.', 'waymark'), 'https://github.com/opengis/waymark-wp/issues/new') . '</li>' . "\n";
 		$out .= '		</ul>' . "\n";
 		// translators: Thank you message
 		$out .= '		<p>' . esc_html__('Thanks', 'waymark') . '!</p>' . "\n";

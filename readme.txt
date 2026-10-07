@@ -4,7 +4,7 @@ Tags: GIS, Map maker, GPX, Track, Elevation
 Requires at least: 4.6
 Tested up to: 7.1
 Requires PHP: 5.2
-Stable tag: 1.6.7
+Stable tag: 1.6.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://github.com/sponsors/OpenGIS
@@ -12,10 +12,6 @@ Donate link: https://github.com/sponsors/OpenGIS
 Waymark adds powerful mapping features to WordPress that are easy to use. Create beautiful, interactive Maps customised to suit your needs.
 
 == Description ==
-
-❤️ [Keep This Project Alive Through Sponsorship](https://github.com/sponsors/OpenGIS) ❤️
-
-### Creating Maps
 
 Use the intuitive Editor to create Maps with one, or thousands of interactive Overlays.
 
@@ -35,7 +31,7 @@ Use the intuitive Editor to create Maps with one, or thousands of interactive Ov
 - **Collections** - Group Maps together and display multiple Maps at once. Create complex Collection hierarchies to suit your needs and associate Maps with multiple Collections.
 - **Submissions** - Allow registered users, or guests to create Maps from the front-end of your site. You can control who can Submit Maps, what editor features are available and whether submissions should be approved before they are published.
 
-🌟 [GitHub](https://github.com/opengis/waymark)
+🌟 [GitHub](https://github.com/opengis/waymark-wp)
 👐 [WordPress](https://wordpress.org/plugins/waymark/)
 📖 [Demo & Docs](https://www.ogis.org/waymark-wp/)
 
@@ -73,8 +69,6 @@ For developers:
 - Geographical data is stored in [GeoJSON](https://geojson.org/) format. Types are specified using the `type` Property, i.e. `{feature: { geometry: { type: 'Point', coordinates: [0, 0] } }, properties: { type: 'Alert', title: 'Bridge Removed!' }`.
 - Specify which GeoJSON feature properties to store when importing (Settings > Overlays > Properties). These can be automatically appended to the Overlay Description, or accessed programatically via the `layer.feature.properties` Object.
 - Maps are displayed using the [Leaflet](https://leafletjs.com/) JavaScript library, which is bundled with Waymark and can be extended using the `waymark_loaded_callback` [callback function](https://www.ogis.org/waymark-wp/advanced/using-the-global-callback-function/.
-
-Be sure to check out [Map First](https://github.com/opengis/map-first), a minimal WordPress theme with an *obsession* for Maps (it's open-source too and contains lots of comments about customisations).
 
 **Waymark is free, open-source ([GPL v2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)) and a labour of Love**. I try to keep the plugin well supported, so please feel free to <a href="https://wordpress.org/support/plugin/waymark/#new-topic-0">reach out</a> with any issues, questions or feedback.
 
@@ -116,10 +110,8 @@ grunt
 
 The build script will watch for changes to the JavaScript and CSS files.
 
-Pull requests are welcome!
-
 > [!IMPORTANT]
-> [Waymark JS](https://www.ogis.org/waymark-js/) is responsible for the Viewer and Editor and is included as a Git submodule (`/waymark-js` directory). View on [GitHub](https://github.com/OpenGIS/Waymark-JS/).
+> [Waymark JS](https://www.ogis.org/waymark-js/) is responsible for the Viewer and Editor and is included as a Git submodule (`/waymark-js` directory). View on [GitHub](https://github.com/OpenGIS/waymark-js/).
 
 ### Dev Server
 
@@ -146,28 +138,21 @@ With Waymark enabled, click on the "Maps" link in the sidebar to create and edit
 
 == Frequently Asked Questions ==
 
-= Is This Free? =
-
-*Yes!*, however if you (or your organisation) benefit from Waymark, please consider supporting the continued development of the plugin through [sponsorship](https://github.com/sponsors/OpenGIS) 🙂
-
 = Is There a Demo? =
 
 Yes, <a href="https://www.ogis.org/waymark-wp/">here</a>.
 
 = Can I Get More Help? =
 
-Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Documentation</a>. If you still need help, feel free to [reach out](https://wordpress.org/support/plugin/waymark/#new-topic-0).
+Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Documentation</a>.
 
 = How Can I Contribute? =
 
-**If you find value in Waymark please consider supporting it's continued development through [sponsorship](https://github.com/sponsors/OpenGIS). Any amount is appreciated.**
-
-You could also:
+**Please**:
 
 * **[Translate the plugin](https://translate.wordpress.org/projects/wp-plugins/waymark/)** If you like the plugin and speak multiple languages, *please* consider becoming a [Translation Editor (PTE)](https://make.wordpress.org/polyglots/handbook/about/roles-and-capabilities/#project-translation-editor) for the plugin.
-* **Star**, create an Issue or Fork the project on [GitHub](https://github.com/opengis/waymark/).
+* **Star**, create an Issue or Fork the project on [GitHub](https://github.com/opengis/waymark-wp/).
 * [Add a Review](https://wordpress.org/support/plugin/waymark/reviews/#new-post).
-* [Report bugs or suggest new features](https://wordpress.org/support/plugin/waymark/#new-topic-0).
 
 If you have anything bad to say, please <a href="https://wordpress.org/support/plugin/waymark/#new-topic-0">create an issue</a> before leaving a review, this is how the plugin gets better!
 
