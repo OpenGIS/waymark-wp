@@ -11,3 +11,7 @@ package.json
 package-lock.json
 Gruntfile.js
 readme.md
+/.wordpress-org
+tests/
+phpunit.xml.dist
+playwright.config.js

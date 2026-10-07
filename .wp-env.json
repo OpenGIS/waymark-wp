@@ -1,4 +1,4 @@
 {
   "plugins": ["."],
-  "testsEnvironment": false
+  "testsEnvironment": true
 }

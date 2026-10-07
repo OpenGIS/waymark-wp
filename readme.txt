@@ -15,6 +15,8 @@ Waymark adds powerful mapping features to WordPress that are easy to use. Create
 
 Use the intuitive Editor to create Maps with one, or thousands of interactive Overlays.
 
+![The Waymark Map Editor displaying a route on a map](.wordpress-org/editor-demo.jpg)
+
 - **Overlays** - Create Markers, Lines and Shapes with a:
   - Title
   - Image (Media Library or link to external image)
@@ -104,11 +106,14 @@ cd waymark
 # Install the dependencies (or pnpm/yarn install)
 npm install
 
-# Run the build script
-grunt
+# Run a one-off build
+npm run grunt
+
+# Or watch for changes and rebuild automatically
+npm run grunt:watch
 `
 
-The build script will watch for changes to the JavaScript and CSS files.
+`npm run grunt:watch` rebuilds automatically when the JavaScript, CSS or readme files change.
 
 > [!IMPORTANT]
 > [Waymark JS](https://www.ogis.org/waymark-js/) is responsible for the Viewer and Editor and is included as a Git submodule (`/waymark-js` directory). View on [GitHub](https://github.com/OpenGIS/waymark-js/).
@@ -121,7 +126,7 @@ A local WordPress environment is provided via [wp-env](https://www.npmjs.com/pac
 npm run dev
 `
 
-This starts WordPress at **http://localhost:8888** and prints the credentials summary:
+This starts WordPress at **http://localhost:8888**, prints the credentials summary, and runs the build watcher:
 
 `
 ────────────────────────────────────
@@ -129,6 +134,21 @@ This starts WordPress at **http://localhost:8888** and prints the credentials su
  Admin  http://localhost:8888/wp-admin  admin / password
 ────────────────────────────────────
 `
+
+### Testing
+
+Two test suites run against a disposable wp-env "tests" instance at **http://localhost:8889**; the normal development instance at **http://localhost:8888** is never touched by the tests.
+
+- `npm run test:php` - PHP integration tests (PHPUnit against the WordPress test library).
+- `npm run test:e2e` - Browser end-to-end tests (Playwright/Chromium), covering login, Map creation, Marker editing and front-end rendering.
+- `npm test` - Runs `test:php` then `test:e2e`; currently stops after the PHP suite until issue #77 is fixed.
+
+`npm run dev` must be running first. After `npx wp-env destroy`, run `npm run test:php:setup` once to prepare the tests container.
+
+PHPUnit resets the tests-instance database, so Playwright's global setup re-activates the plugin and theme before running; the two suites can be run back-to-back without manual steps.
+
+> [!NOTE]
+> Two of the 7 PHP tests currently fail as expected; they are regression tests for the map-data slashing bug ([issue #77](https://github.com/OpenGIS/waymark-wp/issues/77), fix pending), tagged `@group issue-77`.
 
 == Installation ==
 

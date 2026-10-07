@@ -121,8 +121,7 @@ class Waymark_Config {
 					'permalink_slug_collection' => 'collection',
 				],
 				'post' => [
-					'supports' => 'title' . $multi_value_seperator . 'author' . $multi_value_seperator . 'revisions' . $multi_value_seperator . 'thumbnail',
-
+					'supports' => ['title', 'author', 'revisions', 'thumbnail'],
 				],
 				'advanced' => [
 					'debug_mode' => '0',
@@ -220,6 +219,26 @@ class Waymark_Config {
 					}
 				}
 
+			}
+		}
+
+		// ====== Normalise multi-value settings ======
+
+		//Some array-typed settings are stored (or default) as multi-value
+		//separator strings, but are consumed as arrays. Normalise them at
+		//load so consumers can always rely on the type; arrays are left as-is.
+		$multi_value_settings = [
+			['misc', 'post', 'supports'],
+			['submission', 'from_users', 'submission_roles'],
+			['submission', 'from_users', 'submission_features'],
+			['submission', 'from_public', 'submission_features'],
+		];
+
+		foreach ($multi_value_settings as $setting_path) {
+			$value = self::$data[$setting_path[0]][$setting_path[1]][$setting_path[2]];
+
+			if (is_string($value)) {
+				self::$data[$setting_path[0]][$setting_path[1]][$setting_path[2]] = ($value === '') ? [] : explode($multi_value_seperator, $value);
 			}
 		}
 	}

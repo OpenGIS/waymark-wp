@@ -5,18 +5,22 @@
   "author": "Joe Hawes",
   "main": "Gruntfile.js",
   "scripts": {
-    "dev": "wp-env start && printf '\\n────────────────────────────────────\\n MySQL  127.0.0.1  root / password\\n Admin  http://localhost:8888/wp-admin  admin / password\\n────────────────────────────────────\\n'"
+    "dev": "wp-env start && printf '\\n────────────────────────────────────\\n MySQL  127.0.0.1  root / password\\n Admin  http://localhost:8888/wp-admin  admin / password\\n────────────────────────────────────\\n' && npm run grunt:watch",
+    "grunt": "grunt build",
+    "grunt:watch": "grunt watch",
+    "test": "npm run test:php && npm run test:e2e",
+    "test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/waymark-wp phpunit",
+    "test:php:setup": "wp-env run tests-cli bash -c 'composer global require --no-interaction --with-all-dependencies phpunit/phpunit:^9.6 yoast/phpunit-polyfills:^2.0'",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@wordpress/env": "^11.8.0",
     "grunt": "^1.5.3",
     "grunt-contrib-concat": "^1.0.1",
-    "grunt-contrib-copy": "^1.0.0",
     "grunt-contrib-cssmin": "^3.0.0",
     "grunt-contrib-less": "^2.1.0",
-    "grunt-contrib-uglify": "^4.0.1",
     "grunt-contrib-watch": "^1.1.0",
-    "grunt-css-url-replace": "^0.2.7",
     "grunt-terser": "^1.0.0",
     "grunt-wp-i18n": "^1.0.3",
     "grunt-wp-readme-to-markdown": "^2.1.0",

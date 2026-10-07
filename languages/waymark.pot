@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Waymark 1.6.8\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark-wp\n"
-"POT-Creation-Date: 2026-10-04 01:11:03+00:00\n"
+"POT-Creation-Date: 2026-10-07 17:01:35+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1890,55 +1890,55 @@ msgstr ""
 msgid "Click or Hover to Wake"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Photo"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Information"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Alert"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Trail Access"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Food"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Water"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Shelter"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Beer"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Start"
 msgstr ""
 
-#: inc/Waymark_Config.php:141
+#: inc/Waymark_Config.php:140
 msgid "Finish"
 msgstr ""
 
-#: inc/Waymark_Config.php:154 inc/Waymark_Config.php:164
+#: inc/Waymark_Config.php:153 inc/Waymark_Config.php:163
 msgid "Red"
 msgstr ""
 
-#: inc/Waymark_Config.php:154 inc/Waymark_Config.php:164
+#: inc/Waymark_Config.php:153 inc/Waymark_Config.php:163
 msgid "Green"
 msgstr ""
 
-#: inc/Waymark_Config.php:154 inc/Waymark_Config.php:164
+#: inc/Waymark_Config.php:153 inc/Waymark_Config.php:163
 msgid "Blue"
 msgstr ""
 

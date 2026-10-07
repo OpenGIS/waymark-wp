@@ -1,8 +1,7 @@
 node_modules/
 .DS_Store
-package-lock.json
-package-lock.json
 .idea
 pnpm-lock.yaml
 temp/
-.opencode/
+.phpunit.cache/
+.phpunit.result.cache
