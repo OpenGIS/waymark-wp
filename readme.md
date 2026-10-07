@@ -147,6 +147,8 @@ Two test suites run against a disposable wp-env "tests" instance at **http://loc
 
 PHPUnit resets the tests-instance database, so Playwright's global setup re-activates the plugin and theme before running; the two suites can be run back-to-back without manual steps.
 
+Both suites also run automatically in CI on pull requests and pushes to `master`.
+
 > [!NOTE]
 > Two of the 7 PHP tests currently fail as expected; they are regression tests for the map-data slashing bug ([issue #77](https://github.com/OpenGIS/waymark-wp/issues/77), fix pending), tagged `@group issue-77`.
 

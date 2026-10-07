@@ -1,0 +1,50 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start wp-env
+        run: npx wp-env start
+
+      - name: Prepare test container
+        run: npm run test:php:setup
+
+      - name: PHP tests
+        run: npm run test:php
+
+      # Run the browser suite even if the PHP step fails, so both always report.
+      - name: Install Playwright Chromium
+        if: always()
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: always()
+        run: npm run test:e2e
