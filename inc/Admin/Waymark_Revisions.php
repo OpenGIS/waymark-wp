@@ -122,10 +122,10 @@ class Waymark_Revisions {
 		foreach ($this->get_waymark_meta_keys() as $meta_key) {
 			//Revisions created since this fix contain waymark meta: guarantee the value
 			if (metadata_exists('post', $revision_id, $meta_key)) {
-				update_post_meta($post_id, $meta_key, get_post_meta($revision_id, $meta_key, true));
+				update_post_meta($post_id, $meta_key, wp_slash(get_post_meta($revision_id, $meta_key, true)));
 			//Old revisions have no waymark meta: undo core's delete, restore the snapshot
 			} elseif (isset(self::$meta_snapshot[$meta_key])) {
-				update_post_meta($post_id, $meta_key, self::$meta_snapshot[$meta_key]);
+				update_post_meta($post_id, $meta_key, wp_slash(self::$meta_snapshot[$meta_key]));
 			}
 		}
 	}
@@ -143,7 +143,7 @@ class Waymark_Revisions {
 
 		foreach ($this->get_waymark_meta_keys() as $meta_key) {
 			if (metadata_exists('post', $revision_id, $meta_key)) {
-				update_post_meta($post_id, $meta_key, get_post_meta($revision_id, $meta_key, true));
+				update_post_meta($post_id, $meta_key, wp_slash(get_post_meta($revision_id, $meta_key, true)));
 			}
 		}
 	}
@@ -174,8 +174,9 @@ class Waymark_Revisions {
 			//Waymark fields are submitted with the unprefixed parameter name
 			$parameter_name = substr($meta_key, strlen('waymark_'));
 
-			if (isset($posted_data[$parameter_name]) && get_post_meta($new_autosave['ID'], $meta_key, true) !== $posted_data[$parameter_name]) {
-				update_post_meta($new_autosave['ID'], $meta_key, $posted_data[$parameter_name]);
+			//update_post_meta() would redirect a revision ID to the parent Map, so write to the autosave directly
+			if (isset($posted_data[$parameter_name]) && get_metadata('post', $new_autosave['ID'], $meta_key, true) !== $posted_data[$parameter_name]) {
+				update_metadata('post', $new_autosave['ID'], $meta_key, wp_slash($posted_data[$parameter_name]));
 			}
 		}
 	}
