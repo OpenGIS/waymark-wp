@@ -79,7 +79,6 @@ For developers:
 - [Iggy's Hikes – Staze na Medvednici](https://www.iggyshikes.com/staze-na-medvednici/)
 - [Il Cammino del Lago Maggiore – Le 11 tappe](https://www.camminolagomaggiore.it/11-tappe-cammino-lago-maggiore/)
 - [Merritt Mountain Bike Association – Iron Mountain](https://merrittbike.ca/our-trails/iron-mountain/)
-- [The Island Walk – Island Walk Map](https://theislandwalk.ca/island-walk-map/)
 - [Trekkaholic – Trekking al lago Bianco in Alpe Veglia](https://www.trekkaholic.it/piemonte/trekking-lago-bianco-alpe-veglia/)
 - [Via Apsyrtides](https://viaapsyrtides.hr/stage-1/)
 - [Zadar Archipelago – Interactive Map](https://zadar-archipelago.hr/interactive-map/)
