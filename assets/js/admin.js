@@ -293,7 +293,6 @@ function waymark_setup_repeatable_settings() {
           var set_value = clones[i][j];
 
           var input = jQuery(".waymark-input-" + j, clone);
-          input.attr("name", input.attr("name") + "[" + i + "]");
 
           //This is a Select without a valid option
           if (
@@ -316,6 +315,25 @@ function waymark_setup_repeatable_settings() {
             input.attr("readonly", "readonly");
           }
         }
+
+        //Index every input name, including columns without a value for this row
+        jQuery(".waymark-input", clone).each(function () {
+          var input = jQuery(this);
+          var name = input.attr("name");
+          var suffix = "[" + i + "]";
+
+          //Already indexed for this row
+          if (name.slice(-suffix.length) === suffix) {
+            return;
+          }
+
+          //Replace the multi-value suffix
+          if (name.slice(-2) === "[]") {
+            name = name.slice(0, -2);
+          }
+
+          input.attr("name", name + suffix);
+        });
 
         //Delete button
         var delete_button = jQuery("<div />")

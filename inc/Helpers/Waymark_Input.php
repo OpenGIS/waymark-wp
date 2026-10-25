@@ -104,7 +104,7 @@ class Waymark_Input {
 		//Default
 		if (array_key_exists('default', $field)) {
 			if (is_array($field['default'])) {
-				$field['default'] = implode(Waymark_Config::get_item('multi_value_seperator'), self::process_output($field, $field['default']));
+				$field['default'] = Waymark_Helper::multi_value_to_string(self::process_output($field, $field['default']));
 			} else {
 				$field['default'] = self::process_output($field, $field['default']);
 			}
@@ -113,7 +113,7 @@ class Waymark_Input {
 		//Process set value?
 		if ($set_value !== null) {
 			if (is_array($set_value)) {
-				$set_value = implode(Waymark_Config::get_item('multi_value_seperator'), self::process_output($field, $set_value));
+				$set_value = Waymark_Helper::multi_value_to_string(self::process_output($field, $set_value));
 			} else {
 				$set_value = self::process_output($field, $set_value);
 			}

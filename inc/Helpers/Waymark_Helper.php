@@ -551,7 +551,7 @@ class Waymark_Helper {
 			$array_out = [];
 
 			foreach ($value_in as $key => $value) {
-				$multi = explode(Waymark_Config::get_item('multi_value_seperator'), $value);
+				$multi = explode(Waymark_Config::get_item('multi_value_seperator'), self::multi_value_to_string($value));
 
 				$count = 0;
 				foreach ($multi as $m) {
@@ -565,8 +565,31 @@ class Waymark_Helper {
 			return $array_out;
 			//String
 		} else {
-			return explode(Waymark_Config::get_item('multi_value_seperator'), $value_in);
+			return explode(Waymark_Config::get_item('multi_value_seperator'), self::multi_value_to_string($value_in));
 		}
+	}
+
+	/**
+	 * Flatten a value into a single multi-value string.
+	 *
+	 * Repeatable columns should already be flat by this point, but legacy or
+	 * imported data can hold nested arrays. Joining them here keeps the column
+	 * readable instead of emitting a PHP warning from implode().
+	 *
+	 * @param  mixed $value Value to flatten.
+	 * @return string       Flattened value.
+	 */
+	public static function multi_value_to_string($value) {
+		if (! is_array($value)) {
+			return is_scalar($value) ? (string) $value : '';
+		}
+
+		$flat = [];
+		array_walk_recursive($value, function ($item) use (&$flat) {
+			$flat[] = is_scalar($item) ? (string) $item : '';
+		});
+
+		return implode(Waymark_Config::get_item('multi_value_seperator'), $flat);
 	}
 
 	public static function convert_values_to_single_value($array_in) {
@@ -584,7 +607,7 @@ class Waymark_Helper {
 				//Multiple values
 			} else {
 				//Single value, use that
-				$array_out[$key] = implode(Waymark_Config::get_item('multi_value_seperator'), $value);
+				$array_out[$key] = self::multi_value_to_string($value);
 			}
 		}
 

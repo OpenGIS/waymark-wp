@@ -2,9 +2,9 @@
 # This file is distributed under the GPLv2.
 msgid ""
 msgstr ""
-"Project-Id-Version: Waymark 1.7.1\n"
+"Project-Id-Version: Waymark 1.7.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-10-24 04:59:55+00:00\n"
+"POT-Creation-Date: 2026-10-25 22:02:33+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -187,7 +187,7 @@ msgid "Overlays"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:35 inc/Admin/Waymark_Settings.php:139
-#: inc/Helpers/Waymark_Helper.php:1410 inc/Helpers/Waymark_Lang.php:41
+#: inc/Helpers/Waymark_Helper.php:1433 inc/Helpers/Waymark_Lang.php:41
 #. translators: The name of the tab for customising Markers
 msgid "Markers"
 msgstr ""
@@ -1616,7 +1616,7 @@ msgstr ""
 msgid "Map"
 msgstr ""
 
-#: inc/Helpers/Waymark_Helper.php:703 inc/Helpers/Waymark_Helper.php:728
+#: inc/Helpers/Waymark_Helper.php:726 inc/Helpers/Waymark_Helper.php:751
 msgid "Download"
 msgstr ""
 

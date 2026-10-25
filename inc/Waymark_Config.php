@@ -260,22 +260,7 @@ class Waymark_Config {
 					//Multi-value
 				} else {
 					//Convert
-					$values = self::$data[$key][$key_2];
-
-					//Pad if necessary
-					$max_size = null;
-					foreach ($values as $key => &$value) {
-						//Must be an array
-						if (! is_array($value)) {
-							continue;
-						}
-
-						if ($max_size !== null && sizeof($value) != $max_size) {
-							$value = array_pad([], $max_size, $value);
-						} else {
-							$max_size = sizeof($value);
-						}
-					}
+					$values = self::normalise_repeatable_rows(self::$data[$key][$key_2]);
 
 					$values = Waymark_Helper::convert_values_to_single_value($values);
 					$values = Waymark_Helper::convert_single_value_to_array($values);
@@ -292,6 +277,63 @@ class Waymark_Config {
 		} else {
 			return null;
 		}
+	}
+
+	/**
+	 * Normalise a repeatable setting so every column holds one value per row.
+	 *
+	 * Columns can drift out of step — a truncated settings POST, an import, or
+	 * an option written before columns were validated — leaving one column
+	 * shorter than the others, or holding nested arrays. Flatten anything
+	 * nested, treat a single value as a one-row column, then pad short columns
+	 * by repeating their own last value, so the transposition in
+	 * convert_single_value_to_array() always builds complete rows.
+	 *
+	 * @param  mixed $values Repeatable setting columns.
+	 * @return array         Rectangular columns.
+	 */
+	private static function normalise_repeatable_rows($values) {
+		if (! is_array($values)) {
+			return [];
+		}
+
+		$columns   = [];
+		$row_count = 0;
+
+		foreach ($values as $column_key => $column) {
+			//A single value is a one-row column
+			if (! is_array($column)) {
+				$column = [$column];
+			}
+
+			//Flatten nested values so one row is always one value
+			$flat = [];
+			array_walk_recursive($column, function ($value) use (&$flat) {
+				$flat[] = $value;
+			});
+
+			$columns[$column_key] = $flat;
+			$row_count            = max($row_count, sizeof($flat));
+		}
+
+		if (! $row_count) {
+			return $columns;
+		}
+
+		foreach ($columns as $column_key => $column) {
+			//An empty column needs a value for every row
+			if (! sizeof($column)) {
+				$columns[$column_key] = array_fill(0, $row_count, '');
+				continue;
+			}
+
+			//Repeat the column's own last value into any missing rows
+			if (sizeof($column) < $row_count) {
+				$columns[$column_key] = array_pad($column, $row_count, $column[sizeof($column) - 1]);
+			}
+		}
+
+		return $columns;
 	}
 
 	public static function get_data() {

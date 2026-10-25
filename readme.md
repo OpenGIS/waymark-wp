@@ -4,7 +4,7 @@
 **Requires at least:** 6.4  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.3  
-**Stable tag:** 1.7.1  
+**Stable tag:** 1.7.2  
 **License:** GPLv2 or later  
 **License URI:** http://www.gnu.org/licenses/gpl-2.0.html  
 **Donate link:** https://github.com/sponsors/OpenGIS  
@@ -79,7 +79,6 @@ For developers:
 - [Iggy's Hikes – Staze na Medvednici](https://www.iggyshikes.com/staze-na-medvednici/)
 - [Il Cammino del Lago Maggiore – Le 11 tappe](https://www.camminolagomaggiore.it/11-tappe-cammino-lago-maggiore/)
 - [Merritt Mountain Bike Association – Iron Mountain](https://merrittbike.ca/our-trails/iron-mountain/)
-- [The Island Walk – Island Walk Map](https://theislandwalk.ca/island-walk-map/)
 - [Trekkaholic – Trekking al lago Bianco in Alpe Veglia](https://www.trekkaholic.it/piemonte/trekking-lago-bianco-alpe-veglia/)
 - [Via Apsyrtides](https://viaapsyrtides.hr/stage-1/)
 - [Zadar Archipelago – Interactive Map](https://zadar-archipelago.hr/interactive-map/)
@@ -246,6 +245,10 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 
 
 ## Changelog ##
+
+### 1.7.2 ###
+* Fix "Array to string conversion" warnings when repeatable Settings values are incomplete.
+* Fix Settings rows losing a value when a repeatable column has fewer entries than the other columns.
 
 ### 1.7.1 ###
 * Documentation: record the 1.7.0 changes in this changelog.

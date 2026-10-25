@@ -4,7 +4,7 @@ Tags: GIS, Map maker, GPX, Track, Elevation
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.3
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Donate link: https://github.com/sponsors/OpenGIS
@@ -203,6 +203,10 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 21. Advanced — Configure editor, collection, permalink, post type and debug options.
 
 == Changelog ==
+
+= 1.7.2 =
+* Fix "Array to string conversion" warnings when repeatable Settings values are incomplete.
+* Fix Settings rows losing a value when a repeatable column has fewer entries than the other columns.
 
 = 1.7.1 =
 * Documentation: record the 1.7.0 changes in this changelog.
