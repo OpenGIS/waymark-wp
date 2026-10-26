@@ -27,6 +27,7 @@ export function createTimeline({ id, viewport, startedAt }) {
   const scenes = [];
   const sceneIds = new Set();
   let posterAt = null;
+  let poster = null;
   let video = null;
 
   return {
@@ -60,7 +61,7 @@ export function createTimeline({ id, viewport, startedAt }) {
         actionEnd: null,
       };
 
-      if (scene.action === "poster" || scene.poster === true) {
+      if (scene.action === "poster" || scene.poster) {
         record.poster = true;
       }
 
@@ -148,6 +149,16 @@ export function createTimeline({ id, viewport, startedAt }) {
     },
 
     /**
+     * Record the replayed poster image, its resolved crop and the scene that
+     * owns it.
+     *
+     * @param {{ sceneId: string, selector: string, aspect: string, pad: number, crop: { x: number, y: number, width: number, height: number }, scale: number, image: { path: string, width: number, height: number } }} info
+     */
+    setPosterCapture(info) {
+      poster = { ...info, capturedAt: new Date().toISOString() };
+    },
+
+    /**
      * Record the raw video details measured when the context closed.
      *
      * @param {{ path: string, duration: number | null, offset: number, wallClockDuration: number, difference: number | null }} info
@@ -165,6 +176,7 @@ export function createTimeline({ id, viewport, startedAt }) {
         startedAt,
         viewport,
         posterAt,
+        poster,
         scenes,
         video,
       };

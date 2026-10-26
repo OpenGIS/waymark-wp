@@ -13,6 +13,19 @@
   "hideSelectors": ["#edit-slug-box"],
   "scenes": [
     {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Changing Basemaps",
+        "subtitle": "Switching basemaps in the Map Editor"
+      },
+      "hold": 3.0,
+      "highlight": null,
+      "cursor": null,
+      "notes": "The opening is a real timeline scene rendered into the page, not an ffmpeg overlay. It is put on screen before t0 by the prepare hook."
+    },
+    {
       "id": "open-editor",
       "action": "goto",
       "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
@@ -33,6 +46,7 @@
       "action": "waitForMap",
       "zoom": 9,
       "hold": 1.5,
+      "caption": "The map zooms out to fit the whole route",
       "highlight": {
         "selector": "#waymark-map",
         "pad": 8
@@ -95,7 +109,11 @@
       "id": "hold-topo",
       "action": "waitForMap",
       "hold": 7.6,
-      "poster": true,
+      "poster": {
+        "selector": "#waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      },
       "highlight": {
         "selector": "#waymark-map .leaflet-control-layers",
         "pad": 8
@@ -127,19 +145,19 @@
       "id": "shortcode",
       "action": "scrollIntoView",
       "selector": "#waymark_map_shortcode",
+      "block": "start",
       "hold": 10.4,
       "highlight": {
         "selector": "#waymark_map_shortcode .inside",
         "pad": 8
       },
-      "cursor": {
-        "to": "#waymark_map_shortcode input"
-      },
+      "cursor": null,
+      "parkMouse": true,
       "assert": {
         "selector": "#waymark_map_shortcode input",
         "value": "[Waymark"
       },
-      "notes": "scrollIntoView brings the postbox into frame; the following cursor move onto the input doubles as the hover. The value assertion reads the real input."
+      "notes": "scrollIntoView with block start puts the Shortcode panel just below the admin bar, pushing the Publish panel fully above the viewport instead of clipping it. This beat only scrolls, so a leftover synthetic pointer would land on the Shortcode text; the pointer is hidden and the real mouse is parked over the admin bar for the whole scene. The value assertion reads the real input."
     },
     {
       "id": "goto-settings",
@@ -156,30 +174,46 @@
     },
     {
       "id": "reorder",
-      "action": "hover",
+      "action": "scrollTo",
       "selector": ".waymark-settings-section-layers .waymark-repeatable",
+      "block": "center",
       "hold": 8.2,
       "highlight": {
         "selector": ".waymark-settings-section-layers .waymark-repeatable",
         "pad": 8
       },
-      "cursor": {
-        "to": ".waymark-settings-section-layers .waymark-repeatable"
-      },
+      "cursor": null,
+      "parkMouse": true,
       "assert": {
         "selector": ".waymark-settings-section-layers .waymark-repeatable table.form-table",
         "minCount": 2
       },
-      "notes": "Hover only: dragging would mutate live settings. Each basemap row is a table.form-table inside the repeatable container."
+      "notes": "The delete control is anchored to the table's top-left corner and appears on any hover, so it always overlaps the row caption. The pointer is parked and the rows are shown without a hover state; narration carries the drag affordance. Dragging would also mutate live settings."
     },
     {
-      "id": "outro",
-      "action": "pause",
-      "hold": 2.5,
+      "id": "reset-view",
+      "action": "scrollTo",
+      "selector": ".waymark-settings-section-layers > h2",
+      "block": "start",
+      "hold": 1.2,
+      "caption": "The page scrolls back to the Basemaps heading",
       "highlight": null,
       "cursor": null,
       "parkMouse": true,
-      "notes": "Clean final frame for the poster fallback: no highlight and no cursor. The real pointer is parked in the blank centre of the admin bar so the repeatable row's hover-only delete control is not left visible."
+      "notes": "Reset the outgoing frame so the Basemaps heading sits just below the admin bar with both reordered rows beneath it. The pointer stays parked from the preceding scene, so no hover-only control is left visible."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Changing Basemaps",
+        "subtitle": "The editor switch is a view change.\nThe Shortcode and Settings decide what visitors see."
+      },
+      "hold": 4.0,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Replaces the silent outro with a typographic closing card in the timeline. The reset-view scrollTo beat is kept immediately before it."
     }
   ]
 }

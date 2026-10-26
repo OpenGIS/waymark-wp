@@ -16,7 +16,12 @@
     "test:php:setup": "wp-env run tests-cli bash -c 'composer global require --no-interaction --with-all-dependencies phpunit/phpunit:^9.6 yoast/phpunit-polyfills:^2.0'",
     "test:e2e": "playwright test",
     "screenshots": "WAYMARK_SCREENSHOTS=1 playwright test tests/e2e/screenshots.spec.js && node tests/e2e/screenshots.js publish",
-    "screenshots:check": "WAYMARK_SCREENSHOTS=1 playwright test tests/e2e/screenshots.spec.js && node tests/e2e/screenshots.js check"
+    "screenshots:check": "WAYMARK_SCREENSHOTS=1 playwright test tests/e2e/screenshots.spec.js && node tests/e2e/screenshots.js check",
+    "video": "sh -c 'set -e; s=\"${1:-changing-basemaps}\"; case \"$s\" in *.json) p=\"$s\"; id=$(basename \"$s\" .json) ;; *) id=\"$s\"; p=\"scripts/video/scenarios/$s.json\" ;; esac; node scripts/video/tts.mjs \"$id\" && node scripts/video/record.mjs \"$p\" && node scripts/video/build.mjs \"$id\" && node scripts/video/validate.mjs' --",
+    "video:tts": "node scripts/video/tts.mjs",
+    "video:record": "node scripts/video/record.mjs",
+    "video:build": "node scripts/video/build.mjs",
+    "video:validate": "node scripts/video/validate.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

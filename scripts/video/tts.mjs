@@ -2,7 +2,7 @@
 // Synthesise per-scene narration audio with the macOS say provider.
 //
 // Usage:
-//   node scripts/video/tts.mjs <scenario-id>
+//   node scripts/video/tts.mjs [scenario-id]
 //     [--voice <name>] [--rate <wpm>] [--scene <scene-id>] [--force]
 //
 // Each narrated scene is written twice: a raw `.aiff` take and a normalised
@@ -24,6 +24,7 @@ const SCENARIO_DIR = path.join(VIDEO_DIR, "scenarios");
 const PROVIDER = "macos-say";
 const DEFAULT_VOICE = "Daniel";
 const DEFAULT_RATE = 175;
+const DEFAULT_SCENARIO = "changing-basemaps";
 const REQUIRED_TOOLS = ["say", "afconvert", "ffmpeg", "ffprobe"];
 
 function main() {
@@ -36,7 +37,8 @@ function main() {
 
   assertTools();
 
-  const scenarioPath = path.join(SCENARIO_DIR, `${options.scenarioId}.json`);
+  const scenarioId = options.scenarioId ?? DEFAULT_SCENARIO;
+  const scenarioPath = path.join(SCENARIO_DIR, `${scenarioId}.json`);
   if (!fs.existsSync(scenarioPath)) {
     throw new Error(`Scenario not found: ${scenarioPath}`);
   }
@@ -53,8 +55,8 @@ function main() {
   const narrationPath = loadNarration(scenario);
   if (!narrationPath) {
     throw new Error(
-      `No narration file found for scenario "${options.scenarioId}". ` +
-        `Expected scripts/video/narration/${options.scenarioId}.md.`,
+      `No narration file found for scenario "${scenarioId}". ` +
+        `Expected scripts/video/narration/${scenarioId}.md.`,
     );
   }
 
@@ -247,10 +249,6 @@ function parseArgs(argv) {
     }
 
     options.scenarioId = argument;
-  }
-
-  if (!options.help && options.scenarioId === null) {
-    throw new Error("A scenario id is required.");
   }
 
   return options;
@@ -474,7 +472,9 @@ function printUsage() {
   console.log(
     [
       "Usage:",
-      "  node scripts/video/tts.mjs <scenario-id> [options]",
+      "  node scripts/video/tts.mjs [scenario-id] [options]",
+      "",
+      `The scenario id defaults to ${DEFAULT_SCENARIO}.`,
       "",
       "Options:",
       `  --voice <name>     say voice (default: ${DEFAULT_VOICE})`,

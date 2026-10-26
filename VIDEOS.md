@@ -18,17 +18,17 @@ Scenarios, narration and build code live under `scripts/video/`. The delivered M
 | `using-types.mp4`       | Legacy  |  253.1 s (4:13.1) |  5.7 MB | `using-types.jpg`       |
 | `adding-map-meta.mp4`   | Legacy  |  171.3 s (2:51.3) |  5.3 MB | `adding-map-meta.jpg`   |
 | `using-collections.mp4` | Legacy  |  161.0 s (2:41.0) |  3.8 MB | `using-collections.jpg` |
-| `changing-basemaps.mp4` | Rebuilt |   81.2 s (1:21.2) |  4.9 MB | `changing-basemaps.jpg` |
+| `changing-basemaps.mp4` | Rebuilt |   86.1 s (1:26.1) |  4.6 MB | `changing-basemaps.jpg` |
 
 | Set         |                Duration |    Size |
 | ----------- | ----------------------: | ------: |
 | Legacy (7)  | **3,127.5 s (52:07.5)** | 82.8 MB |
-| Rebuilt (1) |     **81.2 s (1:21.2)** |  4.9 MB |
-| **Total**   | **3,208.7 s (53:28.7)** | 87.7 MB |
+| Rebuilt (1) |     **86.1 s (1:26.1)** |  4.6 MB |
+| **Total**   | **3,213.6 s (53:33.6)** | 87.4 MB |
 
 Per-file figures are rounded to one decimal place. Totals are calculated from the files before rounding, so a total can differ by a tenth from the sum of the rounded rows. Sizes are rounded mebibytes, labelled MB.
 
-All eight are 1280×720 H.264 High, yuv420p, with AAC LC 48 kHz audio. The seven legacy files are 25 or 29.97 fps with mono audio at 59–65 kbps. The rebuilt pilot is 30 fps with stereo 128 kbps audio and `+faststart`; it is exactly 81.152 s and 5,135,137 bytes, matching the manifest. Posters are 1280×720 JPEG; together they add about 713 KB.
+All eight are 1280×720 H.264 High, yuv420p, with AAC LC 48 kHz audio. The seven legacy files are 25 or 29.97 fps with mono audio at 59–65 kbps. The rebuilt pilot is 30 fps with stereo 128 kbps audio and `+faststart`; its MP4 is 86.101 s and 4,867,936 bytes (4.64 MB), and the manifest records those exact values. The pilot has 13 scenes: it opens on a typographic title card and closes on a typographic end card. Posters are 1280×720 JPEG.
 
 ### Placement
 
@@ -50,7 +50,7 @@ The source, poster and caption paths are resolved through `withAssetBase` (`docs
 
 The seven legacy posters show the 2019–2021 WordPress admin and front-end UI with the old red Waymark “W” branding. None shows the current dark OGIS admin styling. Four are full admin captures, two are split composites, and one is a pure front-end capture. No legacy poster is blank or corrupt.
 
-The rebuilt `changing-basemaps` poster is different: it was extracted from the new MP4 at 46.133 s, during the Open Topo Map hold, with the layers control outlined and the cursor hidden. It shows the current admin rather than the old capture.
+The rebuilt `changing-basemaps` poster is different: it is a 2× replay capture during the Open Topo Map hold, cropped around the map and its layers panel with the highlight outline preserved and no synthetic cursor. The delivered JPEG is 1280×720 from a 1504×846 crop, taken from the poster marker at 48.795 s. It shows the current admin rather than the old capture and is sharper than a frame lifted from the H.264 stream.
 
 The following observations are inferences from the seven legacy poster frames, not a full shot list. The underlying recordings have not been transcribed.
 
@@ -101,7 +101,9 @@ scripts/video/
     changing-basemaps.md
   lib/
     browser.mjs             # context, storage state, video lifecycle, pre-warm
+    card.mjs                # self-contained title and end card documents
     cursor.mjs              # fake pointer, click ring and fake caret
+    framing.mjs             # admin-bar inset and element visibility guard
     highlight.mjs           # target outlines
     timeline.mjs            # scene timing bookkeeping
     narration.mjs           # shared narration-file parser
@@ -155,50 +157,54 @@ A narration file at `scripts/video/narration/<id>.md` is the authoritative scrip
 
 ### Scene fields
 
-| Field                 | Type           | Purpose                                                                                                                                         |
-| --------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`                  | string         | Stable scene identifier; used for audio filenames, captions and the timeline.                                                                   |
-| `action`              | string         | Action from the vocabulary below.                                                                                                               |
-| `narration`           | string         | Inline narration. Overridden by the narration file when one exists. May be empty.                                                               |
-| `caption`             | string         | Visual description. A silent scene gets a bracketed WebVTT cue; with narration, the caption is included in the transcript alongside the speech. |
-| `hold`                | number         | Silent-scene hold in seconds. Narrated scenes use the audio-derived hold when `timings.json` exists.                                            |
-| `pad`                 | number         | Per-scene silence after narration, overriding the scenario `pad`.                                                                               |
-| `audioAfterAction`    | bool           | Per-scene override for the scenario field.                                                                                                      |
-| `audioAfterActionMax` | number         | Per-scene override for the scenario field.                                                                                                      |
-| `audioOffset`         | number         | Explicit narration start, in seconds from the scene start. Overrides the computed offset.                                                       |
-| `highlight`           | object or null | `{ "selector": "...", "pad": 8 }`; draws or updates the target outline. `null` clears it after the action.                                      |
-| `cursor`              | object or null | `{ "to": "..." }` or `{ "x": 640, "y": 360 }`; moves the fake pointer. `null` hides the overlay without moving the real mouse.                  |
-| `assert`              | object         | Post-action check; see the notes after the action table.                                                                                        |
-| `zoom`                | number         | Zoom applied by `waitForMap` before settling the tile batch.                                                                                    |
-| `poster`              | bool           | Mark the poster frame at the end of the hold, in addition to the `poster` action.                                                               |
-| `parkMouse`           | bool           | Move the real pointer to a neutral point in the admin bar before the scene’s action, clearing hover-only affordances.                           |
-| `notes`               | string         | Direction for reviewers; ignored by the recorder.                                                                                               |
+| Field                 | Type           | Purpose                                                                                                                                                                                                                                                          |
+| --------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                  | string         | Stable scene identifier; used for audio filenames, captions and the timeline.                                                                                                                                                                                    |
+| `action`              | string         | Action from the vocabulary below.                                                                                                                                                                                                                                |
+| `narration`           | string         | Inline narration. Overridden by the narration file when one exists. May be empty.                                                                                                                                                                                |
+| `caption`             | string         | Visual description. A silent scene may carry one, which emits a bracketed WebVTT cue spanning the whole scene; with narration, the caption is included in the transcript alongside the speech.                                                                   |
+| `hold`                | number         | Silent-scene hold in seconds. Narrated scenes use the audio-derived hold when `timings.json` exists.                                                                                                                                                             |
+| `pad`                 | number         | Per-scene silence after narration, overriding the scenario `pad`.                                                                                                                                                                                                |
+| `audioAfterAction`    | bool           | Per-scene override for the scenario field.                                                                                                                                                                                                                       |
+| `audioAfterActionMax` | number         | Per-scene override for the scenario field.                                                                                                                                                                                                                       |
+| `audioOffset`         | number         | Explicit narration start, in seconds from the scene start. Overrides the computed offset.                                                                                                                                                                        |
+| `highlight`           | object or null | `{ "selector": "...", "pad": 8 }`; draws or updates the target outline. `null` clears it after the action.                                                                                                                                                       |
+| `cursor`              | object or null | `{ "to": "..." }` or `{ "x": 640, "y": 360 }`; moves the fake pointer. `null` hides the overlay without moving the real mouse.                                                                                                                                   |
+| `assert`              | object         | Post-action check; see the notes after the action table.                                                                                                                                                                                                         |
+| `zoom`                | number         | Zoom applied by `waitForMap` before settling the tile batch.                                                                                                                                                                                                     |
+| `poster`              | bool or object | `true` or an object `{ selector, aspect, pad }`. Marks the poster frame at the end of the hold, in addition to the `poster` action. An object sets `selector` (default `#waymark-map`), `aspect` (default `"16:9"`) and `pad` (default `0`) for the replay crop. |
+| `parkMouse`           | bool           | Move the real pointer to a neutral point in the admin bar before the scene’s action, clearing hover-only affordances.                                                                                                                                            |
+| `block`               | string         | Vertical alignment for framing: `center` (default), `start` or `end`. The admin bar is treated as the top of the viewport.                                                                                                                                       |
+| `allowPartial`        | bool           | Downgrade a still-clipped target after scrolling to a warning instead of failing the take. Use only for a target taller than the viewport.                                                                                                                       |
+| `notes`               | string         | Direction for reviewers; ignored by the recorder.                                                                                                                                                                                                                |
 
 ### Action vocabulary
 
-| Action           | Payload                            | Behaviour                                                                                                                       |
-| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `goto`           | `url`, optional `selector`         | Navigate, wait for load and fonts, then wait for the selector if supplied. It is a no-op when the page already matches the URL. |
-| `click`          | `selector`                         | Move the fake pointer, click, and wait for actionability. If hovering hides the target, click the recorded coordinates instead. |
-| `fill`           | `selector`, `value`                | Move to the field, click, fill it and show a fake caret at the text end.                                                        |
-| `select`         | `selector`, `value`                | Choose an option by value, falling back to a visible label.                                                                     |
-| `press`          | `selector`, `key`                  | Focus the target and press a key.                                                                                               |
-| `hover`          | `selector`                         | Move the pointer over the target without clicking. The target is centred first only when it is not fully visible.               |
-| `scrollIntoView` | `selector`                         | Scroll the target to the vertical centre and wait for the layout to settle.                                                     |
-| `waitFor`        | `selector`, optional `state`       | Wait for the target to be visible, or `attached` when `state` is `"attached"`.                                                  |
-| `waitForMap`     | optional `zoom`                    | Wait for `window.Waymark.map`, run the Leaflet settle routine, then pin and settle the zoom when supplied.                      |
-| `dragMap`        | `selector`, `delta` or `from`/`to` | Pan the map by a pixel offset or between two map-relative points, then settle the tiles.                                        |
-| `clickMapPoint`  | `selector`, `latlng` or `point`    | Click a map coordinate, preferring `latlng` over screen pixels.                                                                 |
-| `openPopup`      | `selector`, or `latlng`/`point`    | Open a marker popup and wait for `.leaflet-popup`.                                                                              |
-| `pause`          | none                               | An intentional beat with no UI action.                                                                                          |
-| `poster`         | none                               | Mark a candidate poster frame at the end of the hold; no UI action.                                                             |
-| `assertText`     | `selector`, `value`                | Assert visible text and hold on the result.                                                                                     |
+| Action           | Payload                            | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `goto`           | `url`, optional `selector`         | Navigate, wait for load and fonts, then wait for the selector if supplied. It is a no-op when the page already matches the URL, except after a card, where it always navigates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `card`           | `card`                             | Render a self-contained 1280×720 title or end card into the page via `page.setContent` and hold it as a real timeline scene. The `card` object requires a non-empty `title` and accepts optional `eyebrow` and `subtitle` strings. Values are escaped, unknown keys are rejected, and a newline in a subtitle renders as a line break with each segment escaped separately. The document makes no network requests. The card uses the Open GIS dark palette (`#000b00` background, `#e8f5ea` heading and eyebrow, `#eeeeee` subtitle, `#9bb0a3` muted footer, `#0dd70d` accent rule), the brand monospace stack throughout, an inline white Open GIS mark beside the title-case eyebrow name and a quiet `Waymark` footer wordmark. |
+| `click`          | `selector`                         | Move the fake pointer, click, and wait for actionability. If hovering hides the target, click the recorded coordinates instead.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `fill`           | `selector`, `value`                | Move to the field, click, fill it and show a fake caret at the text end.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `select`         | `selector`, `value`                | Choose an option by value, falling back to a visible label.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `press`          | `selector`, `key`                  | Focus the target and press a key.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `hover`          | `selector`                         | Move the pointer over the target without clicking. The target is centred first only when it is not fully visible.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `scrollIntoView` | `selector`                         | Scroll the target into the inset viewport (centred by default) and wait for the layout to settle.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `scrollTo`       | `to` or `selector`                 | Scroll to the document `top` or `bottom`, or align a selector with `block` using the same admin-bar inset logic. Use it to reset the viewport framing between beats, including before a closing card.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `waitFor`        | `selector`, optional `state`       | Wait for the target to be visible, or `attached` when `state` is `"attached"`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `waitForMap`     | optional `zoom`                    | Wait for `window.Waymark.map`, run the Leaflet settle routine, then pin and settle the zoom when supplied.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `dragMap`        | `selector`, `delta` or `from`/`to` | Pan the map by a pixel offset or between two map-relative points, then settle the tiles.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `clickMapPoint`  | `selector`, `latlng` or `point`    | Click a map coordinate, preferring `latlng` over screen pixels.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `openPopup`      | `selector`, or `latlng`/`point`    | Open a marker popup and wait for `.leaflet-popup`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `pause`          | none                               | An intentional beat with no UI action.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `poster`         | none                               | Mark a candidate poster frame at the end of the hold; no UI action. The replay capture uses the scene’s `poster` object when present.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `assertText`     | `selector`, `value`                | Assert visible text and hold on the result.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 `assert` runs after the action and its overlays, and does not create a separate timing beat. It supports `visible`, `text`, `url`, `minCount`, `checked` and `value`; `minCount`, `checked` and `value` require a `selector`. `text` searches the selector’s contents, or the body when no selector is given. `url` matches a substring of the current URL. A failed assertion stops the take.
 
 ### Example
 
-This is an excerpt from the delivered `changing-basemaps` scenario. The full file has more scenes and reviewer notes; the selectors and values below are the real ones.
+This is an excerpt from the delivered `changing-basemaps` scenario. The full file has more scenes, including the closing card, and reviewer notes; the selectors and values below are the real ones.
 
 ```json
 {
@@ -212,6 +218,18 @@ This is an excerpt from the delivered `changing-basemaps` scenario. The full fil
   "pad": 0.5,
   "hideSelectors": ["#edit-slug-box"],
   "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Changing Basemaps",
+        "subtitle": "Switching basemaps in the Map Editor"
+      },
+      "hold": 3.0,
+      "highlight": null,
+      "cursor": null
+    },
     {
       "id": "open-editor",
       "action": "goto",
@@ -227,6 +245,7 @@ This is an excerpt from the delivered `changing-basemaps` scenario. The full fil
       "action": "waitForMap",
       "zoom": 9,
       "hold": 1.5,
+      "caption": "The map zooms out to fit the whole route",
       "highlight": { "selector": "#waymark-map", "pad": 8 },
       "cursor": null
     },
@@ -252,7 +271,11 @@ This is an excerpt from the delivered `changing-basemaps` scenario. The full fil
       "id": "hold-topo",
       "action": "waitForMap",
       "hold": 7.6,
-      "poster": true,
+      "poster": {
+        "selector": "#waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      },
       "highlight": {
         "selector": "#waymark-map .leaflet-control-layers",
         "pad": 8
@@ -295,11 +318,13 @@ hold        = max(0, audioOffset + audioDuration + pad - actionEnd)
 
 An explicit `audioOffset` on the scene replaces the computed value. `audioAfterAction` defaults to `true`, `audioAfterActionMax` to `1.5` seconds and `pad` to `0.5` seconds; all three can be set at scenario level and overridden per scene.
 
-`actionEnd` is measured after the action, its overlays and any assertion. The hold is whatever remains of the narration plus the pad after the action finishes, never negative. The cap matters for a slow `goto`: in the pilot’s settings navigation, the action takes 6.817 s, narration starts at the 1.5 s cap and the hold is 2.836 s, rather than waiting out the whole load before speaking.
+`actionEnd` is measured after the action, its overlays and any assertion. The hold is whatever remains of the narration plus the pad after the action finishes, never negative. The cap matters when a `goto` runs past it: in the pilot’s settings navigation, the action finishes at 1.805 s, so narration starts at the 1.5 s cap and the hold is 7.848 s rather than waiting for the action to finish before speaking.
 
-The opening scene uses an explicit `audioOffset` of 1.4 s. Its action finishes at 0.959 s, so the explicit value leaves a deliberate beat on the already-rendered page rather than starting the sentence immediately.
+The `open-editor` scene uses an explicit `audioOffset` of 1.4 s. Because the title card runs first, this starts the sentence 1.4 s into the editor scene, before its `goto` and assertion have finished, rather than waiting for the action to settle.
 
 A silent scene has no audio entry, so it uses the scene’s `hold` and lasts `actionEnd + hold`. `(no narration)` produces no WAV and no hold calculation. If `timings.json` is absent, every scene uses `hold` and the recorder warns at the end of the run.
+
+Card scenes are ordinary timeline scenes with their own `hold`. The title and end cards are not overlays or pre/post-roll: they are timed, captured and captioned like any other beat, so their holds count towards the delivered duration. Both use the Open GIS dark brand styling: a `#000b00` background, inline white Open GIS mark at 40×40 px and title-case name on the eyebrow row, a `#0dd70d` accent rule, `#e8f5ea` monospace title, `#eeeeee` monospace subtitle and a muted `#9bb0a3` `Waymark` wordmark at the bottom-left. A newline in a card subtitle renders as a line break, with each segment escaped separately. The mark is inlined from `assets/img/ogis-logo-white.svg` with `shape-rendering: geometricPrecision`, `role="img"` and a `<title>Open GIS</title>`, so the card document needs no network access.
 
 ### Timeline
 
@@ -310,31 +335,50 @@ The recorder writes `scripts/video/work/timeline.json`. It is the source of trut
   "id": "changing-basemaps",
   "startedAt": "<ISO timestamp>",
   "viewport": { "width": 1280, "height": 720 },
-  "posterAt": 46.133,
+  "posterAt": 48.795,
+  "poster": {
+    "sceneId": "hold-topo",
+    "selector": "#waymark-map",
+    "aspect": "16:9",
+    "pad": 0,
+    "crop": {
+      "x": 195,
+      "y": 232,
+      "width": 752,
+      "height": 423,
+      "extended": false
+    },
+    "scale": 2,
+    "image": {
+      "path": "work/poster/changing-basemaps.png",
+      "width": 1504,
+      "height": 846
+    }
+  },
   "scenes": [
     {
       "id": "open-editor",
-      "start": 0.001,
-      "end": 10.301,
+      "start": 3.013,
+      "end": 13.316,
       "action": "goto",
       "narration": "Waymark Maps are edited in the WordPress admin. Open the Map you want to work on, and the Editor loads with your saved markers, lines and shapes.",
       "audio": "work/audio/changing-basemaps/open-editor.wav",
       "audioDuration": 8.396,
       "audioOffset": 1.4,
-      "hold": 9.337,
-      "actionEnd": 0.959
+      "hold": 6.971,
+      "actionEnd": 3.325
     }
   ]
 }
 ```
 
-The timeline also records the raw video path, measured duration, pre-warm offset and wall-clock difference. If narration changes after recording, regenerate the affected audio and re-record; do not stretch the audio.
+The timeline also records the replay poster’s resolved crop and image size, the raw video path, measured duration, pre-warm offset and wall-clock difference. For the pilot the marker is at 48.795 s, the crop is 752×423 CSS pixels and the 2× PNG is 1504×846. The crop values are in CSS pixels; the PNG dimensions are those values multiplied by `scale`. `crop.extended` is true when the crop had to reach beyond the poster element to contain the highlight. If narration changes after recording, regenerate the affected audio and re-record; do not stretch the audio.
 
-`build.mjs` fails when a narrated scene has no WAV, when a WAV is not listed in `timings.json`, when the scene order differs, or when the narration text disagrees between the timeline and the timings. It also rejects an encoded MP4 whose duration differs from the timeline by more than 0.2 seconds.
+`build.mjs` fails when a narrated scene has no WAV, when a WAV is not listed in `timings.json`, when the scene order differs, or when the narration text disagrees between the timeline and the timings. It also rejects an encoded MP4 whose duration differs from the timeline by more than 0.2 seconds. The delivered timeline totals 86.083 s and the encoded MP4 is 86.101 s, within that tolerance.
 
 ### Pace and duration
 
-The legacy set is long: `getting-started` is 13:15.8 and `settings` is 16:36.4. The rebuilt pilot is 1:21.2. A 2–6 minute piece remains the target for fuller topics; split long topics into separate videos rather than producing another 13–16 minute recording.
+The legacy set is long: `getting-started` is 13:15.8 and `settings` is 16:36.4. The rebuilt pilot is 1:26.1. A 2–6 minute piece remains the target for fuller topics; split long topics into separate videos rather than producing another 13–16 minute recording.
 
 Working targets:
 
@@ -343,17 +387,21 @@ Working targets:
 - A maximum of about 6 minutes for a first-pass video.
 - `pad` defaults to 0.5 seconds; the pilot uses 0.8 seconds on the basemap-switching scenes.
 
-### Poster timestamps
+### Poster capture
 
-The poster is extracted from the **final muxed video**, not from the raw WebM. Precedence is:
+The preferred poster is a still captured from a second, unrecorded replay of the page, not a frame lifted from the encoded video. Once the take has stopped recording, the recorder opens a browser context at `deviceScaleFactor: 2`, replays the scenario from the first scene up to and including the poster scene, and screenshots the configured element. The context uses the same 1280×720 viewport, storage state, request guard, deterministic reset and tile routes as the take, so the replay reproduces the same map view, open layers panel, selected basemap, highlight and scroll position without the synthetic cursor. Running the replay after the recording context has closed keeps its wall-clock time out of the encoded video, so the delivered duration always matches the timeline.
+
+The crop is the largest box of the configured aspect ratio that fits inside the padded element box. It is centred on the element, then shifted within the element so it contains the active highlight, including the highlight's padding and the poster `pad`. Defaults are `#waymark-map`, `16:9` and zero padding. If the highlight is larger than the fitted crop or reaches outside the element, the box grows as needed; any extension beyond the element is centred and the recorder logs a one-line note. The PNG lands at `scripts/video/work/poster/<id>.png` with dimensions in CSS pixels × 2. The delivered `changing-basemaps` poster comes from this path: a 1504×846 crop at 2× around the map and its layers panel, with the highlight outline preserved, downscaled to 1280×720.
+
+The build prefers that PNG and downscales it with lanczos to the 1280×720 delivery JPEG. When the PNG is absent, it falls back to a frame from the final MP4, which keeps older takes and the seven legacy videos workable. The delivered pilot uses the replay source (`posterSource: "replay"`). Precedence for the timestamp used by the comparison and fallback is:
 
 1. `--poster-at <time>` on `build.mjs`.
-2. The timeline marker written by the `poster` action or `poster: true`.
+2. The timeline marker written by the `poster` action or a truthy `poster` field.
 3. The scenario `posterAt` fallback.
 
-The marker is taken at the end of the poster scene’s hold, while the intended overlays are still visible. The pilot’s marker is 46.133 s; the scenario’s `posterAt` of 50 s is only a fallback.
+The marker is taken at the end of the poster scene’s hold, while the intended overlays are still visible; the pilot’s marker is at 48.795 s. To catch replay drift, the build extracts the video frame at that timestamp, crops it to the same rectangle, normalises both images to the same size, computes the mean absolute difference per channel and warns when the mean Δ is above 10. The delivered pilot measures 2.8 at the poster timestamp. A warning means the replay did not reproduce the take; inspect it rather than accepting the poster. The manifest records `posterSource` as `"replay"` or `"video"`.
 
-After extraction, inspect the frame for an unintentional cursor, highlight or popup. If the frame is wrong, adjust the marker and rebuild the poster; do not hand-edit the JPEG unless the edit is recorded in the manifest.
+Do not hand-edit the delivered JPEG unless the edit is recorded in the manifest.
 
 ## 5. Playwright recording
 
@@ -428,14 +476,14 @@ Playwright records page content only, not browser chrome. That is the intended m
 
 #### Pre-warm
 
-The first `goto` scene is loaded twice:
+The first `goto` or `card` scene is prepared twice:
 
-1. An unrecorded `warmUp` context loads the scene URL, applies `hideSelectors`, waits for the optional selector, and runs the `waitForMap` settle and zoom when the scenario has a `waitForMap` scene. This warms the server, PHP and database caches.
-2. The recorded context then navigates to the same URL before `t0`, performing the wait the first `goto` would perform. The timeline origin is set after this navigation, and `video.offset` stores the elapsed pre-warm.
+1. An unrecorded `warmUp` context loads the scene URL or renders the card, applies `hideSelectors`, waits for the optional selector, and runs the `waitForMap` settle and zoom when the scenario has a `waitForMap` scene. This warms the server, PHP and database caches. A card is local HTML, so the recorder skips the map wait for a card target rather than demanding WordPress.
+2. The recorded context then puts the same scene on screen before `t0` through the `prepare` hook: a `goto` navigates and performs its wait, while a `card` is set into the page with `page.setContent`. The timeline origin is set after this step, and `video.offset` stores the elapsed pre-warm.
 
-The first scene’s `goto` is a no-op because the page already matches. `build.mjs` seeks past `timeline.video.offset` before encoding, so the delivered video starts at the timeline origin. Without the recorded pre-warm the take opened on a blank white page for about 0.75 seconds.
+For a first `goto`, the scene navigation is a no-op because the page already matches; for a first `card`, the scene render is skipped because the prepare hook has already set the same card. `build.mjs` seeks past `timeline.video.offset` before encoding, so the delivered video starts at the timeline origin. Without the recorded pre-warm the take opened on a blank white page for about 0.75 seconds.
 
-Pre-warm runs only for a first scene whose action is `goto`; a scenario with any other first action is not pre-warmed. There is no pre-warm between scenes.
+Pre-warm runs only for a first scene whose action is `goto` or `card`; a scenario with any other first action is not pre-warmed. There is no pre-warm between scenes. `setContent` leaves `page.url()` untouched, so a `goto` after a card always navigates even when the URL string is unchanged.
 
 ### Guards and determinism
 
@@ -476,7 +524,7 @@ Run `settleMap` after navigation and after any action that changes the map view.
 
 Use the pinned tile pack in `tests/fixtures/demo/tiles/` for deterministic frames. `installTileRoutes` aborts a missing tile and records it as a violation by design. If a new framing needs tiles that are not in the pack, record only the missing tiles with `WAYMARK_RECORD_TILES=1` and respect the OpenStreetMap and OpenTopoMap usage policies. The tile-pack rules are documented in `tests/e2e/README.md`.
 
-The pilot pins `zoom: 9` in its `waitForMap` scene. The editor’s `fitBounds` lands on zoom 10, but the pinned OpenTopoMap pack has no zoom 10 tiles; pinning 9 keeps both basemaps on pinned tiles. Live OSM tiles are acceptable only for exploratory drafts, never for a production recording.
+The pilot pins `zoom: 9` in its `settle` scene. The editor’s `fitBounds` lands on zoom 10, but the pinned OpenTopoMap pack has no zoom 10 tiles; pinning 9 keeps both basemaps on pinned tiles. Live OSM tiles are acceptable only for exploratory drafts, never for a production recording.
 
 ### Version and browser
 
@@ -647,23 +695,17 @@ The video and narration bed are encoded together in a single ffmpeg pass. There 
 
 AAC is encoded with macOS AudioToolbox `aac_at` in CBR mode where it is available. The native `aac` encoder undershot the requested 128 kbps on sparse speech, so it is the fallback rather than the default; when used it sets `-aac_coder twoloop`.
 
-`build.mjs` also accepts `--no-encode`, which reuses the existing MP4 and rebuilds the poster, captions, transcript and manifest, and `--poster-at <time>`, which overrides the poster marker.
+`build.mjs` also accepts `--no-encode`, which reuses the existing MP4 and rebuilds the poster, captions, transcript and manifest, and `--poster-at <time>`, which overrides the poster timestamp. The poster step prefers the 2x replay PNG and falls back to a final-MP4 frame when it is absent, as described under poster capture.
 
-### Extract the poster
+### Build the poster
 
-Extract the poster from the final muxed video, after encoding:
+`build.mjs` builds the poster automatically. When `scripts/video/work/poster/<id>.png` exists it downscales that replay capture to `docs/public/assets/video/posters/<id>.jpg`. Otherwise it extracts the frame at the poster timestamp from the final muxed video. The build log states which source was used, for example `poster docs/public/assets/video/posters/<id>.jpg (replay 1504×846 → 1280×720)` or `(video frame at 48.795s)`, and the build warns when the mean Δ between the replay and the video frame exceeds 10; the delivered pilot measures 2.8.
 
-```sh
-ffmpeg -i docs/public/assets/video/changing-basemaps.mp4 \
-  -ss 46.133 -frames:v 1 -vf scale=1280:720:flags=lanczos -q:v 2 \
-  docs/public/assets/video/posters/changing-basemaps.jpg
-```
-
-Pass `--poster-at` to override. Otherwise the timeline marker wins, falling back to the scenario `posterAt`. The timestamp above is the pilot’s. Verify that the extracted frame has no unintended cursor, highlight or popup.
+Pass `--poster-at` to override the timestamp. Otherwise the timeline marker wins, falling back to the scenario `posterAt`. A replay poster should need no manual inspection for the cursor, because the replay context never installs the synthetic pointer.
 
 ### Master files
 
-Delivery is 720p only. Do not record or archive a separate 1080p master. Record at 1280×720 and keep the intermediate WebM under `scripts/video/work/` only for the duration of the run. If this changes later, record a second Playwright context at 1920×1080 and derive the 720p delivery file; upscaling the 720p recording adds no detail.
+Delivery is 720p only. Do not record or archive a separate 1080p master. Record at 1280×720 and keep the intermediate WebM under `scripts/video/work/` only for the duration of the run. The poster replay is a still-only second context at 2× device scale; it does not produce a 1080p master. If a full-resolution master is needed later, record a second Playwright context at 1920×1080 and derive the 720p delivery file; upscaling the 720p recording adds no detail.
 
 ### Captions
 
@@ -682,14 +724,15 @@ The manifest is a single JSON object keyed by video id at `docs/public/assets/vi
     "playwright": "1.63.0",
     "chromium": "153.0.8010.12",
     "file": "/assets/video/changing-basemaps.mp4",
-    "duration": 81.152,
+    "duration": 86.101,
     "width": 1280,
     "height": 720,
     "videoCodec": "h264",
     "audioCodec": "aac",
-    "size": 5135137,
+    "size": 4867936,
     "sha256": "<sha256>",
     "poster": "/assets/video/posters/changing-basemaps.jpg",
+    "posterSource": "replay",
     "captions": "/assets/video/captions/changing-basemaps.en.vtt",
     "transcript": "/assets/video/transcripts/changing-basemaps.md",
     "narrationProvider": "macos-say",
@@ -710,9 +753,9 @@ Read the media values with `ffprobe` and compute the digest with `shasum -a 256`
 
 Captions are generated from the timeline plus the narration. Timings are never inferred from frames.
 
-- A cue is emitted for every narrated scene.
+- A cue is emitted for every narrated scene. The pilot delivers 11 cues: one for each of its nine narrated scenes plus two for silent beats that carry an explicit `caption`.
 - For a narrated scene, a cue starts at `scene.start + audioOffset` and spans `audioDuration`, not the whole scene. It therefore never appears before its sentence.
-- A silent scene gets a cue only when the scenario supplies `caption`; the text is wrapped in square brackets. Without a caption it emits no cue. A caption supplied alongside narration appears in the transcript as well as the speech.
+- A silent scene may carry an explicit `caption`, which emits a bracketed cue spanning the whole scene. Without a caption it emits no cue. The pilot uses this for two beats, `settle` and `reset-view`. A caption supplied alongside narration appears in the transcript as well as the speech.
 - Cue identifiers are scene ids. Timestamps use `HH:MM:SS.mmm`. Text is escaped for `&`, `<` and `>`, and each cue is kept on one line.
 
 The start of the pilot’s captions:
@@ -721,11 +764,15 @@ The start of the pilot’s captions:
 WEBVTT
 
 open-editor
-00:00:01.401 --> 00:00:09.797
+00:00:04.413 --> 00:00:12.809
 Waymark Maps are edited in the WordPress admin. Open the Map you want to work on, and the Editor loads with your saved markers, lines and shapes.
 
+settle
+00:00:13.316 --> 00:00:15.322
+[The map zooms out to fit the whole route]
+
 layers-control
-00:00:12.775 --> 00:00:19.756
+00:00:15.709 --> 00:00:22.690
 In the top-right corner is the layers control. It only appears when more than one Basemap is configured in Waymark Settings.
 ```
 
@@ -844,7 +891,7 @@ They belong in `scripts/video/work/`, which is gitignored.
 
 ## 11. Recommended rollout
 
-`changing-basemaps` is delivered. At 1:21.2 it is the shortest video, it has a clear visual action (opening the Leaflet layers control and switching basemaps), and it exercises cursor movement, highlighting, map settling, TTS, captions and poster extraction without a long script.
+`changing-basemaps` is delivered. At 1:26.1 it is the shortest video, it has a clear visual action (opening the Leaflet layers control and switching basemaps), and it exercises cursor movement, highlighting, map settling, TTS, captions and poster extraction without a long script.
 
 The remaining videos, in order:
 
@@ -866,11 +913,11 @@ Re-record only after the admin UI and copy are final. A design or wording change
 
 Resolved during the build:
 
-- **Pilot video:** `changing-basemaps`, delivered at 81.152 s (1:21.2).
+- **Pilot video:** `changing-basemaps`, delivered at 86.101 s (1:26.1), 4,867,936 bytes (4.64 MB).
 - **Capture style:** page-only Playwright at 1280×720, DPR 1, with an injected cursor and no browser chrome.
 - **Narration:** macOS `say`, voice `Daniel` (en_GB), 175 wpm; per-scene WAVs cached by text, voice and rate.
 - **Timing:** audio-first. Narration starts at `min(actionEnd, audioAfterActionMax)`, at `0` when `audioAfterAction` is false, or at an explicit `audioOffset`; the hold is derived from audio duration and `pad`.
-- **Pre-warm:** an unrecorded warm-up plus a recorded navigation before `t0`; the build discards the recorded prefix using `timeline.video.offset`.
+- **Pre-warm:** an unrecorded warm-up plus a recorded navigation or card render before `t0`; the build discards the recorded prefix using `timeline.video.offset`. The warm-up skips the WordPress map wait for a card target.
 - **Overlay continuity:** highlights persist across scene boundaries and each scene owns its own state; re-applying the same selector does not fade the outline out and back in.
 - **Hidden chrome:** scenario-level `hideSelectors` uses `visibility: hidden` so developer-only UI can be removed without reflow. The pilot hides `#edit-slug-box`.
 - **AAC encoding:** prefer AudioToolbox `aac_at` in CBR mode; fall back to native `aac` with `twoloop`.
@@ -894,6 +941,7 @@ Open:
 | `scripts/video/record.mjs`                       | Playwright launcher, scene runner and timeline writer.                                         |
 | `scripts/video/tts.mjs`                          | macOS `say` synthesis, per-scene audio and `timings.json`.                                     |
 | `scripts/video/build.mjs`                        | Narration bed, MP4, poster, captions, transcript and manifest.                                 |
+| `scripts/video/lib/poster.mjs`                   | Poster config, crop maths and 2x replay capture.                                               |
 | `scripts/video/validate.mjs`                     | Read-only validator for committed assets and docs references.                                  |
 | `scripts/video/scenarios/changing-basemaps.json` | Delivered pilot scenario.                                                                      |
 | `scripts/video/narration/changing-basemaps.md`   | Delivered pilot narration.                                                                     |

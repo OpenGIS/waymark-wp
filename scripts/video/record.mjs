@@ -2,10 +2,11 @@
 // Scenario-driven screen recorder.
 //
 // Usage:
-//   node scripts/video/record.mjs scripts/video/scenarios/<id>.json
+//   node scripts/video/record.mjs [scenario.json]
 //
-// Run from the repository root. The target instance is read from WP_BASE_URL
-// and defaults to the dedicated video instance on http://localhost:11000.
+// The scenario defaults to changing-basemaps. Run from the repository root.
+// The target instance is read from WP_BASE_URL and defaults to the dedicated
+// video instance on http://localhost:11000.
 "use strict";
 
 import fs from "node:fs";
@@ -13,7 +14,17 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
+import { isCardPage, showCard } from "./lib/card.mjs";
+import { ensureVisible } from "./lib/framing.mjs";
 import { loadNarration } from "./lib/narration.mjs";
+import {
+  POSTER_DEFAULTS,
+  POSTER_SCALE,
+  POSTER_WORK_DIR,
+  capturePosterPng,
+  computePosterCrop,
+  parsePosterConfig,
+} from "./lib/poster.mjs";
 
 const require = createRequire(import.meta.url);
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -23,16 +34,69 @@ const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
 // affordances without opening a menu or tooltip.
 const PARK_MOUSE_POINT = { x: 640, y: 8 };
 
+const DEFAULT_SCENARIO = path.join(
+  VIDEO_DIR,
+  "scenarios",
+  "changing-basemaps.json",
+);
+
+const SCENARIO_KEYS = new Set([
+  "id",
+  "title",
+  "output",
+  "viewport",
+  "storageState",
+  "mapSlug",
+  "posterAt",
+  "pad",
+  "audioAfterAction",
+  "audioAfterActionMax",
+  "hideSelectors",
+  "scenes",
+  "version",
+]);
+
+const SCENE_KEYS = new Set([
+  "id",
+  "action",
+  "narration",
+  "caption",
+  "notes",
+  "hold",
+  "pad",
+  "audioOffset",
+  "audioAfterAction",
+  "audioAfterActionMax",
+  "highlight",
+  "cursor",
+  "assert",
+  "zoom",
+  "poster",
+  "parkMouse",
+  "url",
+  "selector",
+  "value",
+  "key",
+  "state",
+  "delta",
+  "from",
+  "to",
+  "latlng",
+  "point",
+  "block",
+  "allowPartial",
+  "card",
+]);
+
+const CARD_KEYS = new Set(["eyebrow", "title", "subtitle"]);
+
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length === 0) {
-    printUsage();
-    process.exitCode = 1;
-    return;
-  }
+  const scenarioPath = args.length
+    ? path.resolve(process.cwd(), args[0])
+    : DEFAULT_SCENARIO;
 
-  const scenarioPath = path.resolve(process.cwd(), args[0]);
   if (!fs.existsSync(scenarioPath)) {
     throw new Error(`Scenario not found: ${scenarioPath}`);
   }
@@ -51,6 +115,14 @@ async function main() {
 
   const scenario = JSON.parse(fs.readFileSync(scenarioPath, "utf8"));
   validateScenario(scenario);
+  validateScenes(scenario);
+  warnUnknownKeys(scenario);
+
+  // A take that fails before its replay must not leave an earlier capture for
+  // the build to pick up as if it belonged to this run.
+  fs.rmSync(path.join(POSTER_WORK_DIR, `${scenario.id}.png`), {
+    force: true,
+  });
 
   const narrationPath = loadNarration(scenario);
   if (narrationPath) {
@@ -91,7 +163,8 @@ async function main() {
 
     const firstScene = scenario.scenes[0];
     const prewarmScene =
-      firstScene && firstScene.action === "goto"
+      firstScene &&
+      (firstScene.action === "goto" || firstScene.action === "card")
         ? resolveScene(firstScene, tokens, firstScene.id)
         : null;
 
@@ -101,21 +174,23 @@ async function main() {
       );
 
       await browserLib.warmUp(browser, baseURL, {
-        url: prewarmScene.url,
-        selector: prewarmScene.selector,
+        target: prewarmTarget(prewarmScene),
         hideSelectors: scenario.hideSelectors ?? [],
         waitForMap: Boolean(mapScene),
         zoom: mapScene?.zoom,
       });
-      console.log("[video] Warm-up navigation complete.");
+      console.log(
+        `[video] Warm-up ${prewarmScene.action === "card" ? "card" : "navigation"} complete.`,
+      );
     }
 
     const session = await browserLib.startRecording(browser, baseURL, {
       hideSelectors: scenario.hideSelectors ?? [],
-      // Navigate the recorded page before t0 so the take opens on the fully
-      // rendered first scene instead of the blank page.
+      // Put the first scene on screen before t0 so the take opens on the fully
+      // rendered scene instead of the blank page. A card is set into the page
+      // by the same hook; a goto is navigated.
       prepare: prewarmScene
-        ? (page) => navigateTo(page, prewarmScene.url, prewarmScene)
+        ? (page) => prepareScene(page, prewarmScene)
         : undefined,
     });
     const timeline = createTimeline({
@@ -125,18 +200,70 @@ async function main() {
     });
 
     let failure = null;
+    let posterRequests = [];
 
     try {
-      await runScenes(session, timeline, scenario, tokens, libs, audioTimings);
+      posterRequests = await runScenes(
+        session,
+        timeline,
+        scenario,
+        tokens,
+        libs,
+        audioTimings,
+      );
     } catch (error) {
       failure = error;
     }
 
     let finish = null;
     try {
-      finish = await browserLib.finishRecording(session, scenario.id);
+      const recordedScenes = timeline.scenes.filter(
+        (scene) => scene.end !== null,
+      );
+      const expectedDuration = recordedScenes.length
+        ? recordedScenes[recordedScenes.length - 1].end
+        : null;
+
+      finish = await browserLib.finishRecording(
+        session,
+        scenario.id,
+        expectedDuration,
+      );
     } catch (error) {
       failure = failure ?? error;
+    }
+
+    // The poster replay runs in its own context only after the take has
+    // stopped recording. Keeping it out of the recording context means the
+    // replay's wall-clock time cannot pad the encoded video with a frozen
+    // frame.
+    if (!failure) {
+      try {
+        for (const request of posterRequests) {
+          const capture = await capturePosterReplay({
+            session,
+            scenario,
+            tokens,
+            libs,
+            sceneIndex: request.sceneIndex,
+            config: request.config,
+          });
+
+          timeline.setPosterCapture({
+            sceneId: request.sceneId,
+            ...capture,
+          });
+          console.log(
+            `[video] Poster replay: ${capture.image.path} ` +
+              `(${capture.image.width}x${capture.image.height} from ` +
+              `${capture.crop.width}x${capture.crop.height} CSS px at ` +
+              `${capture.scale}x; cursor ` +
+              `${capture.overlays.cursor ? "present" : "absent"}).`,
+          );
+        }
+      } catch (error) {
+        failure = error;
+      }
     }
 
     timeline.setVideo(
@@ -274,6 +401,206 @@ function validateScenario(scenario) {
   }
 
   validateAudioAfterAction(scenario, `Scenario "${scenario.id}"`);
+}
+
+/**
+ * Validate every scene, including the action-specific fields the runner
+ * requires, before the browser launches.
+ *
+ * @param {object} scenario
+ */
+function validateScenes(scenario) {
+  for (let index = 0; index < scenario.scenes.length; index += 1) {
+    const scene = scenario.scenes[index];
+    const sceneId = validateScene(scene, index);
+    validateSceneAction(scene, sceneId);
+  }
+}
+
+/**
+ * Validate the fields an action reads at run time. The recorder calls this
+ * before launch so a malformed late scene cannot surface after earlier scenes
+ * have already been recorded.
+ *
+ * @param {object} scene
+ * @param {string} sceneId
+ */
+function validateSceneAction(scene, sceneId) {
+  switch (scene.action) {
+    case "goto":
+      requireString(scene, sceneId, "url");
+      break;
+
+    case "card":
+      validateCard(scene.card, sceneId);
+      break;
+
+    case "click":
+    case "hover":
+    case "scrollIntoView":
+    case "waitFor":
+      requireString(scene, sceneId, "selector");
+      break;
+
+    case "scrollTo": {
+      const hasTo = scene.to !== undefined;
+      const hasSelector = scene.selector !== undefined;
+
+      if (!hasTo && !hasSelector) {
+        throw new Error(
+          `Scene "${sceneId}": action "scrollTo" requires "to" or "selector".`,
+        );
+      }
+
+      if (hasTo && hasSelector) {
+        throw new Error(
+          `Scene "${sceneId}": action "scrollTo" accepts "to" or "selector", not both.`,
+        );
+      }
+
+      if (hasTo && scene.to !== "top" && scene.to !== "bottom") {
+        throw new Error(`Scene "${sceneId}": "to" must be "top" or "bottom".`);
+      }
+
+      if (hasSelector) {
+        requireString(scene, sceneId, "selector");
+      }
+      break;
+    }
+
+    case "fill":
+    case "select":
+    case "assertText":
+      requireString(scene, sceneId, "selector");
+      requireString(scene, sceneId, "value", true);
+      break;
+
+    case "press":
+      requireString(scene, sceneId, "selector");
+      requireString(scene, sceneId, "key");
+      break;
+
+    case "dragMap":
+      requireString(scene, sceneId, "selector");
+      if (scene.delta !== undefined) {
+        normalizePoint(scene.delta, sceneId, "delta");
+      } else if (scene.from === undefined || scene.to === undefined) {
+        throw new Error(
+          `Scene "${sceneId}": action "dragMap" requires "from" and "to", or "delta".`,
+        );
+      }
+      break;
+
+    case "clickMapPoint":
+      requireString(scene, sceneId, "selector");
+      requireMapPoint(scene, sceneId);
+      break;
+
+    case "openPopup":
+      if (scene.latlng === undefined && scene.point === undefined) {
+        requireString(scene, sceneId, "selector");
+      }
+      break;
+
+    case "poster":
+      // The poster object is validated with the shared scene fields, before
+      // the browser launches. The action itself only marks the poster beat.
+      if (scene.poster !== undefined) {
+        parsePosterConfig(scene.poster, sceneId);
+      }
+      break;
+
+    case "waitForMap":
+    case "pause":
+      break;
+
+    default:
+      throw new Error(`Scene "${sceneId}": unknown action "${scene.action}".`);
+  }
+}
+
+/**
+ * Validate a card object. Unknown keys inside the card are rejected so a
+ * misspelled `subtitel` cannot silently render an empty subtitle.
+ *
+ * @param {object} card
+ * @param {string} sceneId
+ */
+function validateCard(card, sceneId) {
+  if (!card || typeof card !== "object" || Array.isArray(card)) {
+    throw new Error(
+      `Scene "${sceneId}": action "card" requires a "card" object.`,
+    );
+  }
+
+  if (typeof card.title !== "string" || card.title.trim() === "") {
+    throw new Error(
+      `Scene "${sceneId}": "card.title" must be a non-empty string.`,
+    );
+  }
+
+  for (const field of ["eyebrow", "subtitle"]) {
+    if (card[field] !== undefined && typeof card[field] !== "string") {
+      throw new Error(
+        `Scene "${sceneId}": "card.${field}" must be a string when present.`,
+      );
+    }
+  }
+
+  const unknown = Object.keys(card)
+    .filter((key) => !CARD_KEYS.has(key))
+    .sort();
+
+  if (unknown.length) {
+    throw new Error(
+      `Scene "${sceneId}": "card" has unknown key(s): ${unknown.join(", ")}.`,
+    );
+  }
+}
+
+/**
+ * Require either `latlng` or `point`, matching `resolveMapPoint`.
+ *
+ * @param {object} scene
+ * @param {string} sceneId
+ */
+function requireMapPoint(scene, sceneId) {
+  if (scene.latlng === undefined && scene.point === undefined) {
+    throw new Error(
+      `Scene "${sceneId}": action "${scene.action}" requires "latlng" or "point".`,
+    );
+  }
+}
+
+/**
+ * Warn about keys the recorder does not recognise, so misspellings are visible
+ * without rejecting forward-compatible scenario data.
+ *
+ * @param {object} scenario
+ */
+function warnUnknownKeys(scenario) {
+  warnUnknownObjectKeys(`Scenario "${scenario.id}"`, scenario, SCENARIO_KEYS);
+
+  for (const scene of scenario.scenes) {
+    warnUnknownObjectKeys(`Scene "${scene.id}"`, scene, SCENE_KEYS);
+  }
+}
+
+/**
+ * @param {string} label
+ * @param {object} value
+ * @param {Set<string>} allowed
+ */
+function warnUnknownObjectKeys(label, value, allowed) {
+  const unknown = Object.keys(value)
+    .filter((key) => !allowed.has(key))
+    .sort();
+
+  if (unknown.length) {
+    console.warn(
+      `[video] WARNING: ${label} has unknown key(s): ${unknown.join(", ")}`,
+    );
+  }
 }
 
 /**
@@ -500,12 +827,30 @@ function validateScene(scene, index) {
     );
   }
 
-  if (scene.poster !== undefined && typeof scene.poster !== "boolean") {
-    throw new Error(`Scene "${scene.id}": "poster" must be a boolean.`);
+  if (scene.poster !== undefined) {
+    parsePosterConfig(scene.poster, scene.id);
   }
 
   if (scene.parkMouse !== undefined && typeof scene.parkMouse !== "boolean") {
     throw new Error(`Scene "${scene.id}": "parkMouse" must be a boolean.`);
+  }
+
+  if (
+    scene.block !== undefined &&
+    scene.block !== "center" &&
+    scene.block !== "start" &&
+    scene.block !== "end"
+  ) {
+    throw new Error(
+      `Scene "${scene.id}": "block" must be "center", "start" or "end".`,
+    );
+  }
+
+  if (
+    scene.allowPartial !== undefined &&
+    typeof scene.allowPartial !== "boolean"
+  ) {
+    throw new Error(`Scene "${scene.id}": "allowPartial" must be a boolean.`);
   }
 
   validateAudioAfterAction(scene, `Scene "${scene.id}"`);
@@ -551,6 +896,7 @@ async function runScenes(
   audioTimings,
 ) {
   const { page, violations, t0, hideSelectors } = session;
+  const posterRequests = [];
 
   for (let index = 0; index < scenario.scenes.length; index += 1) {
     const scene = scenario.scenes[index];
@@ -599,7 +945,11 @@ async function runScenes(
           result?.cursorSelector &&
           resolved.cursor.to === result.cursorSelector;
         if (!alreadyThere) {
-          await libs.cursor.applyCursor(page, resolved.cursor);
+          await libs.cursor.applyCursor(
+            page,
+            resolved.cursor,
+            pointerFramingOptions(libs.fixtures, resolved, sceneId),
+          );
         }
       }
 
@@ -625,10 +975,20 @@ async function runScenes(
       timeline.setHold(sceneId, holdSeconds);
       await hold(page, holdSeconds);
 
-      if (resolved.action === "poster" || resolved.poster === true) {
+      const posterConfig = posterConfigForScene(resolved, sceneId);
+
+      if (posterConfig) {
         // Mark the end of the poster hold, while the intended overlays are
-        // still visible and before the scene cleanup starts.
+        // still visible and before the scene cleanup starts. The replay runs
+        // after the take has finished recording, so it cannot lengthen the
+        // encoded video; the marker still points at this frame.
         timeline.markPoster((Date.now() - t0) / 1000);
+
+        posterRequests.push({
+          sceneIndex: index,
+          sceneId,
+          config: posterConfig,
+        });
       }
 
       assertNoViolations(violations, sceneId, libs.browser);
@@ -638,25 +998,264 @@ async function runScenes(
       timeline.endScene(sceneId, end);
     }
   }
+
+  return posterRequests;
+}
+
+/**
+ * Resolve the poster configuration for a scene. A `poster` action always
+ * captures, using the defaults when it has no payload; the flag form only
+ * captures when it is true or an object.
+ *
+ * @param {object} scene
+ * @param {string} sceneId
+ * @returns {{ selector: string, aspect: string, pad: number } | null}
+ */
+function posterConfigForScene(scene, sceneId) {
+  if (scene.action === "poster") {
+    if (
+      scene.poster === undefined ||
+      scene.poster === null ||
+      typeof scene.poster === "boolean"
+    ) {
+      return { ...POSTER_DEFAULTS };
+    }
+
+    return parsePosterConfig(scene.poster, sceneId);
+  }
+
+  return parsePosterConfig(scene.poster, sceneId);
+}
+
+/**
+ * Replay the scenario up to and including the poster scene in a second,
+ * unrecorded context, then capture a cropped 2x PNG.
+ *
+ * The replay uses the same action implementation and overlay handling as the
+ * take, so the map view, open layers panel, selected basemap, highlight and
+ * scroll position are reproduced rather than approximated.
+ *
+ * @param {{ session: object, scenario: object, tokens: object, libs: object, sceneIndex: number, config: { selector: string, aspect: string, pad: number } }} options
+ * @returns {Promise<object>}
+ */
+async function capturePosterReplay({
+  session,
+  scenario,
+  tokens,
+  libs,
+  sceneIndex,
+  config,
+}) {
+  const sceneId = scenario.scenes[sceneIndex].id;
+  let replay = null;
+
+  try {
+    replay = await libs.browser.startReplay(session.browser, session.baseURL, {
+      hideSelectors: session.hideSelectors,
+    });
+
+    for (let index = 0; index <= sceneIndex; index += 1) {
+      const scene = scenario.scenes[index];
+      const id = validateScene(scene, index);
+      const resolved = resolveScene(scene, tokens, id);
+
+      await replayScene({
+        page: replay.page,
+        scene: resolved,
+        sceneId: id,
+        libs,
+        hideSelectors: session.hideSelectors,
+      });
+    }
+
+    // A fill scene would otherwise leave its fake caret in the still.
+    await libs.cursor.clearCaret(replay.page);
+    await replay.page
+      .waitForFunction(
+        () => {
+          const element = document.getElementById("waymark-video-highlight");
+          return (
+            !element || Number(window.getComputedStyle(element).opacity) >= 0.99
+          );
+        },
+        null,
+        { timeout: 2000 },
+      )
+      .catch(() => {});
+    await replay.page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }),
+    );
+
+    const overlays = await replay.page.evaluate(() => {
+      const highlight = document.getElementById("waymark-video-highlight");
+      const bounds = highlight?.getBoundingClientRect();
+
+      return {
+        cursor: Boolean(document.getElementById("waymark-video-cursor")),
+        caret: Boolean(document.getElementById("waymark-video-caret")),
+        highlight: Boolean(highlight),
+        highlightRect:
+          highlight && bounds
+            ? {
+                x: bounds.x,
+                y: bounds.y,
+                width: bounds.width,
+                height: bounds.height,
+              }
+            : null,
+      };
+    });
+
+    const rect = await replay.page
+      .locator(config.selector)
+      .first()
+      .evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+        };
+      });
+
+    const crop = computePosterCrop(
+      rect,
+      config,
+      sceneId,
+      libs.browser.VIEWPORT,
+      { highlightRect: overlays.highlightRect },
+    );
+
+    if (crop.extended) {
+      console.log(
+        `[video] Poster crop extended beyond "${config.selector}" ` +
+          `to include the highlight.`,
+      );
+    }
+    const image = await capturePosterPng(replay.page, crop, scenario.id);
+
+    if (replay.violations.length) {
+      const error = new Error(
+        `Scene "${sceneId}": poster replay failed the request guard.\n` +
+          libs.browser.formatViolations(replay.violations),
+      );
+      error.isViolation = true;
+      throw error;
+    }
+
+    return {
+      selector: config.selector,
+      aspect: config.aspect,
+      pad: config.pad,
+      crop,
+      scale: POSTER_SCALE,
+      image: {
+        path: path.relative(VIDEO_DIR, image.path).split(path.sep).join("/"),
+        width: image.width,
+        height: image.height,
+      },
+      overlays,
+    };
+  } catch (error) {
+    // Never leave a stale capture for the build to pick up after a failed
+    // replay.
+    fs.rmSync(path.join(POSTER_WORK_DIR, `${scenario.id}.png`), {
+      force: true,
+    });
+
+    if (String(error.message).startsWith(`Scene "${sceneId}":`)) {
+      throw error;
+    }
+
+    throw new Error(
+      `Scene "${sceneId}": poster replay failed: ${error.message}`,
+    );
+  } finally {
+    if (replay) {
+      await replay.context.close().catch(() => {});
+    }
+  }
+}
+
+/**
+ * Apply one scene's action and overlays during a replay. Narration, holds,
+ * timeline bookkeeping and assertions are deliberately skipped.
+ *
+ * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object, hideSelectors: string[] }} options
+ */
+async function replayScene({ page, scene, sceneId, libs, hideSelectors }) {
+  if (scene.parkMouse) {
+    await libs.cursor.moveCursorTo(
+      page,
+      PARK_MOUSE_POINT.x,
+      PARK_MOUSE_POINT.y,
+      { steps: 1 },
+    );
+  }
+
+  const result = await runAction({
+    page,
+    scene,
+    sceneId,
+    libs,
+    silent: true,
+  });
+
+  if (scene.action === "goto" && hideSelectors.length) {
+    await libs.browser.applyHiddenSelectors(page, hideSelectors);
+  }
+
+  if (scene.highlight) {
+    await libs.highlight.showHighlight(page, scene.highlight);
+  } else {
+    await libs.highlight.clearHighlight(page, { fade: false });
+  }
+
+  if (scene.cursor === null) {
+    await libs.cursor.hideCursor(page);
+  } else if (scene.cursor) {
+    const alreadyThere =
+      result?.cursorSelector && scene.cursor.to === result.cursorSelector;
+    if (!alreadyThere) {
+      await libs.cursor.applyCursor(
+        page,
+        scene.cursor,
+        pointerFramingOptions(libs.fixtures, scene, sceneId),
+      );
+    }
+  }
 }
 
 /**
  * Dispatch one action.
  *
- * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object }} options
+ * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object, silent?: boolean }} options
  * @returns {Promise<{ cursorSelector?: string, cursorPoint?: { x: number, y: number } }>}
  */
-async function runAction({ page, scene, sceneId, libs }) {
+async function runAction({ page, scene, sceneId, libs, silent = false }) {
   const { fixtures, cursor } = libs;
 
   switch (scene.action) {
     case "goto": {
       const url = requireString(scene, sceneId, "url");
 
-      if (!sameURL(page.url(), url)) {
+      // `setContent` keeps the previous URL, so a goto after a card must
+      // navigate even when the URL string has not changed.
+      const onCard = await isCardPage(page);
+
+      if (onCard || !sameURL(page.url(), url)) {
         await navigateTo(page, url, scene);
       }
 
+      return {};
+    }
+
+    case "card": {
+      await showCard(page, scene.card);
       return {};
     }
 
@@ -665,7 +1264,7 @@ async function runAction({ page, scene, sceneId, libs }) {
       await cursor.clickWithCursor(
         page,
         selector,
-        pointerFramingOptions(fixtures),
+        pointerFramingOptions(fixtures, scene, sceneId),
       );
       return { cursorSelector: selector };
     }
@@ -674,11 +1273,17 @@ async function runAction({ page, scene, sceneId, libs }) {
       const selector = requireString(scene, sceneId, "selector");
       const value = requireString(scene, sceneId, "value", true);
 
-      await cursor.moveCursorToSelector(page, selector);
+      await cursor.moveCursorToSelector(
+        page,
+        selector,
+        pointerFramingOptions(fixtures, scene, sceneId),
+      );
       const locator = page.locator(selector).first();
       await locator.click();
       await locator.fill(value);
-      await cursor.showCaret(page, selector);
+      if (!silent) {
+        await cursor.showCaret(page, selector);
+      }
 
       return { cursorSelector: selector };
     }
@@ -687,7 +1292,11 @@ async function runAction({ page, scene, sceneId, libs }) {
       const selector = requireString(scene, sceneId, "selector");
       const value = requireString(scene, sceneId, "value", true);
 
-      await cursor.moveCursorToSelector(page, selector);
+      await cursor.moveCursorToSelector(
+        page,
+        selector,
+        pointerFramingOptions(fixtures, scene, sceneId),
+      );
       const locator = page.locator(selector).first();
 
       try {
@@ -703,7 +1312,11 @@ async function runAction({ page, scene, sceneId, libs }) {
       const selector = requireString(scene, sceneId, "selector");
       const key = requireString(scene, sceneId, "key");
 
-      await cursor.moveCursorToSelector(page, selector);
+      await cursor.moveCursorToSelector(
+        page,
+        selector,
+        pointerFramingOptions(fixtures, scene, sceneId),
+      );
       const locator = page.locator(selector).first();
       await locator.focus();
       await page.keyboard.press(key);
@@ -716,14 +1329,48 @@ async function runAction({ page, scene, sceneId, libs }) {
       await cursor.moveCursorToSelector(
         page,
         selector,
-        pointerFramingOptions(fixtures),
+        pointerFramingOptions(fixtures, scene, sceneId),
       );
       return { cursorSelector: selector };
     }
 
     case "scrollIntoView": {
       const selector = requireString(scene, sceneId, "selector");
-      await settleElement(page, selector, fixtures);
+      await settleElement(page, selector, fixtures, {
+        sceneId,
+        block: scene.block,
+        allowPartial: scene.allowPartial,
+      });
+      return {};
+    }
+
+    case "scrollTo": {
+      if (scene.selector !== undefined) {
+        const selector = requireString(scene, sceneId, "selector");
+        await settleElement(page, selector, fixtures, {
+          sceneId,
+          block: scene.block,
+          allowPartial: scene.allowPartial,
+        });
+        return {};
+      }
+
+      const to = requireString(scene, sceneId, "to");
+      await page.evaluate((where) => {
+        const top =
+          where === "bottom" ? document.documentElement.scrollHeight : 0;
+        window.scrollTo(0, top);
+      }, to);
+
+      await fixtures.waitForLayoutStable(
+        async () =>
+          page.evaluate(() => ({
+            scrollY: Math.round(window.scrollY),
+            height: Math.round(document.documentElement.scrollHeight),
+          })),
+        { quietMs: 250, pollMs: 100, timeoutMs: 5000 },
+      );
+
       return {};
     }
 
@@ -827,7 +1474,11 @@ async function runAction({ page, scene, sceneId, libs }) {
         result = { cursorPoint: target };
       } else {
         const selector = requireString(scene, sceneId, "selector");
-        await cursor.clickWithCursor(page, selector);
+        await cursor.clickWithCursor(
+          page,
+          selector,
+          pointerFramingOptions(fixtures, scene, sceneId),
+        );
         result = { cursorSelector: selector };
       }
 
@@ -866,6 +1517,37 @@ async function runAction({ page, scene, sceneId, libs }) {
     default:
       throw new Error(`Scene "${sceneId}": unknown action "${scene.action}".`);
   }
+}
+
+/**
+ * Describe the first scene as a pre-warm target. A card is local HTML, so it
+ * has no URL to navigate to and no WordPress map to settle.
+ *
+ * @param {object} scene
+ * @returns {{ kind: "card", card: object } | { kind: "goto", url: string, selector?: string }}
+ */
+function prewarmTarget(scene) {
+  if (scene.action === "card") {
+    return { kind: "card", card: scene.card };
+  }
+
+  return { kind: "goto", url: scene.url, selector: scene.selector };
+}
+
+/**
+ * Put the first scene on screen before t0. The pre-warm uses the same hook for
+ * every first action, so a card cannot regress to a blank opening.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {object} scene
+ */
+async function prepareScene(page, scene) {
+  if (scene.action === "card") {
+    await showCard(page, scene.card);
+    return;
+  }
+
+  await navigateTo(page, scene.url, scene);
 }
 
 /**
@@ -1209,34 +1891,52 @@ async function waitForCondition(page, condition, timeoutMs = 15000) {
 }
 
 /**
- * Wait for an element and its layout to settle after a scroll.
+ * Wait for an element and its layout to settle after a scroll. Framing,
+ * including the admin-bar inset and the post-scroll visibility check, is
+ * delegated to the shared helper.
  *
  * @param {import("@playwright/test").Page} page
  * @param {string} selector
  * @param {object} fixtures
+ * @param {{ sceneId?: string, block?: "center" | "start" | "end", allowPartial?: boolean }} [options]
  */
-async function settleElement(page, selector, fixtures) {
+async function settleElement(page, selector, fixtures, options = {}) {
   const locator = page.locator(selector).first();
   await locator.waitFor({ state: "visible" });
-  await locator.evaluate((element) => {
-    element.scrollIntoView({ block: "center", inline: "nearest" });
+
+  const measure = async () => {
+    const box = await locator.boundingBox();
+    if (!box) {
+      return null;
+    }
+    return {
+      x: Math.round(box.x),
+      y: Math.round(box.y),
+      width: Math.round(box.width),
+      height: Math.round(box.height),
+    };
+  };
+
+  const settle = (sample) =>
+    fixtures.waitForLayoutStable(sample, {
+      quietMs: 250,
+      pollMs: 100,
+      timeoutMs: 5000,
+    });
+
+  const result = await ensureVisible(page, locator, {
+    selector,
+    sceneId: options.sceneId,
+    block: options.block,
+    allowPartial: options.allowPartial,
+    settle,
   });
 
-  await fixtures.waitForLayoutStable(
-    async () => {
-      const box = await locator.boundingBox();
-      if (!box) {
-        return null;
-      }
-      return {
-        x: Math.round(box.x),
-        y: Math.round(box.y),
-        width: Math.round(box.width),
-        height: Math.round(box.height),
-      };
-    },
-    { quietMs: 250, pollMs: 100, timeoutMs: 5000 },
-  );
+  // `scrollIntoView` and `scrollTo` are explicit framing beats, so wait for
+  // layout even when the target was already visible and no scroll happened.
+  if (!result.scrolled) {
+    await settle(measure);
+  }
 }
 
 /**
@@ -1289,17 +1989,23 @@ function normalizePoint(value, sceneId, field) {
 }
 
 /**
- * Pointer framing for hover and click: centre the target when it is not fully
- * visible, wait for the layout to settle, then move the pointer. An element
- * that is already fully in view is left in place, so hovering the Leaflet
- * layers control never moves the page under the pointer.
+ * Pointer framing for hover and click: bring the target into the inset
+ * viewport when it is not fully visible, wait for the layout to settle, then
+ * move the pointer. An element that is already fully in view is left in place,
+ * so hovering the Leaflet layers control never moves the page under the
+ * pointer.
  *
  * @param {object} fixtures
- * @returns {{ centre: boolean, settle: (measure: () => Promise<object | null>) => Promise<void> }}
+ * @param {object} [scene]
+ * @param {string} [sceneId]
+ * @returns {{ centre: boolean, sceneId?: string, block?: "center" | "start" | "end", allowPartial: boolean, settle: (measure: () => Promise<object | null>) => Promise<void> }}
  */
-function pointerFramingOptions(fixtures) {
+function pointerFramingOptions(fixtures, scene, sceneId) {
   return {
     centre: true,
+    sceneId,
+    block: scene?.block,
+    allowPartial: scene?.allowPartial === true,
     settle: (measure) =>
       fixtures.waitForLayoutStable(measure, {
         quietMs: 250,
@@ -1368,6 +2074,17 @@ function resolveScene(scene, tokens, sceneId) {
     if (typeof resolved.highlight.selector === "string") {
       resolved.highlight.selector = resolveTokens(
         resolved.highlight.selector,
+        tokens,
+        sceneId,
+      );
+    }
+  }
+
+  if (resolved.poster && typeof resolved.poster === "object") {
+    resolved.poster = { ...resolved.poster };
+    if (typeof resolved.poster.selector === "string") {
+      resolved.poster.selector = resolveTokens(
+        resolved.poster.selector,
         tokens,
         sceneId,
       );
@@ -1495,10 +2212,10 @@ function printUsage() {
   console.log(
     [
       "Usage:",
-      "  node scripts/video/record.mjs <scenario.json>",
+      "  node scripts/video/record.mjs [scenario.json]",
       "",
-      "Run from the repository root. WP_BASE_URL defaults to",
-      "http://localhost:11000.",
+      "The scenario defaults to changing-basemaps. Run from the repository root.",
+      "WP_BASE_URL defaults to http://localhost:11000.",
       "",
       "The raw take is written to scripts/video/work/raw/<id>.webm and timing",
       "to scripts/video/work/timeline.json.",

@@ -12,6 +12,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
+import { showCard } from "./card.mjs";
 import { installCursor } from "./cursor.mjs";
 
 const require = createRequire(import.meta.url);
@@ -30,6 +31,10 @@ export const AUTH_DIR = path.join(WORK_DIR, "auth");
 export const STORAGE_STATE_PATH = path.join(AUTH_DIR, "storage-state.json");
 export const TIMELINE_PATH = path.join(WORK_DIR, "timeline.json");
 export const HIDDEN_STYLE_ATTRIBUTE = "data-waymark-hidden-selectors";
+
+// Media that ends more than this much before the timeline end is treated as
+// truncated. Container and frame rounding account for the small tolerance.
+const TRUNCATION_TOLERANCE = 0.25;
 
 /**
  * Build the stylesheet that hides scenario selectors. The selectors carry their
@@ -271,9 +276,13 @@ export async function assertAuthenticated(browser, baseURL) {
  * first-load variance (server, PHP and database caches) so the first recorded
  * scene loads promptly and its narration does not play over a blank page.
  *
+ * The target may be a navigation or a card. A card is local HTML with no
+ * WordPress dependency, so the map wait is skipped for it even when the
+ * scenario contains `waitForMap` scenes.
+ *
  * @param {import("@playwright/test").Browser} browser
  * @param {string} baseURL
- * @param {{ url: string, selector?: string | null, hideSelectors?: string[], waitForMap?: boolean, zoom?: number }} options
+ * @param {{ target: { kind: "goto", url: string, selector?: string | null } | { kind: "card", card: object }, hideSelectors?: string[], waitForMap?: boolean, zoom?: number }} options
  */
 export async function warmUp(browser, baseURL, options) {
   const {
@@ -284,7 +293,18 @@ export async function warmUp(browser, baseURL, options) {
     settleMap,
   } = fixtures();
 
-  if (typeof options.url !== "string" || options.url.trim() === "") {
+  const target = options.target;
+  const isCard = target?.kind === "card";
+
+  if (isCard) {
+    if (
+      !target.card ||
+      typeof target.card !== "object" ||
+      Array.isArray(target.card)
+    ) {
+      throw new Error("Warm-up card requires a card object.");
+    }
+  } else if (typeof target?.url !== "string" || target.url.trim() === "") {
     throw new Error("Warm-up navigation requires a URL.");
   }
 
@@ -313,17 +333,21 @@ export async function warmUp(browser, baseURL, options) {
     await installHiddenSelectors(page, hideSelectors);
     await installTileRoutes(page, { violations });
 
-    await page.goto(options.url, { waitUntil: "load" });
-    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    if (isCard) {
+      await showCard(page, target.card);
+    } else {
+      await page.goto(target.url, { waitUntil: "load" });
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
 
-    if (typeof options.selector === "string" && options.selector !== "") {
-      await page
-        .locator(options.selector)
-        .first()
-        .waitFor({ state: "visible" });
+      if (typeof target.selector === "string" && target.selector !== "") {
+        await page
+          .locator(target.selector)
+          .first()
+          .waitFor({ state: "visible" });
+      }
     }
 
-    if (options.waitForMap) {
+    if (!isCard && options.waitForMap) {
       await page.waitForFunction(
         () => Boolean(window.Waymark && window.Waymark.map),
         null,
@@ -414,6 +438,8 @@ export async function startRecording(browser, baseURL, options = {}) {
     const videoOffset = roundSeconds((t0 - recordingStartedAt) / 1000);
 
     return {
+      browser,
+      baseURL,
       context,
       page,
       violations,
@@ -431,13 +457,65 @@ export async function startRecording(browser, baseURL, options = {}) {
 }
 
 /**
+ * Create a second, unrecorded context for a poster replay. It mirrors the
+ * recording context's viewport, storage state, request guard, deterministic
+ * reset, hide selectors and tile routes, but captures at twice the device
+ * scale and never records video. The synthetic pointer overlay is deliberately
+ * not installed, so the still cannot contain it.
+ *
+ * @param {import("@playwright/test").Browser} browser
+ * @param {string} baseURL
+ * @param {{ hideSelectors?: string[] }} [options]
+ * @returns {Promise<{ context: import("@playwright/test").BrowserContext, page: import("@playwright/test").Page, violations: Array<object> }>}
+ */
+export async function startReplay(browser, baseURL, options = {}) {
+  const {
+    installExternalRequestGuard,
+    stubExternalAssets,
+    makePageDeterministic,
+    installTileRoutes,
+  } = fixtures();
+
+  const hideSelectors = Array.isArray(options.hideSelectors)
+    ? options.hideSelectors
+    : [];
+
+  const violations = [];
+  const context = await browser.newContext({
+    baseURL,
+    viewport: VIEWPORT,
+    deviceScaleFactor: 2,
+    reducedMotion: "reduce",
+    storageState: STORAGE_STATE_PATH,
+  });
+
+  try {
+    const page = await context.newPage();
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(45000);
+
+    await installExternalRequestGuard(context, violations);
+    await stubExternalAssets(context);
+    await makePageDeterministic(page);
+    await installHiddenSelectors(page, hideSelectors);
+    await installTileRoutes(page, { violations });
+
+    return { context, page, violations };
+  } catch (error) {
+    await context.close().catch(() => {});
+    throw error;
+  }
+}
+
+/**
  * Close the context, save the raw video and measure it. The video handle is
  * taken before the context closes, as Playwright requires.
  *
  * @param {Awaited<ReturnType<typeof startRecording>>} session
  * @param {string} id
+ * @param {number | null} [expectedDuration]
  */
-export async function finishRecording(session, id) {
+export async function finishRecording(session, id, expectedDuration = null) {
   if (session.closed) {
     return session.finish;
   }
@@ -470,19 +548,25 @@ export async function finishRecording(session, id) {
   }
 
   const offset = session.videoOffset ?? 0;
-  const timelineDuration =
+  const available =
     duration === null ? null : roundSeconds(Math.max(0, duration - offset));
   const difference =
-    timelineDuration === null
+    available === null
       ? null
-      : roundSeconds(Math.abs(timelineDuration - wallClockDuration));
+      : roundSeconds(Math.abs(available - wallClockDuration));
+  const expected = Number.isFinite(expectedDuration)
+    ? roundSeconds(expectedDuration)
+    : null;
 
-  if (difference !== null && difference > 0.5) {
+  if (
+    available !== null &&
+    expected !== null &&
+    available < expected - TRUNCATION_TOLERANCE
+  ) {
     console.warn(
-      `[video] WARNING: raw video duration (${timelineDuration.toFixed(2)}s ` +
-        `after the ${offset.toFixed(2)}s pre-warm) and wall-clock duration ` +
-        `(${wallClockDuration.toFixed(2)}s) differ by ${difference.toFixed(2)}s, ` +
-        `which is more than 0.5s. The take may be truncated or delayed.`,
+      `[video] WARNING: raw video may be truncated: it covers ` +
+        `${available.toFixed(2)}s after the ${offset.toFixed(2)}s pre-warm, ` +
+        `but the timeline runs ${expected.toFixed(2)}s.`,
     );
   }
 

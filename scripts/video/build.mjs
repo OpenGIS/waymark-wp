@@ -2,7 +2,7 @@
 // Build one delivery video from a raw take and its narration audio.
 //
 // Usage:
-//   node scripts/video/build.mjs <scenario-id> [--no-encode] [--poster-at <time>]
+//   node scripts/video/build.mjs [scenario-id] [--no-encode] [--poster-at <time>]
 //
 // The timeline in work/timeline.json is authoritative for scene starts and
 // ends. Narration WAVs are placed at those starts, the MP4 is encoded once,
@@ -13,9 +13,11 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { assembleNarration, runTool } from "./lib/audio.mjs";
+import { assembleNarration, resolveTool, runTool } from "./lib/audio.mjs";
+import { POSTER_WORK_DIR, readPngSize } from "./lib/poster.mjs";
 import {
   buildCues,
   parseTimestamp,
@@ -39,6 +41,10 @@ const CAPTION_DIR = path.join(DELIVERY_DIR, "captions");
 const TRANSCRIPT_DIR = path.join(DELIVERY_DIR, "transcripts");
 const MANIFEST_PATH = path.join(DELIVERY_DIR, "manifest.json");
 const TIMELINE_PATH = path.join(WORK_DIR, "timeline.json");
+const DEFAULT_SCENARIO = "changing-basemaps";
+const POSTER_DIFF_WARN = 10;
+const POSTER_COMPARE_WIDTH = 320;
+const POSTER_COMPARE_HEIGHT = 180;
 
 function main() {
   const options = parseArgs(process.argv.slice(2));
@@ -48,7 +54,9 @@ function main() {
     return;
   }
 
-  const scenarioPath = resolveScenarioPath(options.scenario);
+  const scenarioPath = resolveScenarioPath(
+    options.scenario ?? DEFAULT_SCENARIO,
+  );
   const scenario = readJSON(scenarioPath, "scenario");
   const id = requireString(scenario.id, "scenario.id");
 
@@ -137,7 +145,25 @@ function main() {
     );
   }
 
-  extractPoster(outputPath, posterPath, posterAt);
+  const capturePath = path.join(POSTER_WORK_DIR, `${id}.png`);
+  let posterSource = "video";
+  let posterDetail = `video frame at ${posterAt.toFixed(3)}s`;
+
+  if (fs.existsSync(capturePath)) {
+    const captureSize = readPngSize(capturePath);
+    renderPosterFromCapture(capturePath, posterPath);
+    posterSource = "replay";
+    posterDetail = `replay ${captureSize.width}×${captureSize.height} → 1280×720`;
+    compareReplayPoster(
+      capturePath,
+      outputPath,
+      posterAt,
+      timeline.poster?.crop ?? null,
+      media,
+    );
+  } else {
+    extractPoster(outputPath, posterPath, posterAt);
+  }
 
   const cues = buildCues(timeline, scenario);
   fs.mkdirSync(CAPTION_DIR, { recursive: true });
@@ -163,6 +189,7 @@ function main() {
     size: media.size,
     sha256: sha256(outputPath),
     poster: assetPath(posterPath),
+    posterSource,
     captions: assetPath(captionsPath),
     transcript: assetPath(transcriptPath),
     narrationProvider: timings?.provider ?? null,
@@ -182,6 +209,9 @@ function main() {
     duration: media.duration,
     size: media.size,
     posterAt,
+    posterDetail,
+    posterSource,
+    posterCrop: timeline.poster?.crop ?? null,
     cueCount: cues.length,
     encoded: !options.noEncode,
     narrationPath: options.noEncode ? null : narrationPath,
@@ -241,10 +271,6 @@ function parseArgs(argv) {
     }
 
     options.scenario = argument;
-  }
-
-  if (!options.help && options.scenario === null) {
-    throw new Error("A scenario id is required.");
   }
 
   return options;
@@ -603,7 +629,8 @@ function resolvePosterAt(timeline, scenario, override) {
 }
 
 /**
- * Extract a JPEG from the final MP4, not the raw take.
+ * Extract a JPEG from the final MP4, not the raw take. Used only when the
+ * replay capture is absent.
  *
  * @param {string} inputPath
  * @param {string} outputPath
@@ -632,6 +659,140 @@ function extractPoster(inputPath, outputPath, at) {
 }
 
 /**
+ * Downscale the 2x replay capture to the delivery size.
+ *
+ * @param {string} capturePath
+ * @param {string} outputPath
+ */
+function renderPosterFromCapture(capturePath, outputPath) {
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+
+  runTool("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-i",
+    capturePath,
+    "-frames:v",
+    "1",
+    "-vf",
+    "scale=1280:720:flags=lanczos",
+    "-q:v",
+    "2",
+    outputPath,
+  ]);
+}
+
+/**
+ * Compare the replay capture with the frame at the poster timestamp. Both are
+ * normalised to the same small RGB frame, so the check measures a real drift
+ * between the replay and the take rather than compression noise.
+ *
+ * @param {string} capturePath
+ * @param {string} videoPath
+ * @param {number} at
+ * @param {{ x: number, y: number, width: number, height: number } | null} crop
+ * @param {{ width: number, height: number }} media
+ */
+function compareReplayPoster(capturePath, videoPath, at, crop, media) {
+  const capture = readRGBFrame(["-i", capturePath, "-frames:v", "1"]);
+
+  // The replay poster is cropped to the configured element, so the video frame
+  // must be cropped to the same rectangle before the two can be compared.
+  const box =
+    crop &&
+    crop.width > 0 &&
+    crop.height > 0 &&
+    crop.x + crop.width <= media.width &&
+    crop.y + crop.height <= media.height
+      ? crop
+      : { x: 0, y: 0, width: media.width, height: media.height };
+
+  const video = readRGBFrame(
+    ["-ss", at.toFixed(3), "-i", videoPath, "-frames:v", "1"],
+    ["format=rgb24", `crop=${box.width}:${box.height}:${box.x}:${box.y}`],
+  );
+
+  if (capture.length !== video.length) {
+    throw new Error(
+      `Cannot compare the poster: the replay frame is ${capture.length} bytes ` +
+        `but the video frame is ${video.length}.`,
+    );
+  }
+
+  const sums = [0, 0, 0];
+
+  for (let index = 0; index < capture.length; index += 1) {
+    sums[index % 3] += Math.abs(capture[index] - video[index]);
+  }
+
+  const pixels = capture.length / 3;
+  const channels = sums.map((sum) => sum / pixels);
+  const mean = channels.reduce((total, value) => total + value, 0) / 3;
+  const detail = `R ${channels[0].toFixed(1)}, G ${channels[1].toFixed(
+    1,
+  )}, B ${channels[2].toFixed(1)}`;
+
+  console.log(
+    `[video]   poster check  mean Δ ${mean.toFixed(1)} at ` +
+      `${at.toFixed(3)}s (${detail})`,
+  );
+
+  if (mean > POSTER_DIFF_WARN) {
+    console.warn(
+      `[video] WARNING: poster replay differs from the video frame at ` +
+        `${at.toFixed(3)}s (mean Δ ${mean.toFixed(1)}); check that the replay ` +
+        `reproduces the take.`,
+    );
+  }
+}
+
+/**
+ * Decode one frame to a small RGB buffer for comparison.
+ *
+ * @param {string[]} inputArguments
+ * @param {string[]} [inputFilters]
+ * @returns {Buffer}
+ */
+function readRGBFrame(inputArguments, inputFilters = []) {
+  const result = spawnSync(
+    resolveTool("ffmpeg"),
+    [
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      ...inputArguments,
+      "-vf",
+      [
+        ...inputFilters,
+        `scale=${POSTER_COMPARE_WIDTH}:${POSTER_COMPARE_HEIGHT}:flags=area`,
+      ].join(","),
+      "-pix_fmt",
+      "rgb24",
+      "-f",
+      "rawvideo",
+      "pipe:1",
+    ],
+    { encoding: null, maxBuffer: 16 * 1024 * 1024 },
+  );
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    const detail = (result.stderr ?? "").toString("utf8").trim();
+    throw new Error(
+      `ffmpeg could not decode a poster comparison frame` +
+        `${detail ? `: ${detail}` : ""}.`,
+    );
+  }
+
+  return result.stdout;
+}
+
+/**
  * @param {object} summary
  */
 function printSummary(summary) {
@@ -647,8 +808,15 @@ function printSummary(summary) {
   console.log(`[video]   video       ${displayPath(summary.outputPath)}`);
   console.log(
     `[video]   poster      ${displayPath(summary.posterPath)} ` +
-      `(${summary.posterAt.toFixed(3)}s)`,
+      `(${summary.posterDetail})`,
   );
+  if (summary.posterCrop) {
+    const crop = summary.posterCrop;
+    console.log(
+      `[video]   poster crop  ${crop.x},${crop.y} ` +
+        `${crop.width}×${crop.height} CSS px`,
+    );
+  }
   console.log(
     `[video]   captions    ${displayPath(summary.captionsPath)} ` +
       `(${summary.cueCount} cue(s))`,
@@ -760,7 +928,9 @@ function printUsage() {
   console.log(
     [
       "Usage:",
-      "  node scripts/video/build.mjs <scenario-id> [options]",
+      "  node scripts/video/build.mjs [scenario-id] [options]",
+      "",
+      `The scenario id defaults to ${DEFAULT_SCENARIO}.`,
       "",
       "Options:",
       "  --no-encode          reuse the existing MP4 and rebuild the sidecars",

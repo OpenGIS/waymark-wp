@@ -12,6 +12,8 @@
 // checks the computed style rather than assuming it works.
 "use strict";
 
+import { ensureVisible } from "./framing.mjs";
+
 const CURSOR_ID = "waymark-video-cursor";
 const CARET_ID = "waymark-video-caret";
 
@@ -193,61 +195,21 @@ export async function moveCursorTo(page, x, y, options = {}) {
 }
 
 /**
- * Bring an element to the centre of the viewport when it is not already fully
- * visible, then wait for layout to settle. The top inset accounts for the
- * sticky WordPress admin bar, which overlays the top of the viewport without
- * appearing in the element's own box.
+ * Bring an element into the inset viewport when it is not already fully
+ * visible, then wait for layout to settle. Delegates to the shared framing
+ * helper so the admin-bar inset and the post-scroll guarantee match every
+ * other path.
  *
  * @param {import("@playwright/test").Page} page
  * @param {import("@playwright/test").Locator} locator
  * @param {((measure: () => Promise<object | null>) => Promise<void>) | undefined} settle
+ * @param {{ selector?: string, sceneId?: string, block?: "center" | "start" | "end", allowPartial?: boolean }} [options]
  */
-async function centreElementIfNeeded(page, locator, settle) {
-  const scrolled = await locator.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const adminBar = document.getElementById("wpadminbar");
-    const topInset = adminBar
-      ? Math.max(0, adminBar.getBoundingClientRect().bottom)
-      : 0;
-    const viewportHeight =
-      window.innerHeight || document.documentElement.clientHeight;
-
-    if (rect.top >= topInset && rect.bottom <= viewportHeight) {
-      return false;
-    }
-
-    element.scrollIntoView({ block: "center", inline: "nearest" });
-    return true;
+async function centreElementIfNeeded(page, locator, settle, options = {}) {
+  await ensureVisible(page, locator, {
+    ...options,
+    settle: settle ?? options.settle,
   });
-
-  if (!scrolled) {
-    return;
-  }
-
-  const measure = async () => {
-    const box = await locator.boundingBox();
-    if (!box) {
-      return null;
-    }
-    return {
-      x: Math.round(box.x),
-      y: Math.round(box.y),
-      width: Math.round(box.width),
-      height: Math.round(box.height),
-    };
-  };
-
-  if (typeof settle === "function") {
-    await settle(measure);
-    return;
-  }
-
-  await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-      }),
-  );
 }
 
 /**
@@ -255,7 +217,7 @@ async function centreElementIfNeeded(page, locator, settle) {
  *
  * @param {import("@playwright/test").Page} page
  * @param {string} selector
- * @param {{ steps?: number, timeout?: number, centre?: boolean, settle?: (measure: () => Promise<object | null>) => Promise<void> }} [options]
+ * @param {{ steps?: number, timeout?: number, centre?: boolean, settle?: (measure: () => Promise<object | null>) => Promise<void>, sceneId?: string, block?: "center" | "start" | "end", allowPartial?: boolean }} [options]
  * @returns {Promise<{ x: number, y: number }>}
  */
 export async function moveCursorToSelector(page, selector, options = {}) {
@@ -265,11 +227,10 @@ export async function moveCursorToSelector(page, selector, options = {}) {
     timeout: options.timeout ?? 15000,
   });
 
-  if (options.centre) {
-    await centreElementIfNeeded(page, locator, options.settle);
-  } else {
-    await locator.scrollIntoViewIfNeeded();
-  }
+  await centreElementIfNeeded(page, locator, options.settle, {
+    ...options,
+    selector,
+  });
 
   const box = await locator.boundingBox();
   if (!box) {
@@ -291,11 +252,12 @@ export async function moveCursorToSelector(page, selector, options = {}) {
  *
  * @param {import("@playwright/test").Page} page
  * @param {{ to?: string, x?: number, y?: number }} cursor
+ * @param {{ sceneId?: string, block?: "center" | "start" | "end", allowPartial?: boolean, settle?: (measure: () => Promise<object | null>) => Promise<void> }} [options]
  * @returns {Promise<{ x: number, y: number }>}
  */
-export async function applyCursor(page, cursor) {
+export async function applyCursor(page, cursor, options = {}) {
   if (cursor && typeof cursor.to === "string") {
-    return moveCursorToSelector(page, cursor.to);
+    return moveCursorToSelector(page, cursor.to, options);
   }
 
   if (cursor && Number.isFinite(cursor.x) && Number.isFinite(cursor.y)) {

@@ -131,6 +131,19 @@ function validateEntry(id, entry, failures) {
     validatePoster(poster, id, failures);
   }
 
+  if (
+    entry.posterSource !== undefined &&
+    entry.posterSource !== "replay" &&
+    entry.posterSource !== "video"
+  ) {
+    fail(
+      failures,
+      id,
+      `"posterSource" must be "replay" or "video", received ` +
+        `${JSON.stringify(entry.posterSource)}.`,
+    );
+  }
+
   const captions = assetFor(entry, "captions", id, failures);
   if (captions) {
     validateCaptions(captions, id, failures);

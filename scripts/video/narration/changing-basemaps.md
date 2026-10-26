@@ -1,5 +1,9 @@
 # Changing Basemaps
 
+## title
+
+(no narration)
+
 ## open-editor
 
 Waymark Maps are edited in the WordPress admin. Open the Map you want to work on, and the Editor loads with your saved markers, lines and shapes.
@@ -40,6 +44,10 @@ Basemaps themselves live in Waymark Settings. Each row has a name, a tile URL, a
 
 Drag the rows to reorder them. The first Basemap becomes the default for every Map that doesn't specify one.
 
-## outro
+## reset-view
+
+(no narration)
+
+## end
 
 (no narration)
