@@ -1,41 +1,66 @@
 #!/usr/bin/env node
-// Synthesise per-scene narration audio with the macOS say provider.
+// Synthesise per-scene narration audio through a pluggable TTS provider.
 //
 // Usage:
-//   node scripts/video/tts.mjs [scenario-id]
-//     [--voice <name>] [--rate <wpm>] [--scene <scene-id>] [--force]
+//   node scripts/video/tts.mjs [scenario-id] [options]
+//     [--provider <id>] [--voice <name>] [--rate <wpm>]
+//     [--scene <scene-id>] [--force] [--verbose]
 //
-// Each narrated scene is written twice: a raw `.aiff` take and a normalised
-// 48 kHz mono 16-bit PCM `.wav`. Durations land in `timings.json` beside them,
-// and the recorder uses that file to drive scene holds.
+// Each narrated scene is written as a normalised 48 kHz mono 16-bit PCM WAV.
+// A pace guard measures the delivered speech and re-requests out-of-band scenes
+// at a native provider rate before keeping the take closest to the target.
+// Durations land in `timings.json` beside the audio, and the recorder uses that
+// file to drive scene holds. The provider, voice, rate and model metadata are
+// recorded so a take can be traced back to how it was narrated.
 "use strict";
 
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { loadNarration } from "./lib/narration.mjs";
+import {
+  POST_PROCESS_VERSION,
+  oneLine,
+  probeDuration,
+} from "./lib/tts/shared.mjs";
+import {
+  PACE_GUARD_VERSION,
+  closestPace,
+  describeBand,
+  isInPaceBand,
+  measurePace,
+  nextRequestRate,
+  resolvePaceOptions,
+  roundWpm,
+} from "./lib/tts/pace.mjs";
+import {
+  availability,
+  describeProvider,
+  nextCandidate,
+  providerIds,
+  resolveCandidates,
+  resolveVoice,
+} from "./lib/tts/index.mjs";
 
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(VIDEO_DIR, "..", "..");
 const WORK_DIR = path.join(VIDEO_DIR, "work");
 const SCENARIO_DIR = path.join(VIDEO_DIR, "scenarios");
-const PROVIDER = "macos-say";
-const DEFAULT_VOICE = "Daniel";
 const DEFAULT_RATE = 175;
 const DEFAULT_SCENARIO = "changing-basemaps";
-const REQUIRED_TOOLS = ["say", "afconvert", "ffmpeg", "ffprobe"];
 
-function main() {
+async function main() {
+  loadDotEnv();
+
   const options = parseArgs(process.argv.slice(2));
+  const pace = resolvePaceOptions(process.env);
 
   if (options.help) {
     printUsage();
     return;
   }
-
-  assertTools();
 
   const scenarioId = options.scenarioId ?? DEFAULT_SCENARIO;
   const scenarioPath = path.join(SCENARIO_DIR, `${scenarioId}.json`);
@@ -63,16 +88,10 @@ function main() {
   console.log(
     `[video] Narration: ${path.relative(process.cwd(), narrationPath)}`,
   );
-
-  const voice = options.voice ?? DEFAULT_VOICE;
-  const rate = options.rate ?? DEFAULT_RATE;
-
-  const voices = listVoices();
-  if (!voices.includes(voice)) {
-    throw new Error(
-      `Voice "${voice}" is not installed. Available voices: ${voices.join(", ")}`,
-    );
-  }
+  console.log(
+    `[video] TTS pace guard: target ${pace.targetWpm} wpm ` +
+      `(${describeBand(pace)}), up to ${pace.maxAttempts} attempt(s).`,
+  );
 
   const narrated = scenario.scenes.filter(
     (scene) => typeof scene.narration === "string" && scene.narration.trim(),
@@ -93,6 +112,11 @@ function main() {
     }
   }
 
+  const { requestedId, candidates } = resolveCandidates({
+    flag: options.provider,
+    env: process.env,
+  });
+
   const audioDir = path.join(WORK_DIR, "audio", scenario.id);
   const timingsPath = path.join(audioDir, "timings.json");
   fs.mkdirSync(audioDir, { recursive: true });
@@ -102,8 +126,212 @@ function main() {
     (previous?.scenes ?? []).map((entry) => [entry.id, entry]),
   );
 
+  const selected = await selectAndSynthesise({
+    candidates,
+    options,
+    narrated,
+    audioDir,
+    previousById,
+    pace,
+  });
+
+  const scenes = narrated
+    .map((scene) => selected.generated.get(scene.id))
+    .filter(Boolean);
+
+  if (scenes.length !== narrated.length) {
+    throw new Error("Not every narrated scene produced an audio entry.");
+  }
+
+  const metadata =
+    typeof selected.provider.timingMetadata === "function"
+      ? selected.provider.timingMetadata({
+          voice: selected.voice,
+          rate: options.rate,
+          env: process.env,
+        })
+      : {};
+
+  const timings = {
+    id: scenario.id,
+    ...metadata,
+    provider: selected.provider.id,
+    voice: selected.voice,
+    rate: options.rate,
+    pace,
+    generatedAt: new Date().toISOString(),
+    scenes,
+  };
+
+  if (selected.fallbackFrom) {
+    timings.requestedProvider = requestedId;
+    timings.fallbackReason = oneLine(selected.fallbackReason);
+  }
+
+  fs.writeFileSync(
+    timingsPath,
+    `${JSON.stringify(timings, null, 2)}\n`,
+    "utf8",
+  );
+
+  if (!selected.fallbackFrom) {
+    console.log(
+      `[video] TTS: ${describeProvider(selected.provider, selected.voice)}.`,
+    );
+  }
+
+  printTable(selected.rows);
+  console.log(`[video] Timings: ${path.relative(process.cwd(), timingsPath)}`);
+}
+
+/**
+ * Pick an available provider and synthesise the whole narration run. A fatal
+ * synthesis failure restarts the run on the next candidate so one video never
+ * mixes voices.
+ *
+ * @param {{ candidates: object[], options: object, narrated: object[], audioDir: string, previousById: Map<string, object>, pace: object }} args
+ * @returns {Promise<{ provider: object, voice: string, generated: Map<string, object>, rows: object[], fallbackFrom: string | null, fallbackReason: string | null }>}
+ */
+async function selectAndSynthesise({
+  candidates,
+  options,
+  narrated,
+  audioDir,
+  previousById,
+  pace,
+}) {
+  let index = 0;
+  let fallbackFrom = null;
+  let fallbackReason = null;
+  let forceScenes = new Set();
+
+  while (index < candidates.length) {
+    const provider = candidates[index];
+    const check = availability(provider, process.env);
+
+    if (check.available) {
+      const selection = resolveVoice(provider, {
+        flagVoice: options.voice,
+        env: process.env,
+      });
+      const voice = selection.voice;
+
+      try {
+        const result = await synthesiseRun({
+          provider,
+          voice,
+          voiceSource: selection.source,
+          options,
+          narrated,
+          audioDir,
+          previousById,
+          pace,
+          force: options.force,
+          forceScenes,
+        });
+
+        return {
+          provider,
+          voice,
+          generated: result.generated,
+          rows: result.rows,
+          fallbackFrom,
+          fallbackReason,
+        };
+      } catch (error) {
+        if (!error.isProviderFailure) {
+          throw error;
+        }
+
+        const next = nextCandidate(candidates, provider.id);
+        const reason = oneLine(error.message);
+
+        if (!next) {
+          console.warn(
+            `[video] TTS: ${provider.id} failed (${reason}); ` +
+              `no fallback provider is available.`,
+          );
+          throw error;
+        }
+
+        const nextSelection = resolveVoice(next, {
+          flagVoice: options.voice,
+          env: process.env,
+        });
+
+        console.warn(
+          `[video] TTS: ${provider.id} failed (${reason}); falling back to ` +
+            `${describeProvider(next, nextSelection.voice)}.`,
+        );
+
+        fallbackFrom ??= provider.id;
+        fallbackReason = reason;
+        // A failed run may already have overwritten cached WAVs. Regenerate
+        // those scenes on the fallback provider rather than reusing a take
+        // that no longer matches its cache entry. Accumulate across failures
+        // so a later provider cannot reuse audio from any earlier attempt.
+        for (const sceneId of error.writtenScenes ?? []) {
+          forceScenes.add(sceneId);
+        }
+        index += 1;
+        continue;
+      }
+    }
+
+    const next = nextCandidate(candidates, provider.id);
+    const reason = oneLine(check.reason);
+    const nextSelection = next
+      ? resolveVoice(next, {
+          flagVoice: options.voice,
+          env: process.env,
+        })
+      : null;
+
+    console.warn(
+      next
+        ? `[video] TTS: ${provider.id} unavailable (${reason}); falling back to ` +
+            `${describeProvider(next, nextSelection.voice)}.`
+        : `[video] TTS: ${provider.id} unavailable (${reason}); ` +
+            `no fallback provider is available.`,
+    );
+
+    fallbackFrom ??= provider.id;
+    fallbackReason ??= reason;
+
+    if (!next) {
+      throw new Error(
+        `No TTS provider is available. ${provider.id}: ${reason}`,
+      );
+    }
+
+    index += 1;
+  }
+
+  throw new Error("No TTS provider is available.");
+}
+
+/**
+ * Synthesise every narrated scene with one provider. Cache hits are reused
+ * only when the provider, voice, rate and text all match.
+ *
+ * @param {{ provider: object, voice: string, voiceSource: string, options: object, narrated: object[], audioDir: string, previousById: Map<string, object>, pace: object, force: boolean, forceScenes: Set<string> }} args
+ * @returns {Promise<{ generated: Map<string, object>, rows: object[] }>}
+ */
+async function synthesiseRun({
+  provider,
+  voice,
+  voiceSource,
+  options,
+  narrated,
+  audioDir,
+  previousById,
+  pace,
+  force,
+  forceScenes,
+}) {
   const generated = new Map();
   const rows = [];
+  const written = new Set();
 
   for (const scene of narrated) {
     const isSelected = options.scene === null || options.scene === scene.id;
@@ -112,18 +340,58 @@ function main() {
       .relative(VIDEO_DIR, wavPath)
       .split(path.sep)
       .join("/");
-    const hash = hashNarration(scene.narration, voice, rate);
+    const hash = hashNarration(
+      scene.narration,
+      provider,
+      voice,
+      options.rate,
+      pace,
+    );
     const cached = previousById.get(scene.id);
 
     if (!isSelected) {
-      if (cached) {
-        generated.set(scene.id, { ...cached, text: scene.narration });
+      if (forceScenes.has(scene.id)) {
+        throw new Error(
+          `Scene "${scene.id}" was partially rewritten by a failed provider. ` +
+            `Run without --scene to regenerate every scene.`,
+        );
       }
+
+      if (!cached) {
+        throw new Error(
+          `Scene "${scene.id}" has no cached audio for provider ` +
+            `"${provider.id}" and voice "${voice}". Run without --scene to ` +
+            `regenerate every scene.`,
+        );
+      }
+
+      if (cached.hash !== hash || !fs.existsSync(wavPath)) {
+        throw new Error(
+          `Scene "${scene.id}" was narrated with a different provider, voice ` +
+            `or rate. Run without --scene to regenerate every scene.`,
+        );
+      }
+
+      const duration = Number.isFinite(cached.duration)
+        ? cached.duration
+        : probeDuration(wavPath);
+      const paceInfo = cachedPaceInfo(cached, wavPath, scene.narration);
+
+      generated.set(scene.id, {
+        ...cached,
+        text: scene.narration,
+        file: relativeFile,
+        duration,
+        ...paceInfo,
+        hash,
+      });
+      logChosenPace(scene.id, paceInfo, pace, true);
       continue;
     }
 
     const canReuse =
-      !options.force &&
+      !force &&
+      !forceScenes.has(scene.id) &&
       options.scene === null &&
       cached?.hash === hash &&
       fs.existsSync(wavPath);
@@ -132,71 +400,287 @@ function main() {
       const duration = Number.isFinite(cached.duration)
         ? cached.duration
         : probeDuration(wavPath);
+      const paceInfo = cachedPaceInfo(cached, wavPath, scene.narration);
 
       generated.set(scene.id, {
         ...cached,
         text: scene.narration,
         file: relativeFile,
         duration,
+        ...paceInfo,
         hash,
       });
-      rows.push({ id: scene.id, duration, cached: true });
+      logChosenPace(scene.id, paceInfo, pace, true);
+      rows.push({
+        id: scene.id,
+        duration,
+        wpm: paceInfo.wpm,
+        attempts: paceInfo.attempts,
+        cached: true,
+      });
       continue;
     }
 
-    const result = synthesise({
-      text: scene.narration,
-      voice,
-      rate,
-      out: wavPath,
-    });
+    const before = fileSignature(wavPath);
+
+    let result;
+    try {
+      result = await synthesiseWithPaceGuard({
+        provider,
+        voice,
+        voiceSource,
+        rate: options.rate,
+        text: scene.narration,
+        sceneId: scene.id,
+        wavPath,
+        audioDir,
+        pace,
+        verbose: options.verbose,
+      });
+    } catch (error) {
+      // A provider can fail before it writes anything, notably a fatal HTTP
+      // error. Only force the fallback to regenerate this scene when the file
+      // actually changed; otherwise a valid cached take is still reusable.
+      if (fileSignature(wavPath) !== before) {
+        written.add(scene.id);
+      }
+      error.writtenScenes = [...written];
+      error.isProviderFailure = true;
+      throw error;
+    }
+
+    written.add(scene.id);
 
     generated.set(scene.id, {
       id: scene.id,
       text: scene.narration,
       file: relativeFile,
       duration: result.duration,
+      speechSeconds: result.speechSeconds,
+      wordCount: result.wordCount,
+      wpm: result.wpm,
+      firstWpm: result.firstWpm,
+      attempts: result.attempts,
+      requestedRate: result.requestedRate,
+      attemptRates: result.attemptRates,
       hash,
     });
-    rows.push({ id: scene.id, duration: result.duration, cached: false });
+    rows.push({
+      id: scene.id,
+      duration: result.duration,
+      wpm: result.wpm,
+      attempts: result.attempts,
+      cached: false,
+    });
   }
 
-  const scenes = narrated
-    .map((scene) => generated.get(scene.id))
-    .filter(Boolean);
+  return { generated, rows };
+}
 
-  const timings = {
-    id: scenario.id,
-    provider: PROVIDER,
-    voice,
-    rate,
-    generatedAt: new Date().toISOString(),
-    scenes,
+/**
+ * Synthesise one scene into a scratch take, measure its pace, and retry while
+ * the take is outside the acceptable band. A retry asks the provider for a
+ * different native speaking rate estimated from the measured pace; the audio is
+ * never time-stretched. The take closest to the target is promoted to the
+ * scene's WAV.
+ *
+ * @param {{ provider: object, voice: string, voiceSource: string, rate: number, text: string, sceneId: string, wavPath: string, audioDir: string, pace: { targetWpm: number, bandWpm: number, maxAttempts: number }, verbose: boolean }} options
+ * @returns {Promise<{ duration: number, speechSeconds: number, wordCount: number, wpm: number, firstWpm: number, attempts: number, requestedRate: number, attemptRates: number[] }>}
+ */
+async function synthesiseWithPaceGuard({
+  provider,
+  voice,
+  voiceSource,
+  rate,
+  text,
+  sceneId,
+  wavPath,
+  audioDir,
+  pace,
+  verbose,
+}) {
+  const attemptDir = path.join(audioDir, ".pace");
+  const takes = [];
+  let requestedRate = rate;
+
+  fs.mkdirSync(attemptDir, { recursive: true });
+
+  try {
+    for (let attempt = 1; attempt <= pace.maxAttempts; attempt += 1) {
+      const attemptPath = path.join(attemptDir, `${sceneId}-${attempt}.wav`);
+      const result = await provider.synthesise({
+        text,
+        voice,
+        rate: requestedRate,
+        outPath: attemptPath,
+        env: process.env,
+        sceneId,
+        verbose,
+        allowVoiceSubstitution: voiceSource !== "flag",
+        log: console.log,
+      });
+      const duration = Number.isFinite(result?.duration)
+        ? result.duration
+        : probeDuration(attemptPath);
+      const measured = measurePace(attemptPath, text);
+
+      takes.push({
+        attempt,
+        path: attemptPath,
+        duration,
+        requestedRate,
+        ...measured,
+      });
+
+      console.log(
+        `[video] TTS pace ${sceneId}: attempt ${attempt}/` +
+          `${pace.maxAttempts} ${roundWpm(measured.wpm)} wpm ` +
+          `(request ${requestedRate} wpm, target ${pace.targetWpm}).`,
+      );
+
+      if (isInPaceBand(measured.wpm, pace)) {
+        break;
+      }
+
+      requestedRate = nextRequestRate(
+        requestedRate,
+        measured.wpm,
+        pace.targetWpm,
+      );
+    }
+
+    const chosen = closestPace(takes, (take) => take.wpm, pace.targetWpm);
+    const inBand = takes.some((take) => isInPaceBand(take.wpm, pace));
+
+    fs.copyFileSync(chosen.path, wavPath);
+    copyAiffSidecar(chosen.path, wavPath);
+
+    if (!inBand) {
+      console.warn(
+        `[video] TTS pace ${sceneId}: no attempt inside ` +
+          `${describeBand(pace)}; using the closest take at ` +
+          `${roundWpm(chosen.wpm)} wpm.`,
+      );
+    }
+
+    logChosenPace(
+      sceneId,
+      {
+        wpm: chosen.wpm,
+        firstWpm: takes[0].wpm,
+        attempts: takes.length,
+      },
+      pace,
+      false,
+    );
+
+    return {
+      duration: chosen.duration,
+      speechSeconds: chosen.speechSeconds,
+      wordCount: chosen.wordCount,
+      wpm: roundWpm(chosen.wpm),
+      firstWpm: roundWpm(takes[0].wpm),
+      attempts: takes.length,
+      requestedRate: chosen.requestedRate,
+      attemptRates: takes.map((take) => take.requestedRate),
+    };
+  } finally {
+    fs.rmSync(attemptDir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Reuse the pace recorded beside a cached take. Older cache entries that
+ * predate the guard are measured from the WAV instead.
+ *
+ * @param {object} cached
+ * @param {string} wavPath
+ * @param {string} text
+ * @returns {{ speechSeconds: number, wordCount: number, wpm: number, firstWpm: number, attempts: number }}
+ */
+function cachedPaceInfo(cached, wavPath, text) {
+  const attempts = Number.isInteger(cached.attempts) ? cached.attempts : 1;
+
+  if (
+    Number.isFinite(cached.speechSeconds) &&
+    Number.isFinite(cached.wordCount) &&
+    Number.isFinite(cached.wpm)
+  ) {
+    return {
+      speechSeconds: cached.speechSeconds,
+      wordCount: cached.wordCount,
+      wpm: cached.wpm,
+      firstWpm: Number.isFinite(cached.firstWpm) ? cached.firstWpm : cached.wpm,
+      attempts,
+    };
+  }
+
+  const measured = measurePace(wavPath, text);
+
+  return {
+    ...measured,
+    firstWpm: measured.wpm,
+    attempts,
   };
+}
 
-  fs.writeFileSync(
-    timingsPath,
-    `${JSON.stringify(timings, null, 2)}\n`,
-    "utf8",
+/**
+ * Preserve a provider's raw sidecar (the say `.aiff`) when a retried take is
+ * promoted over the final WAV.
+ *
+ * @param {string} fromWav
+ * @param {string} toWav
+ */
+function copyAiffSidecar(fromWav, toWav) {
+  const fromAiff = fromWav.replace(/\.wav$/, ".aiff");
+  if (!fs.existsSync(fromAiff)) {
+    return;
+  }
+
+  fs.copyFileSync(fromAiff, toWav.replace(/\.wav$/, ".aiff"));
+}
+
+/**
+ * Log the take that was kept. The arrow form mirrors the per-attempt log when
+ * more than one take was requested.
+ *
+ * @param {string} sceneId
+ * @param {{ wpm: number, firstWpm: number, attempts: number }} info
+ * @param {{ targetWpm: number }} pace
+ * @param {boolean} cached
+ */
+function logChosenPace(sceneId, info, pace, cached) {
+  const suffix = cached ? ", cached" : "";
+
+  if (info.attempts > 1) {
+    console.log(
+      `[video] TTS pace ${sceneId}: ${roundWpm(info.firstWpm)} wpm → ` +
+        `retry ${roundWpm(info.wpm)} wpm (target ${pace.targetWpm}${suffix}).`,
+    );
+    return;
+  }
+
+  console.log(
+    `[video] TTS pace ${sceneId}: ${roundWpm(info.wpm)} wpm ` +
+      `(target ${pace.targetWpm}${suffix}).`,
   );
-
-  printTable(rows);
-  console.log(`[video] Timings: ${path.relative(process.cwd(), timingsPath)}`);
 }
 
 /**
  * Parse the CLI arguments.
  *
  * @param {string[]} argv
- * @returns {{ scenarioId: string | null, voice: string | null, rate: number | null, scene: string | null, force: boolean, help: boolean }}
+ * @returns {{ scenarioId: string | null, provider: string | null, voice: string | null, rate: number, scene: string | null, force: boolean, verbose: boolean, help: boolean }}
  */
 function parseArgs(argv) {
   const options = {
     scenarioId: null,
+    provider: null,
     voice: null,
-    rate: null,
+    rate: DEFAULT_RATE,
     scene: null,
     force: false,
+    verbose: false,
     help: false,
   };
 
@@ -213,7 +697,13 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (argument === "--verbose") {
+      options.verbose = true;
+      continue;
+    }
+
     if (
+      argument === "--provider" ||
       argument === "--voice" ||
       argument === "--rate" ||
       argument === "--scene"
@@ -224,7 +714,9 @@ function parseArgs(argv) {
       }
       index += 1;
 
-      if (argument === "--voice") {
+      if (argument === "--provider") {
+        options.provider = value;
+      } else if (argument === "--voice") {
         options.voice = value;
       } else if (argument === "--rate") {
         const rate = Number(value);
@@ -255,71 +747,54 @@ function parseArgs(argv) {
 }
 
 /**
- * Synthesise one narration line, returning the normalised WAV and its duration.
- * The raw provider take is kept beside it with an `.aiff` extension.
+ * Cache key for one take. Provider, voice, rate, any provider-specific speed,
+ * the pace settings and the post-processing version are part of the key, so
+ * switching provider, voice, pace target or the trim chain never reuses the
+ * wrong audio.
  *
- * @param {{ text: string, voice: string, rate: number, out: string }} options
- * @returns {{ file: string, duration: number }}
+ * @param {string} text
+ * @param {object} provider
+ * @param {string} voice
+ * @param {number} rate
+ * @param {{ targetWpm: number, bandWpm: number, maxAttempts: number }} pace
+ * @returns {string}
  */
-export function synthesise({ text, voice, rate, out }) {
-  if (typeof text !== "string" || text.trim() === "") {
-    throw new Error("synthesise() requires non-empty text.");
-  }
+function hashNarration(text, provider, voice, rate, pace) {
+  const speed =
+    typeof provider.speedForRate === "function"
+      ? provider.speedForRate(rate)
+      : null;
 
-  const parsed = path.parse(out);
-  const aiffPath = path.join(parsed.dir, `${parsed.name}.aiff`);
-  const sourcePath = path.join(parsed.dir, `${parsed.name}.source.wav`);
-
-  fs.mkdirSync(parsed.dir, { recursive: true });
-
-  run("say", ["-v", voice, "-r", String(rate), "-o", aiffPath, "--", text]);
-  run("afconvert", [
-    "-f",
-    "WAVE",
-    "-d",
-    "LEI16@48000",
-    "-c",
-    "1",
-    aiffPath,
-    sourcePath,
-  ]);
-
-  try {
-    run("ffmpeg", [
-      "-hide_banner",
-      "-loglevel",
-      "error",
-      "-y",
-      "-i",
-      sourcePath,
-      "-af",
-      "loudnorm=I=-16:TP=-1.5:LRA=11",
-      "-ar",
-      "48000",
-      "-ac",
-      "1",
-      "-c:a",
-      "pcm_s16le",
-      out,
-    ]);
-  } finally {
-    fs.rmSync(sourcePath, { force: true });
-  }
-
-  return { file: out, duration: probeDuration(out) };
+  return crypto
+    .createHash("sha256")
+    .update(
+      JSON.stringify({
+        provider: provider.id,
+        voice,
+        rate,
+        speed,
+        pace,
+        paceGuard: PACE_GUARD_VERSION,
+        text,
+        postProcess: POST_PROCESS_VERSION,
+      }),
+    )
+    .digest("hex");
 }
 
 /**
- * @param {string} text
- * @param {string} voice
- * @param {number} rate
- * @returns {string}
+ * Identify the current on-disk state of a file without reading its contents.
+ *
+ * @param {string} filePath
+ * @returns {string | null}
  */
-function hashNarration(text, voice, rate) {
-  return crypto
-    .createHash("sha256")
-    .update(`${text}\n${voice}\n${rate}`)
-    .digest("hex");
+function fileSignature(filePath) {
+  try {
+    const stats = fs.statSync(filePath);
+    return `${stats.mtimeMs}:${stats.size}`;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -342,114 +817,26 @@ function readTimings(filePath) {
 }
 
 /**
- * Ensure every executable this provider needs is available.
+ * Load `.env` from the repository root when it exists. Never required, and its
+ * contents are never logged.
  */
-function assertTools() {
-  const missing = REQUIRED_TOOLS.filter((name) => !resolveExecutable(name));
+function loadDotEnv() {
+  const envPath = path.join(REPO_ROOT, ".env");
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
 
-  if (missing.length) {
-    throw new Error(
-      `Missing required executable(s): ${missing.join(", ")}. The macOS say ` +
-        `provider needs say, afconvert, ffmpeg and ffprobe on PATH.`,
+  try {
+    process.loadEnvFile(envPath);
+  } catch {
+    console.warn(
+      "[video] TTS: .env exists but could not be loaded; continuing without it.",
     );
   }
 }
 
 /**
- * List the installed say voices.
- *
- * @returns {string[]}
- */
-function listVoices() {
-  const output = run("say", ["-v", "?"]);
-
-  return output
-    .split(/\r?\n/)
-    .map((line) => /^(.+?)\s+[a-z]{2}[_-][A-Za-z0-9]+\s+#/.exec(line))
-    .filter(Boolean)
-    .map((match) => match[1].trim());
-}
-
-/**
- * Measure a media file in seconds.
- *
- * @param {string} filePath
- * @returns {number}
- */
-function probeDuration(filePath) {
-  const output = run("ffprobe", [
-    "-v",
-    "error",
-    "-show_entries",
-    "format=duration",
-    "-of",
-    "default=noprint_wrappers=1:nokey=1",
-    filePath,
-  ]).trim();
-  const duration = Number(output);
-
-  if (!Number.isFinite(duration) || duration <= 0) {
-    throw new Error(`ffprobe could not read a duration from ${filePath}.`);
-  }
-
-  return Math.round(duration * 1000) / 1000;
-}
-
-/**
- * Run a command and return its stdout, failing with the command's stderr.
- *
- * @param {string} command
- * @param {string[]} args
- * @returns {string}
- */
-function run(command, args) {
-  const executable = resolveExecutable(command);
-  if (!executable) {
-    throw new Error(`Missing required executable: ${command}.`);
-  }
-
-  const result = spawnSync(executable, args, { encoding: "utf8" });
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  if (result.status !== 0) {
-    const detail = (result.stderr ?? "").trim();
-    throw new Error(
-      `${command} failed (exit ${result.status})${detail ? `: ${detail}` : ""}`,
-    );
-  }
-
-  return result.stdout ?? "";
-}
-
-/**
- * Find an executable on PATH.
- *
- * @param {string} name
- * @returns {string | null}
- */
-function resolveExecutable(name) {
-  for (const directory of (process.env.PATH ?? "").split(path.delimiter)) {
-    if (!directory) {
-      continue;
-    }
-
-    const candidate = path.join(directory, name);
-    try {
-      fs.accessSync(candidate, fs.constants.X_OK);
-      return candidate;
-    } catch {
-      // Keep looking.
-    }
-  }
-
-  return null;
-}
-
-/**
- * @param {Array<{ id: string, duration: number, cached: boolean }>} rows
+ * @param {Array<{ id: string, duration: number, wpm?: number, attempts?: number, cached: boolean }>} rows
  */
 function printTable(rows) {
   let total = 0;
@@ -458,8 +845,11 @@ function printTable(rows) {
   for (const row of rows) {
     total += row.duration;
     const suffix = row.cached ? " (cached)" : "";
+    const pace = Number.isFinite(row.wpm)
+      ? `  ${String(roundWpm(row.wpm)).padStart(3)} wpm  x${row.attempts}`
+      : "";
     console.log(
-      `[video]   ${row.id.padEnd(18)} ${row.duration.toFixed(3)}s${suffix}`,
+      `[video]   ${row.id.padEnd(18)} ${row.duration.toFixed(3)}s${pace}${suffix}`,
     );
   }
 
@@ -477,20 +867,27 @@ function printUsage() {
       `The scenario id defaults to ${DEFAULT_SCENARIO}.`,
       "",
       "Options:",
-      `  --voice <name>     say voice (default: ${DEFAULT_VOICE})`,
+      `  --provider <id>    ${providerIds().join(" or ")} (default: deepgram when`,
+      "                     DEEPGRAM_API_KEY is set, otherwise say)",
+      "  --voice <name>     voice (default: provider-specific)",
       `  --rate <wpm>       speaking rate in words per minute (default: ${DEFAULT_RATE})`,
       "  --scene <id>       process one scene only",
       "  --force            ignore the cache and regenerate",
+      "  --verbose          log provider model and request identifiers",
       "",
-      "Audio is written to scripts/video/work/audio/<id>/ with a timings.json",
-      "file beside it. Run from the repository root.",
+      "Environment:",
+      "  DEEPGRAM_API_KEY, DEEPGRAM_REGION, DEEPGRAM_BASE_URL",
+      "  VIDEO_TTS_PROVIDER, VIDEO_TTS_VOICE",
+      "  VIDEO_TTS_TARGET_WPM, VIDEO_TTS_PACE_BAND_WPM, VIDEO_TTS_MAX_ATTEMPTS",
+      "",
+      "A .env file in the repository root is loaded when present. Audio is",
+      "written to scripts/video/work/audio/<id>/ with a timings.json file",
+      "beside it. Run from the repository root.",
     ].join("\n"),
   );
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(`[video] ${error.stack ?? error.message}`);
+main().catch((error) => {
+  console.error(`[video] ${oneLine(error?.message ?? error)}`);
   process.exitCode = 1;
-}
+});

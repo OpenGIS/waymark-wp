@@ -8,7 +8,9 @@ The video pipeline produces scenario-driven screen recordings for the documentat
 
 - Node 24 or newer.
 - `ffmpeg` and `ffprobe` (`brew install ffmpeg`). `ffprobe` is used to read durations and stream metadata and to validate the delivered set.
-- `say` and `afconvert` (macOS) for text-to-speech.
+- One narration provider:
+  - macOS `say` and `afconvert` for the local fallback voice.
+  - A Deepgram API key for Flux TTS. No SDK or extra dependency is needed. Set it in `.env` (see `.env.example`) or the environment.
 - `wp-env`, installed with the project's dependencies.
 - The plugin's Playwright dependency (`@playwright/test`).
 
@@ -34,6 +36,12 @@ scripts/video/
     poster.mjs              # replay poster crop and 2x PNG capture
     timeline.mjs            # performance.now() bookkeeping
     narration.mjs           # shared narration-file parser
+    tts/
+      index.mjs             # provider registry, resolution and fallback
+      shared.mjs            # loudnorm, duration probing and executable helpers
+      providers/
+        say.mjs             # macOS say provider
+        deepgram.mjs        # Deepgram Flux TTS provider
     audio.mjs               # narration bed assembly and ffmpeg helpers
     vtt.mjs                 # timeline + narration -> WebVTT and transcript
     manifest.mjs            # ffprobe metadata, SHA-256 and manifest merge
@@ -133,10 +141,10 @@ The same commands are available directly:
 # Narration is read from narration/<id>.md when that file exists.
 node scripts/video/record.mjs [scripts/video/scenarios/<id>.json]
 
-# Synthesise per-scene narration with macOS say. Writes work/audio/<id>/
-# and a timings.json that drives the recorder's holds.
-node scripts/video/tts.mjs [<id>] [--voice Daniel] [--rate 175] \
-  [--scene <scene-id>] [--force]
+# Synthesise per-scene narration. Writes work/audio/<id>/ and a timings.json
+# that drives the recorder's holds.
+node scripts/video/tts.mjs [<id>] [--provider <id>] [--voice <name>] \
+  [--rate 175] [--scene <scene-id>] [--force] [--verbose]
 
 # Build one video end to end from work/timeline.json and the narration
 # timings. Writes the MP4, poster, WebVTT, transcript and manifest.
@@ -175,15 +183,83 @@ Flags:
 | `--no-encode`        | Reuse the existing MP4; rebuild the poster, captions, transcript and manifest. |
 | `--poster-at <time>` | Override the poster marker in seconds or `HH:MM:SS`.                           |
 
+## Narration providers
+
+`tts.mjs` resolves a provider before it synthesises anything:
+
+1. `--provider <id>`.
+2. `VIDEO_TTS_PROVIDER`.
+3. Automatic: `deepgram` when `DEEPGRAM_API_KEY` is set, otherwise `say`.
+
+The known providers are `say` (macOS) and `deepgram` (Flux TTS). A requested provider that is unavailable, or that fails fatally, produces one warning line and falls back to the next available provider. `say` is always the final fallback; if it is unavailable or fails, the run stops with a readable error. A synthesis failure restarts the whole run on the fallback provider, so one video never mixes voices.
+
+```text
+[video] TTS: deepgram unavailable (DEEPGRAM_API_KEY is not set); falling back to say (Daniel, en-GB).
+```
+
+Voice selection is `--voice` > `VIDEO_TTS_VOICE` > the provider default. The defaults are `flux-kit-en` for Deepgram and `Daniel` for `say`. The voice is resolved again if the run falls back, so the fallback uses a valid local voice.
+
+`--rate` keeps its words-per-minute meaning. `say` receives it directly. Deepgram expects a speed multiplier, mapped linearly around the 175 wpm narration baseline: `speed = wpm / 175`, clamped to 0.5–1.5 and rounded to the nearest 0.05. The default 175 wpm therefore becomes 1.0; 140 wpm becomes 0.8 and 210 wpm becomes 1.2.
+
+### Pace guard
+
+A provider delivery is not trusted to land at a consistent pace. After synthesis and silence trimming, `tts.mjs` measures the spoken part of each take from its first to its last non-silent sample (the 30 ms lead and 120 ms tail pads are silent and therefore excluded), counts the words in the scene's narration text and computes words per minute.
+
+Defaults are a **165 wpm target**, an acceptable band of **±20 wpm (145–185)** and at most **3 attempts per scene**. A take inside the band is kept immediately. An out-of-band take is re-requested at a native provider rate estimated from the measured pace; the estimate is deliberately damped (square root of the target/measured ratio) because provider speed quantisation can otherwise overshoot badly on a short line. The audio is never resampled or time-stretched. The take closest to the target wins, and when no attempt lands in band the run warns once and uses that closest take.
+
+Each attempt and the chosen take are logged, for example:
+
+```text
+[video] TTS pace layers-control: attempt 1/3 201 wpm (request 175 wpm, target 165).
+[video] TTS pace layers-control: attempt 2/3 172 wpm (request 158 wpm, target 165).
+[video] TTS pace layers-control: 201 wpm → retry 172 wpm (target 165).
+```
+
+The guard is shared by every provider, so the local `say` fallback is measured the same way. The settings can be overridden per run:
+
+| Environment variable      | Default | Meaning                                        |
+| ------------------------- | ------- | ---------------------------------------------- |
+| `VIDEO_TTS_TARGET_WPM`    | `165`   | Target pace in words per minute.               |
+| `VIDEO_TTS_PACE_BAND_WPM` | `20`    | Acceptable distance either side of the target. |
+| `VIDEO_TTS_MAX_ATTEMPTS`  | `3`     | Maximum takes requested for one scene.         |
+
+The pace settings and the guard version are part of the cache key, so changing the target, band or attempt count regenerates takes instead of reusing one made for a different delivery.
+
+### Deepgram
+
+The provider uses Node's built-in `fetch`; there is no SDK. Each scene is one batch request:
+
+```text
+POST {DEEPGRAM_BASE_URL or region}/v2/speak
+  ?model=<voice>&encoding=linear16&sample_rate=48000&container=wav&speed=<multiplier>
+Authorization: Token <DEEPGRAM_API_KEY>
+Content-Type: application/json
+
+{"text":"..."}
+```
+
+The response is a complete 48 kHz mono 16-bit PCM WAV. It is written straight to a temporary file and then normalised to the delivery WAV with the same `loudnorm` step as the local voice. `bit_rate` is not sent with `linear16`.
+
+- `DEEPGRAM_REGION` selects the endpoint: unset is `https://api.deepgram.com`; `eu`, `au` and `in` use the matching regional host.
+- `DEEPGRAM_BASE_URL` overrides the whole base URL, which is useful for a local test server.
+- Requests time out after 30 seconds. `408`, `429`, `500`, `502`, `503` and `504` are retried up to three attempts with exponential backoff and jitter, honouring `Retry-After` when present. `400`, `401`, `402`, `403`, `413` and `415` are fatal and do not retry.
+- Each scene is limited to 2,000 characters. A longer line fails before the request and names the scene and the character count.
+- Error bodies may be the legacy shape (`err_code`, `err_msg`), the modern shape (`category`, `message`, `details`), or plain text. The provider prints one readable line with the HTTP status and whichever fields exist.
+- `--verbose` logs the `dg-model-name` and `dg-request-id` response headers. The same metadata is kept in `timings.json` where available.
+
+Deepgram is a paid API: every uncached scene is a request. Check current pricing before a large run, and rely on the cache for reruns. Cloud audio is not guaranteed to be bit-identical across calls, so the cache is also what keeps an already-recorded take stable.
+
+The repository loads `.env` from the root when it exists, using `process.loadEnvFile` inside a try/catch. It is never required and its contents are never logged. `.env.example` documents `DEEPGRAM_API_KEY`, `DEEPGRAM_REGION`, `DEEPGRAM_BASE_URL`, `VIDEO_TTS_PROVIDER`, `VIDEO_TTS_VOICE`, `VIDEO_TTS_TARGET_WPM`, `VIDEO_TTS_PACE_BAND_WPM` and `VIDEO_TTS_MAX_ATTEMPTS`; `.env` and its local variants are gitignored.
+
 ## Audio and holds
 
-Narration defines timing. `tts.mjs` writes `work/audio/<id>/timings.json` with each narrated scene's text, WAV path and measured duration, plus a SHA-256 cache hash. Each take keeps a raw `.aiff` beside a normalised 48 kHz mono 16-bit PCM WAV.
+Narration defines timing. `tts.mjs` writes `work/audio/<id>/timings.json` with each narrated scene's text, WAV path, measured duration, speech duration, word count, measured pace, attempt count and the rates requested for each attempt, plus the guard settings, a SHA-256 cache hash and the provider metadata. The `say` provider keeps a raw `.aiff` beside the normalised 48 kHz mono 16-bit PCM WAV; the Deepgram response is written to a temporary WAV and removed after normalisation.
 
 Narration starts after the action has settled, not at the scene start. For a narrated scene the recorder computes `audioOffset = min(actionEnd, audioAfterActionMax)` (or `0` when `audioAfterAction` is false), then holds until the scene reaches `audioOffset + audioDuration + pad`. `audioAfterAction` defaults to `true` and `audioAfterActionMax` to `1.5` seconds; both can be set at scenario level and overridden per scene. The cap matters for a `goto` that takes longer than the cap to load: the speech starts at the cap while the page is still settling, rather than waiting out the whole load. A scene's `audioOffset` overrides the computed value verbatim; use it to leave a deliberate beat on a scene that is already rendered when it starts, such as the pre-warmed opening.
 
 `pad` defaults to `0.5` at scenario level and can be overridden per scene. A scene without audio (a silent beat such as `settle` or `outro`) uses its own `hold`, which defaults to `0`, and lasts `actionEnd + hold`; when `timings.json` is absent every scene uses its own `hold` and the recorder warns at the end of the run. The timeline records `audio`, `audioDuration`, `audioOffset`, `hold` and `actionEnd` for every scene. `hold` is the silence actually held after the action, so for a narrated scene it is smaller than `audioDuration` whenever the action overlaps the start of the narration.
 
-The default voice is `Daniel` (en_GB) at 175 wpm. Audio is cached by `text + voice + rate`: reruns reuse existing WAVs, `--force` regenerates everything and `--scene` regenerates one scene.
+Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, any provider speed multiplier, the pace settings and the pace-guard version. Switching provider, voice or delivery target therefore regenerates rather than reusing the wrong audio. Reruns reuse existing WAVs, `--force` regenerates everything and `--scene` regenerates one scene. `timings.json` records the provider, voice, rate, pace guard, model metadata and, when a fallback happened, the requested provider and the reason.
 
 Before recording starts, `record.mjs` performs an unrecorded warm-up for a first `goto` scene, including the scenario's `waitForMap` settle. This removes cold start-up cost. It then puts the first scene on the recorded page before the timeline origin: a `goto` navigates to its URL and performs its wait, while a `card` is set into the page with `showCard`. The take therefore opens on the fully rendered first scene rather than the blank page. The pre-warm is recorded but skipped by the build using the timeline's `video.offset`. Warm-up is card-aware: a card target is local HTML, so the WordPress map wait is skipped even when the scenario contains `waitForMap` scenes. Neither warm-up runs between scenes, and a scenario whose first action is neither `goto` nor `card` is not pre-warmed.
 
@@ -217,7 +293,7 @@ The tile record/replay policy is documented in `tests/e2e/README.md`. Record mis
 - Raw Playwright WebM recordings.
 - TTS audio and provider responses.
 - ffmpeg intermediates.
-- `storage-state.json` and any credentials.
+- `storage-state.json`, `.env` and any credentials.
 - Timelines and pipeline logs.
 
 All of these belong in `scripts/video/work/`, which is gitignored.

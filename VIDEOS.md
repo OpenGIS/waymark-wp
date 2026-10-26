@@ -18,17 +18,17 @@ Scenarios, narration and build code live under `scripts/video/`. The delivered M
 | `using-types.mp4`       | Legacy  |  253.1 s (4:13.1) |  5.7 MB | `using-types.jpg`       |
 | `adding-map-meta.mp4`   | Legacy  |  171.3 s (2:51.3) |  5.3 MB | `adding-map-meta.jpg`   |
 | `using-collections.mp4` | Legacy  |  161.0 s (2:41.0) |  3.8 MB | `using-collections.jpg` |
-| `changing-basemaps.mp4` | Rebuilt |   86.1 s (1:26.1) |  4.6 MB | `changing-basemaps.jpg` |
+| `changing-basemaps.mp4` | Rebuilt |   93.8 s (1:33.8) |  5.2 MB | `changing-basemaps.jpg` |
 
 | Set         |                Duration |    Size |
 | ----------- | ----------------------: | ------: |
 | Legacy (7)  | **3,127.5 s (52:07.5)** | 82.8 MB |
-| Rebuilt (1) |     **86.1 s (1:26.1)** |  4.6 MB |
-| **Total**   | **3,213.6 s (53:33.6)** | 87.4 MB |
+| Rebuilt (1) |     **93.8 s (1:33.8)** |  5.2 MB |
+| **Total**   | **3,214.8 s (53:34.8)** | 87.6 MB |
 
 Per-file figures are rounded to one decimal place. Totals are calculated from the files before rounding, so a total can differ by a tenth from the sum of the rounded rows. Sizes are rounded mebibytes, labelled MB.
 
-All eight are 1280×720 H.264 High, yuv420p, with AAC LC 48 kHz audio. The seven legacy files are 25 or 29.97 fps with mono audio at 59–65 kbps. The rebuilt pilot is 30 fps with stereo 128 kbps audio and `+faststart`; its MP4 is 86.101 s and 4,867,936 bytes (4.64 MB), and the manifest records those exact values. The pilot has 13 scenes: it opens on a typographic title card and closes on a typographic end card. Posters are 1280×720 JPEG.
+All eight are 1280×720 H.264 High, yuv420p, with AAC LC 48 kHz audio. The seven legacy files are 25 or 29.97 fps with mono audio at 59–65 kbps. The rebuilt pilot is 30 fps with stereo 128 kbps audio and `+faststart`; its MP4 is 93.833 s and 5,404,633 bytes (5.15 MB), and the manifest records those exact values. The pilot has 13 scenes: it opens on a typographic title card and closes on a typographic end card. Posters are 1280×720 JPEG.
 
 ### Placement
 
@@ -50,7 +50,7 @@ The source, poster and caption paths are resolved through `withAssetBase` (`docs
 
 The seven legacy posters show the 2019–2021 WordPress admin and front-end UI with the old red Waymark “W” branding. None shows the current dark OGIS admin styling. Four are full admin captures, two are split composites, and one is a pure front-end capture. No legacy poster is blank or corrupt.
 
-The rebuilt `changing-basemaps` poster is different: it is a 2× replay capture during the Open Topo Map hold, cropped around the map and its layers panel with the highlight outline preserved and no synthetic cursor. The delivered JPEG is 1280×720 from a 1504×846 crop, taken from the poster marker at 48.795 s. It shows the current admin rather than the old capture and is sharper than a frame lifted from the H.264 stream.
+The rebuilt `changing-basemaps` poster is different: it is a 2× replay capture during the Open Topo Map hold, cropped around the map and its layers panel with the highlight outline preserved and no synthetic cursor. The delivered JPEG is 1280×720 from a 1504×846 crop, taken from the poster marker at 54.236 s. It shows the current admin rather than the old capture and is sharper than a frame lifted from the H.264 stream.
 
 The following observations are inferences from the seven legacy poster frames, not a full shot list. The underlying recordings have not been transcribed.
 
@@ -79,7 +79,7 @@ The generated set should be:
 Operational constraints:
 
 - **Never use the development instance on ports 8888 or 8889.** Recording and seeding run against a dedicated, disposable wp-env instance on port 11000 (`scripts/video/wp-env.video.json`, `autoPort: false`). `record.mjs` refuses a `WP_BASE_URL` whose port is 8888 or 8889. The project’s Playwright config refuses `:8888` (`playwright.config.js:13-17`), and the demo seeder refuses it too (`tests/fixtures/demo/seed.php:42-45`). The 8889 tests instance is also off-limits by policy; the code guards are not a substitute for that rule.
-- **Generate locally.** Recording needs a disposable WordPress instance, a pinned browser, macOS speech synthesis and ffmpeg. CI validates committed metadata and assets only; it never records, synthesises or encodes.
+- **Generate locally.** Recording needs a disposable WordPress instance, a pinned browser, a narration provider (macOS `say` or Deepgram) and ffmpeg. CI validates committed metadata and assets only; it never records, synthesises or encodes.
 - **Do not commit raw intermediates.** Raw WebM, TTS audio, timelines and ffmpeg intermediates belong in `scripts/video/work/`, which is gitignored. Nothing under `work/` is a deliverable.
 - **Commit the delivery files.** The MP4s stay in the repository rather than using external hosting. Consider Git LFS only if the delivered set grows substantially.
 
@@ -107,12 +107,18 @@ scripts/video/
     highlight.mjs           # target outlines
     timeline.mjs            # scene timing bookkeeping
     narration.mjs           # shared narration-file parser
+    tts/
+      index.mjs             # provider registry, resolution and fallback
+      shared.mjs            # loudnorm, duration probing and executable helpers
+      providers/
+        say.mjs             # macOS say provider
+        deepgram.mjs        # Deepgram Flux TTS provider
     audio.mjs               # narration bed assembly and ffmpeg helpers
     vtt.mjs                 # timeline + narration -> WebVTT and transcript
     manifest.mjs            # ffprobe metadata, SHA-256 and manifest merge
   work/                     # gitignored
     auth/storage-state.json
-    audio/<id>/             # .aiff takes, normalised .wav files, timings.json
+    audio/<id>/             # provider takes, normalised .wav files, timings.json
     build/<id>/             # assembled narration bed
     raw/<id>.webm
     timeline.json
@@ -130,7 +136,7 @@ docs/public/assets/video/transcripts/<id>.md
 docs/public/assets/video/manifest.json
 ```
 
-The root `.gitignore` contains `scripts/video/work/`. The directory holds the raw Playwright WebM, TTS audio, timelines and ffmpeg intermediates for the duration of a run. Nothing in it is committed.
+The root `.gitignore` contains `scripts/video/work/`, `.env` and its local variants. `scripts/video/work/` holds the raw Playwright WebM, TTS audio, timelines and ffmpeg intermediates for the duration of a run. Nothing in it is committed. `.env.example` is tracked and documents the narration environment.
 
 ## 3. Scenario script schema
 
@@ -302,7 +308,7 @@ This is an excerpt from the delivered `changing-basemaps` scenario. The full fil
 Timing is **audio-first**. Do not hand-maintain absolute timestamps in the scenario. The narration defines how long each scene lasts.
 
 1. Write the narration per scene in `scripts/video/narration/<id>.md`, using the same scene ids as the scenario.
-2. Run `tts.mjs`. It synthesises one WAV per narrated scene and writes `work/audio/<id>/timings.json` with each scene’s text, WAV path, measured duration and cache hash.
+2. Run `tts.mjs`. It resolves a narration provider, synthesises one WAV per narrated scene and writes `work/audio/<id>/timings.json` with each scene’s text, WAV path, measured duration, cache hash and provider metadata.
 3. Record the scenario. The recorder reads `timings.json` and computes each scene’s hold.
 4. Build the video. `build.mjs` places each WAV at its timeline start plus `audioOffset` and derives the captions from the same values.
 
@@ -335,7 +341,7 @@ The recorder writes `scripts/video/work/timeline.json`. It is the source of trut
   "id": "changing-basemaps",
   "startedAt": "<ISO timestamp>",
   "viewport": { "width": 1280, "height": 720 },
-  "posterAt": 48.795,
+  "posterAt": 54.236,
   "poster": {
     "sceneId": "hold-topo",
     "selector": "#waymark-map",
@@ -372,18 +378,18 @@ The recorder writes `scripts/video/work/timeline.json`. It is the source of trut
 }
 ```
 
-The timeline also records the replay poster’s resolved crop and image size, the raw video path, measured duration, pre-warm offset and wall-clock difference. For the pilot the marker is at 48.795 s, the crop is 752×423 CSS pixels and the 2× PNG is 1504×846. The crop values are in CSS pixels; the PNG dimensions are those values multiplied by `scale`. `crop.extended` is true when the crop had to reach beyond the poster element to contain the highlight. If narration changes after recording, regenerate the affected audio and re-record; do not stretch the audio.
+The timeline also records the replay poster’s resolved crop and image size, the raw video path, measured duration, pre-warm offset and wall-clock difference. For the pilot the marker is at 54.236 s, the crop is 752×423 CSS pixels and the 2× PNG is 1504×846. The crop values are in CSS pixels; the PNG dimensions are those values multiplied by `scale`. `crop.extended` is true when the crop had to reach beyond the poster element to contain the highlight. If narration changes after recording, regenerate the affected audio and re-record; do not stretch the audio.
 
-`build.mjs` fails when a narrated scene has no WAV, when a WAV is not listed in `timings.json`, when the scene order differs, or when the narration text disagrees between the timeline and the timings. It also rejects an encoded MP4 whose duration differs from the timeline by more than 0.2 seconds. The delivered timeline totals 86.083 s and the encoded MP4 is 86.101 s, within that tolerance.
+`build.mjs` fails when a narrated scene has no WAV, when a WAV is not listed in `timings.json`, when the scene order differs, or when the narration text disagrees between the timeline and the timings. It also rejects an encoded MP4 whose duration differs from the timeline by more than 0.2 seconds. The delivered timeline totals 93.807 s and the encoded MP4 is 93.833 s, within that tolerance.
 
 ### Pace and duration
 
-The legacy set is long: `getting-started` is 13:15.8 and `settings` is 16:36.4. The rebuilt pilot is 1:26.1. A 2–6 minute piece remains the target for fuller topics; split long topics into separate videos rather than producing another 13–16 minute recording.
+The legacy set is long: `getting-started` is 13:15.8 and `settings` is 16:36.4. The rebuilt pilot is 1:33.8. A 2–6 minute piece remains the target for fuller topics; split long topics into separate videos rather than producing another 13–16 minute recording.
 
 Working targets:
 
 - 5–20 seconds per scene.
-- Narration at the default 175 words per minute. Adjust `--rate` if a different pace is needed.
+- Narration at the default 175 words per minute for `say`. Deepgram maps the same figure to a 1.0 speed multiplier. Adjust `--rate` if a different pace is needed.
 - A maximum of about 6 minutes for a first-pass video.
 - `pad` defaults to 0.5 seconds; the pilot uses 0.8 seconds on the basemap-switching scenes.
 
@@ -399,7 +405,7 @@ The build prefers that PNG and downscales it with lanczos to the 1280×720 deliv
 2. The timeline marker written by the `poster` action or a truthy `poster` field.
 3. The scenario `posterAt` fallback.
 
-The marker is taken at the end of the poster scene’s hold, while the intended overlays are still visible; the pilot’s marker is at 48.795 s. To catch replay drift, the build extracts the video frame at that timestamp, crops it to the same rectangle, normalises both images to the same size, computes the mean absolute difference per channel and warns when the mean Δ is above 10. The delivered pilot measures 2.8 at the poster timestamp. A warning means the replay did not reproduce the take; inspect it rather than accepting the poster. The manifest records `posterSource` as `"replay"` or `"video"`.
+The marker is taken at the end of the poster scene’s hold, while the intended overlays are still visible; the pilot’s marker is at 54.236 s. To catch replay drift, the build extracts the video frame at that timestamp, crops it to the same rectangle, normalises both images to the same size, computes the mean absolute difference per channel and warns when the mean Δ is above 10. The delivered pilot measures 2.8 at the poster timestamp. A warning means the replay did not reproduce the take; inspect it rather than accepting the poster. The manifest records `posterSource` as `"replay"` or `"video"`.
 
 Do not hand-edit the delivered JPEG unless the edit is recorded in the manifest.
 
@@ -600,47 +606,90 @@ Record the current OGIS admin styling, not the old red “W” branding. This is
 
 ## 7. AI voice-over
 
-The implemented provider is macOS `say`. No cloud TTS provider is configured. The cloud options remain documented as alternatives only; none is implemented.
+Narration is produced behind a small provider interface in `scripts/video/lib/tts/`. The implemented providers are Deepgram Flux TTS (`deepgram`) and macOS `say` (`say`). Both return the same normalised WAV, so the recorder, build and captions do not care which one produced a take.
 
-| Option           | Status          | Notes                                                           |
-| ---------------- | --------------- | --------------------------------------------------------------- |
-| macOS `say`      | Implemented     | No setup or credentials; synthetic prosody is accepted.         |
-| OpenAI TTS       | Not implemented | Hosted API; needs a key and usage budget.                       |
-| ElevenLabs       | Not implemented | Hosted API; check voice licensing and cloning consent.          |
-| Azure Speech     | Not implemented | Hosted API; pronunciation and voice selection are configurable. |
-| Google Cloud TTS | Not implemented | Hosted API; check quotas and data terms.                        |
+| Provider     | Status          | Notes                                                                               |
+| ------------ | --------------- | ----------------------------------------------------------------------------------- |
+| Deepgram     | Implemented     | Flux TTS batch API; default voice `flux-kit-en`; paid and needs `DEEPGRAM_API_KEY`. |
+| macOS `say`  | Implemented     | macOS only; no credentials; default voice `Daniel`; always the final fallback.      |
+| OpenAI TTS   | Not implemented | Hosted API; needs a key and usage budget.                                           |
+| ElevenLabs   | Not implemented | Hosted API; check voice licensing and cloning consent.                              |
+| Azure Speech | Not implemented | Hosted API; pronunciation and voice selection are configurable.                     |
+| Google Cloud | Not implemented | Hosted API; check quotas and data terms.                                            |
 
-Store API keys in environment variables. Never put keys in scenarios, narration files, committed `.env` files or CI logs.
+Store API keys in `.env` or the environment. Never put keys in scenarios, narration files, committed `.env` files or CI logs. The repository loads `.env` from its root when present, never requires it, and never logs its contents.
+
+### Provider selection and fallback
+
+1. `--provider <id>`.
+2. `VIDEO_TTS_PROVIDER`.
+3. Automatic: `deepgram` when `DEEPGRAM_API_KEY` is set, otherwise `say`.
+
+A requested provider that is unavailable, or that fails fatally, prints one warning line and falls back to the next available provider. `say` is always last; if it is unavailable or fails, the run stops with a readable message. A synthesis failure restarts the whole run on the fallback provider, so a delivered video never mixes voices.
+
+```text
+[video] TTS: deepgram unavailable (DEEPGRAM_API_KEY is not set); falling back to say (Daniel, en-GB).
+```
+
+Voice selection is `--voice` > `VIDEO_TTS_VOICE` > the provider default. The defaults are `flux-kit-en` (Deepgram) and `Daniel` (say). The voice is resolved again if the run falls back, so the local fallback uses a valid installed voice.
+
+`--rate` keeps its words-per-minute meaning. `say` receives it directly. Deepgram expects a speed multiplier, mapped linearly around the 175 wpm baseline: `speed = wpm / 175`, clamped to 0.5–1.5 and rounded to the nearest 0.05. The default 175 wpm therefore maps to 1.0; 140 wpm maps to 0.8 and 210 wpm to 1.2.
+
+A pace guard measures each normalised take after silence trimming: the speech duration runs from the first to the last non-silent sample, so the 30 ms lead and 120 ms tail pads are excluded. The scene’s words are counted from its narration text and converted to words per minute. A take outside **165 ± 20 wpm** is re-requested at a native provider rate estimated from the measured pace, up to **3 attempts** per scene. The audio is never time-stretched; the take closest to the target is kept, and a run with no in-band attempt warns once. `VIDEO_TTS_TARGET_WPM`, `VIDEO_TTS_PACE_BAND_WPM` and `VIDEO_TTS_MAX_ATTEMPTS` override the defaults.
 
 ### Voice and synthesis
 
-`tts.mjs` uses the macOS `say` provider with voice `Daniel` (en_GB) at 175 words per minute by default. It writes:
+Deepgram is one batch request per scene:
 
-- a raw `.aiff` take from `say`;
-- a normalised 48 kHz mono 16-bit PCM `.wav` via `afconvert` and `ffmpeg loudnorm` (`I=-16:TP=-1.5:LRA=11`);
-- `timings.json` beside the audio, with `provider: "macos-say"`, voice, rate and one entry per narrated scene.
+```text
+POST {DEEPGRAM_BASE_URL or region}/v2/speak
+  ?model=<voice>&encoding=linear16&sample_rate=48000&container=wav&speed=<multiplier>
+Authorization: Token <DEEPGRAM_API_KEY>
+Content-Type: application/json
 
-Audio is cached by `text + voice + rate`. Reruns reuse existing WAVs; `--voice` and `--rate` override the defaults, `--force` regenerates everything and `--scene <id>` regenerates one scene. `timings.json` is the recorder’s source of truth for holds.
+{"text":"..."}
+```
+
+The response is a complete 48 kHz mono 16-bit PCM WAV. It is written straight to a temporary file and normalised with `ffmpeg loudnorm` (`I=-16:TP=-1.5:LRA=11`) to the delivery WAV. `bit_rate` is not sent with `linear16`.
+
+- `DEEPGRAM_REGION` selects the endpoint: unset is `https://api.deepgram.com`; `eu`, `au` and `in` use the matching regional host.
+- `DEEPGRAM_BASE_URL` overrides the whole base URL, which is useful for a local test server.
+- Requests time out after 30 seconds. `408`, `429`, `500`, `502`, `503` and `504` are retried up to three attempts with exponential backoff and jitter, honouring `Retry-After`. `400`, `401`, `402`, `403`, `413` and `415` are fatal and do not retry.
+- Each scene is limited to 2,000 characters. A longer line fails before the request and names the scene and the character count.
+- Error bodies may be the legacy shape (`err_code`, `err_msg`), the modern shape (`category`, `message`, `details`), or plain text. The provider prints one readable line with the HTTP status and whichever fields exist.
+- `--verbose` logs the `dg-model-name` and `dg-request-id` response headers.
+
+Deepgram is a paid API, so every uncached scene is a request. Check current pricing before a large run and rely on the cache for reruns. Cloud audio is not guaranteed to be bit-identical across calls, so the cache is also what keeps an already-recorded take stable.
+
+The `say` provider keeps a raw `.aiff` take, converts it to 48 kHz mono WAV with `afconvert`, and then applies the same loudnorm step. It needs `say` and `afconvert` on macOS.
+
+Both providers write `timings.json` beside the audio. It records the provider, voice, rate, pace settings, model metadata and speed where applicable, plus one entry per narrated scene with its speech duration, word count, measured pace and attempts. When a fallback happened it also records the requested provider and the reason.
+
+Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, any provider speed multiplier, the pace settings and the pace-guard version. Switching provider, voice or delivery target therefore regenerates rather than reusing the wrong audio. Reruns reuse existing WAVs, `--voice` and `--rate` override the defaults, `--force` regenerates everything and `--scene <id>` regenerates one scene. `timings.json` is the recorder’s source of truth for holds.
 
 ```sh
-node scripts/video/tts.mjs changing-basemaps --voice Daniel --rate 175
+node scripts/video/tts.mjs changing-basemaps --provider deepgram
+node scripts/video/tts.mjs changing-basemaps --provider say --voice Daniel --rate 175
 node scripts/video/tts.mjs changing-basemaps --scene open-editor --force
 ```
 
-The synthesise function is provider-specific:
+The provider contract is intentionally small:
 
 ```js
-export function synthesise({ text, voice, rate, out }) {
-  // say -> .aiff, afconvert -> 48 kHz mono WAV, loudnorm -> out.
-  // Returns { file, duration }.
-}
+export default {
+  id: "deepgram",
+  label: "Deepgram",
+  defaultVoice: "flux-kit-en",
+  isAvailable(env) {},
+  synthesise({ text, voice, rate, outPath, env, sceneId }) {},
+};
 ```
 
-It is not a pluggable provider interface. Adding a cloud provider would mean implementing the same input and output contract behind a provider switch.
+A new provider is one module under `lib/tts/providers/` plus one import and one registry line in `lib/tts/index.mjs`. There is no class hierarchy or plugin loader.
 
 ### Voice and pronunciation
 
-No pronunciation lexicon is applied. Narration text is passed to `say` verbatim, so write terms in the narration file the way they should be spoken and review every track by ear. The following editorial guidance is not automated:
+No pronunciation lexicon is applied. Narration text is passed to the selected provider verbatim, so write terms in the narration file the way they should be spoken and review every track by ear. The following editorial guidance is not automated:
 
 | Term            | Suggested treatment                            |
 | --------------- | ---------------------------------------------- |
@@ -676,7 +725,7 @@ Disclose synthetic narration where required by the publishing context or the voi
 
 ## 8. Post-production with ffmpeg
 
-The build requires `ffmpeg` and `ffprobe` on `PATH`. `tts.mjs` additionally needs macOS `say` and `afconvert`.
+The build requires `ffmpeg` and `ffprobe` on `PATH`. `tts.mjs` additionally needs either macOS `say` and `afconvert`, or a Deepgram API key.
 
 ### Assemble the narration bed
 
@@ -699,7 +748,7 @@ AAC is encoded with macOS AudioToolbox `aac_at` in CBR mode where it is availabl
 
 ### Build the poster
 
-`build.mjs` builds the poster automatically. When `scripts/video/work/poster/<id>.png` exists it downscales that replay capture to `docs/public/assets/video/posters/<id>.jpg`. Otherwise it extracts the frame at the poster timestamp from the final muxed video. The build log states which source was used, for example `poster docs/public/assets/video/posters/<id>.jpg (replay 1504×846 → 1280×720)` or `(video frame at 48.795s)`, and the build warns when the mean Δ between the replay and the video frame exceeds 10; the delivered pilot measures 2.8.
+`build.mjs` builds the poster automatically. When `scripts/video/work/poster/<id>.png` exists it downscales that replay capture to `docs/public/assets/video/posters/<id>.jpg`. Otherwise it extracts the frame at the poster timestamp from the final muxed video. The build log states which source was used, for example `poster docs/public/assets/video/posters/<id>.jpg (replay 1504×846 → 1280×720)` or `(video frame at 54.236s)`, and the build warns when the mean Δ between the replay and the video frame exceeds 10; the delivered pilot measures 2.8.
 
 Pass `--poster-at` to override the timestamp. Otherwise the timeline marker wins, falling back to the scenario `posterAt`. A replay poster should need no manual inspection for the cursor, because the replay context never installs the synthetic pointer.
 
@@ -724,12 +773,12 @@ The manifest is a single JSON object keyed by video id at `docs/public/assets/vi
     "playwright": "1.63.0",
     "chromium": "153.0.8010.12",
     "file": "/assets/video/changing-basemaps.mp4",
-    "duration": 86.101,
+    "duration": 93.833,
     "width": 1280,
     "height": 720,
     "videoCodec": "h264",
     "audioCodec": "aac",
-    "size": 4867936,
+    "size": 5404633,
     "sha256": "<sha256>",
     "poster": "/assets/video/posters/changing-basemaps.jpg",
     "posterSource": "replay",
@@ -743,7 +792,7 @@ The manifest is a single JSON object keyed by video id at `docs/public/assets/vi
 }
 ```
 
-The media values above are from the delivered pilot; `scenarioVersion`, `sha256` and `generatedAt` are shown as placeholders. `scenarioVersion` is a 12-character SHA-256 prefix of the scenario JSON unless the scenario sets `version`; `sha256` changes when the video is rebuilt, and `generatedAt` records the build time. `mergeManifest` preserves every other video id, so rebuilding one video never rewrites the others. A malformed manifest is a hard error rather than something to overwrite.
+The media values above are from the delivered pilot; `scenarioVersion`, `sha256` and `generatedAt` are shown as placeholders. `scenarioVersion` is a 12-character SHA-256 prefix of the scenario JSON unless the scenario sets `version`; `sha256` changes when the video is rebuilt, and `generatedAt` records the build time. The narration fields are copied from the timings file, so a Deepgram re-record changes them to `deepgram` and `flux-kit-en`. `mergeManifest` preserves every other video id, so rebuilding one video never rewrites the others. A malformed manifest is a hard error rather than something to overwrite.
 
 Read the media values with `ffprobe` and compute the digest with `shasum -a 256` on macOS (or `sha256sum` on Linux). A manifest makes metadata validation possible without decoding every video.
 
@@ -858,7 +907,7 @@ It also scans `docs/content/` for `src`, `poster` and `captions` attributes poin
 
 ### CI validation
 
-The `Video` job in `.github/workflows/tests.yml` runs on Ubuntu, sets up Node 24, installs ffmpeg and runs `node scripts/video/validate.mjs`. It validates only. Do not add recording, TTS or transcoding to CI: generation needs a disposable WordPress instance, a pinned browser, macOS speech synthesis and human review.
+The `Video` job in `.github/workflows/tests.yml` runs on Ubuntu, sets up Node 24, installs ffmpeg and runs `node scripts/video/validate.mjs`. It validates only. Do not add recording, TTS or transcoding to CI: generation needs a disposable WordPress instance, a pinned browser, a narration provider and human review.
 
 ### Validate the docs build
 
@@ -891,7 +940,7 @@ They belong in `scripts/video/work/`, which is gitignored.
 
 ## 11. Recommended rollout
 
-`changing-basemaps` is delivered. At 1:26.1 it is the shortest video, it has a clear visual action (opening the Leaflet layers control and switching basemaps), and it exercises cursor movement, highlighting, map settling, TTS, captions and poster extraction without a long script.
+`changing-basemaps` is delivered. At 1:33.8 it is the shortest video, it has a clear visual action (opening the Leaflet layers control and switching basemaps), and it exercises cursor movement, highlighting, map settling, TTS, captions and poster extraction without a long script.
 
 The remaining videos, in order:
 
@@ -913,9 +962,9 @@ Re-record only after the admin UI and copy are final. A design or wording change
 
 Resolved during the build:
 
-- **Pilot video:** `changing-basemaps`, delivered at 86.101 s (1:26.1), 4,867,936 bytes (4.64 MB).
+- **Pilot video:** `changing-basemaps`, delivered at 93.833 s (1:33.8), 5,404,633 bytes (5.15 MB).
 - **Capture style:** page-only Playwright at 1280×720, DPR 1, with an injected cursor and no browser chrome.
-- **Narration:** macOS `say`, voice `Daniel` (en_GB), 175 wpm; per-scene WAVs cached by text, voice and rate.
+- **Narration:** provider-based. The shipped voice is Deepgram Flux TTS `flux-kit-en`, with macOS `say` (`Daniel`, en_GB) as the fallback. The current delivered pilot was captured with the local voice before the provider interface; re-record it with Deepgram when a key is configured. Per-scene WAVs are cached by provider, voice, rate and speed.
 - **Timing:** audio-first. Narration starts at `min(actionEnd, audioAfterActionMax)`, at `0` when `audioAfterAction` is false, or at an explicit `audioOffset`; the hold is derived from audio duration and `pad`.
 - **Pre-warm:** an unrecorded warm-up plus a recorded navigation or card render before `t0`; the build discards the recorded prefix using `timeline.video.offset`. The warm-up skips the WordPress map wait for a card target.
 - **Overlay continuity:** highlights persist across scene boundaries and each scene owns its own state; re-applying the same selector does not fade the outline out and back in.
@@ -939,7 +988,7 @@ Open:
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | `scripts/video/README.md`                        | Operational guide: setup, commands, prerequisites.                                             |
 | `scripts/video/record.mjs`                       | Playwright launcher, scene runner and timeline writer.                                         |
-| `scripts/video/tts.mjs`                          | macOS `say` synthesis, per-scene audio and `timings.json`.                                     |
+| `scripts/video/tts.mjs`                          | Provider-backed narration, per-scene audio and `timings.json`.                                 |
 | `scripts/video/build.mjs`                        | Narration bed, MP4, poster, captions, transcript and manifest.                                 |
 | `scripts/video/lib/poster.mjs`                   | Poster config, crop maths and 2x replay capture.                                               |
 | `scripts/video/validate.mjs`                     | Read-only validator for committed assets and docs references.                                  |

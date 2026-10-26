@@ -6,3 +6,6 @@ temp/
 .phpunit.cache/
 .phpunit.result.cache
 scripts/video/work/
+.env
+.env.local
+.env.*.local
