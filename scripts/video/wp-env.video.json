@@ -1,0 +1,5 @@
+{
+  "plugins": ["."],
+  "port": 11000,
+  "autoPort": false
+}

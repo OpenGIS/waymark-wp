@@ -1,0 +1,185 @@
+{
+  "id": "changing-basemaps",
+  "title": "Changing Basemaps",
+  "output": "docs/public/assets/video/changing-basemaps.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:00:50",
+  "pad": 0.5,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "open-editor",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "hold": 10.9,
+      "audioOffset": 1.4,
+      "highlight": null,
+      "cursor": {
+        "to": "#waymark-map"
+      },
+      "assert": {
+        "selector": "#waymark-map",
+        "visible": true
+      },
+      "notes": "The map id is resolved from mapSlug rather than hard-coded."
+    },
+    {
+      "id": "settle",
+      "action": "waitForMap",
+      "zoom": 9,
+      "hold": 1.5,
+      "highlight": {
+        "selector": "#waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "notes": "The editor fitBounds lands on zoom 10, but the frozen OpenTopoMap tile pack covers zoom 9. Pinning zoom 9 keeps both basemaps on pinned tiles."
+    },
+    {
+      "id": "layers-control",
+      "action": "hover",
+      "selector": "#waymark-map .leaflet-control-layers",
+      "hold": 9.4,
+      "highlight": {
+        "selector": "#waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark-map .leaflet-control-layers"
+      },
+      "notes": "Hover expands the control. Do not click the toggle: Leaflet hides it while the panel is expanded."
+    },
+    {
+      "id": "show-basemaps",
+      "action": "pause",
+      "hold": 11.7,
+      "highlight": {
+        "selector": "#waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark-map .leaflet-control-layers"
+      },
+      "assert": {
+        "selector": "#waymark-map .leaflet-control-layers-base label:visible",
+        "minCount": 2
+      },
+      "notes": "The :visible suffix makes the count reflect the expanded panel, not the hidden label markup.",
+      "pad": 0.8
+    },
+    {
+      "id": "choose-topo",
+      "action": "click",
+      "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input",
+      "hold": 8.9,
+      "highlight": {
+        "selector": "#waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input"
+      },
+      "assert": {
+        "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input",
+        "checked": true
+      },
+      "notes": "The basemap selector is scoped to the layers control because the map attribution also contains 'OpenStreetMap'. The radio's accessible name is the basemap name.",
+      "pad": 0.8
+    },
+    {
+      "id": "hold-topo",
+      "action": "waitForMap",
+      "hold": 7.6,
+      "poster": true,
+      "highlight": {
+        "selector": "#waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": null,
+      "notes": "waitForMap runs the Leaflet settle routine, so the topo tile pane is stable before the hero hold. The cursor is hidden so the poster frame stays clean; the real mouse stays over the radio, which keeps the panel open. The control stays outlined because this frame is the poster: without it the thumbnail has no focal point. The poster marker is taken at the end of the hold.",
+      "pad": 0.8
+    },
+    {
+      "id": "restore",
+      "action": "click",
+      "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Street Map\") input",
+      "hold": 5.6,
+      "highlight": {
+        "selector": "#waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Street Map\") input"
+      },
+      "assert": {
+        "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Street Map\") input",
+        "checked": true
+      },
+      "notes": "Scoped like choose-topo so the attribution line cannot match.",
+      "pad": 0.8
+    },
+    {
+      "id": "shortcode",
+      "action": "scrollIntoView",
+      "selector": "#waymark_map_shortcode",
+      "hold": 10.4,
+      "highlight": {
+        "selector": "#waymark_map_shortcode .inside",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark_map_shortcode input"
+      },
+      "assert": {
+        "selector": "#waymark_map_shortcode input",
+        "value": "[Waymark"
+      },
+      "notes": "scrollIntoView brings the postbox into frame; the following cursor move onto the input doubles as the hover. The value assertion reads the real input."
+    },
+    {
+      "id": "goto-settings",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-tiles",
+      "hold": 8.4,
+      "highlight": null,
+      "cursor": null,
+      "assert": {
+        "selector": ".waymark-settings-section-layers",
+        "visible": true
+      },
+      "notes": "content=waymark-settings-tab-tiles opens the Basemaps tab; the section heading is 'Basemaps'."
+    },
+    {
+      "id": "reorder",
+      "action": "hover",
+      "selector": ".waymark-settings-section-layers .waymark-repeatable",
+      "hold": 8.2,
+      "highlight": {
+        "selector": ".waymark-settings-section-layers .waymark-repeatable",
+        "pad": 8
+      },
+      "cursor": {
+        "to": ".waymark-settings-section-layers .waymark-repeatable"
+      },
+      "assert": {
+        "selector": ".waymark-settings-section-layers .waymark-repeatable table.form-table",
+        "minCount": 2
+      },
+      "notes": "Hover only: dragging would mutate live settings. Each basemap row is a table.form-table inside the repeatable container."
+    },
+    {
+      "id": "outro",
+      "action": "pause",
+      "hold": 2.5,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "notes": "Clean final frame for the poster fallback: no highlight and no cursor. The real pointer is parked in the blank centre of the admin bar so the repeatable row's hover-only delete control is not left visible."
+    }
+  ]
+}

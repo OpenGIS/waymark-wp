@@ -5,3 +5,4 @@ pnpm-lock.yaml
 temp/
 .phpunit.cache/
 .phpunit.result.cache
+scripts/video/work/

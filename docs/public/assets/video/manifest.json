@@ -1,0 +1,24 @@
+{
+  "changing-basemaps": {
+    "id": "changing-basemaps",
+    "title": "Changing Basemaps",
+    "scenarioVersion": "94b8c819def6",
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "file": "/assets/video/changing-basemaps.mp4",
+    "duration": 81.152,
+    "width": 1280,
+    "height": 720,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "size": 5135137,
+    "sha256": "31278b045120faa84c132226fc85e0e540b5e629112daac8ecb082a8492b2292",
+    "poster": "/assets/video/posters/changing-basemaps.jpg",
+    "captions": "/assets/video/captions/changing-basemaps.en.vtt",
+    "transcript": "/assets/video/transcripts/changing-basemaps.md",
+    "narrationProvider": "macos-say",
+    "narrationVoice": "Daniel",
+    "narrationRate": 175,
+    "generatedAt": "2026-10-25T19:36:45.941Z"
+  }
+}
