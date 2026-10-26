@@ -34,6 +34,12 @@ const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
 // affordances without opening a menu or tooltip.
 const PARK_MOUSE_POINT = { x: 640, y: 8 };
 
+// A card is a static frame, so the capture encoder needs a moment to settle
+// after the first paint. The pre-warm is recorded but skipped by the build, so
+// holding the card briefly before the timeline origin keeps the encoder's
+// initial transient out of the delivered video.
+const CARD_PREWARM_SETTLE_MS = 3500;
+
 const DEFAULT_SCENARIO = path.join(
   VIDEO_DIR,
   "scenarios",
@@ -1544,6 +1550,7 @@ function prewarmTarget(scene) {
 async function prepareScene(page, scene) {
   if (scene.action === "card") {
     await showCard(page, scene.card);
+    await page.waitForTimeout(CARD_PREWARM_SETTLE_MS);
     return;
   }
 

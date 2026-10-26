@@ -14,6 +14,15 @@ const CARD_MARKER = "waymarkCard";
 const TYPE_STACK =
   'ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace';
 
+// A deterministic 64x64 dither tile. Every pixel is the brand field with a
+// green offset of at most one level, so the field stops being a perfectly flat
+// patch without changing its perceived colour. It is embedded as a data URI to
+// keep the card offline. The tile is stable run to run; the build also applies
+// a temporal chroma stabiliser to the opening card only, because the capture
+// encoder can still vary a near-black field's chroma between frames.
+const CARD_TEXTURE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAFVUlEQVR42o2aUY7jMAxD+03x/uddYGe3E0d8TIBB0Qma2LElkqL8+czn489Hfz+/3/X/+8/F7/W5XJnLLdef+XLl51PnF52P2t/3KErj/vwdj9hTvA6py+RuT7wNQ+Pdnny7qPMJOt9Ka0r/XkDnPOZ8pevjdK7u9UFKU5nz9j3KbdVvT4jrsqPjCJ69fnF+t7hSWlfx5uznOz1fZ3DeYuT7PQy5I3vO4BleuTnHvm6RUxQp/Wue+qxACNmzY33vtc5b9pBzzl5pUXf63uL7NlyczLGtTsvZEzFm8w6bvZAD4TopJgld/u2AUlhrwasX1BpG2rHhGqJaAem19rP2UNck3mNoLcakt+oAsknAsJlT42oH7fdnR4AKUFwpTfdW3LZLKSq0sPX2ZWf/bbgbuOeNi/Mmnoq0unMgslJc/riIhhvDnVoJR2ktzu8dRXFyRNi0e5scAvUqYUKMK4EcUnqZCDiTwKqA0ualO3oaoGCAO7XS63b79Tc6d8Mpv5UgIean9w4QnG3OGqDw/qrDjFGo3TX2slgwT85peQyspzQtpwVSVSVx6j8X84LdYsBJqJC+2IM5KVNB/BBka/3NF0ad0N0r8QXpJc5gJeASQJYSCcaS4/rXUNZ8xRUBNyt5rb2AagbE3N6NuxZS0h4DzNWjnKijx2qsDajG8i4pC0FGop0VWjFIDAXdpCiN4nxP+jqNzF+bmFVr8IF9m4S/u9CJZbHrhuccGAg1c1BOqqHEAU0Wg0+0MMuh22fmF1cO39QWkdfwe9XSbJLBo6R2f3PAnPtFNpI3oVRMTrIV3sBoLAyu24WFM1XiU4ndbFTpKVxjbVDo/9cXErsGMXCJaClztlAj9SHA8UJNgWVLhRoxROwKRgIh4N+6SMwDhxrdACwA3agZiUaIeqJw2hUmGW2364f7aRaDbwwcs1Jw3R/XsCEE/7kLBaDZsepsHY3hSSzmFyX/PNmEz46VkjtksERdDTKnwsMQ4uIRtQsag0NvgGoDrZCmoueoZsXG3z1WYHUy3Hv6mmsageajUrO8/Eb2TNHiesUsmcRm8kDjhxyQqe7ldT6ty7Jv81NIlM4FGVVvKmPiBH1qyPqJCP0kxUg1Rc4yEHOsELK9LpCHsWlVfDXz6w2bSE5are+MP5X5yduJq2hOvlgelI7WGwmE3miZxKOaMCyS2NkuIBbFgWI9IJZKBdpinyLq1t6lnFQGzSrQJvneQ1qIHDWzUyu2QwTl/64fikVAY71STrtNKy6ICV4F7mopxAZg/bDXu/2r1IJ32iLyqGnrS/NUUHPHOMx5SW6K6rkByjZD4kaWdKqcqAP068xpjeQnq8xJb700UQiOqB1f6kR0ZL06ecWeMJfIMaGLeRxJUNyFuNepewcFJU5RAQKrq/exNwPMC/DNVt6AiVmaSMUCK6rusTs40AEbqshitWXgmjcsrqcDNVMb9wY4+TV39eJMTRcF/fCKagDohQSmxXXMgYKMXfaRcHpTWCmlVgQP9xNbehJhSh3ikpR+Z7OSVDbT8/dLgAvxIb5+dInEY9yfPu9yhs1bSnSNTlGhBLKkzJzMWqXTNG8K0aM/YBaPrhs6qelZYnfYCe6Ut9WNdqfecG70sXVpPp1APclyZLOfsXOpyAx1tKoj8sYDdjprIihZzIIvnqTRh89jTq3lVHubejp4NyB73vgosxscvSLpx5hiL6OfeqWjWO95TTuEaNNL17Zom+jgmtlNtf1KADj74Kvrca95IsVYDYppKArPIg0jymXhIAB71d6MFrp3MlE1/sUHha9jNUWphLCGAyjUqPST3h72lQ1a5nLLH24jsGoYOROAAAAAAElFTkSuQmCC";
+
 const LOGO_PATH = new URL(
   "../../../assets/img/ogis-logo-white.svg",
   import.meta.url,
@@ -139,6 +148,13 @@ export function renderCard(card) {
     height: 100%;
     background: #000b00;
     overflow: hidden;
+  }
+
+  html,
+  body {
+    background-image: url("${CARD_TEXTURE}");
+    background-repeat: repeat;
+    background-size: 64px 64px;
   }
 
   body {

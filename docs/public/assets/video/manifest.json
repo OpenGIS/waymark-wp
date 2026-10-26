@@ -6,13 +6,13 @@
     "playwright": "1.63.0",
     "chromium": "153.0.8010.12",
     "file": "/assets/video/changing-basemaps.mp4",
-    "duration": 85.952,
+    "duration": 87.275,
     "width": 1280,
     "height": 720,
     "videoCodec": "h264",
     "audioCodec": "aac",
-    "size": 4985981,
-    "sha256": "ad7de39db9c63f850cb5590100d93669a24248f0df7afd2411ff05c9722d0d85",
+    "size": 5002217,
+    "sha256": "78b1ca0a22391218e25b12e6b783c188da24444958f8beb1c8fc0afbd6b3ef55",
     "poster": "/assets/video/posters/changing-basemaps.jpg",
     "posterSource": "replay",
     "captions": "/assets/video/captions/changing-basemaps.en.vtt",
@@ -20,6 +20,6 @@
     "narrationProvider": "macos-say",
     "narrationVoice": "Daniel",
     "narrationRate": 175,
-    "generatedAt": "2026-10-26T17:07:41.273Z"
+    "generatedAt": "2026-10-26T19:47:20.212Z"
   }
 }

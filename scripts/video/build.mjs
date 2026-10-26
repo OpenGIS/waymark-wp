@@ -126,6 +126,15 @@ function main() {
       sourceDuration,
       sourceOffset,
       title,
+      // Only the opening card needs the stabiliser. Later cards follow real
+      // page content, and the same filter can bloom the card's own texture at
+      // that boundary, so leave them alone.
+      cardIntervals: (() => {
+        const opening = timeline.scenes.find(
+          (scene) => scene.action === "card",
+        );
+        return opening ? [{ start: opening.start, end: opening.end }] : [];
+      })(),
     });
   }
 
@@ -507,7 +516,7 @@ function resolveSourceOffset(timeline) {
  * Encode the delivery MP4 in one pass. The source video is cloned at the end by
  * at most the difference between the raw take and the timeline total.
  *
- * @param {{ rawPath: string, narrationPath: string, outputPath: string, duration: number, sourceDuration: number, sourceOffset: number, title: string }} options
+ * @param {{ rawPath: string, narrationPath: string, outputPath: string, duration: number, sourceDuration: number, sourceOffset: number, title: string, cardIntervals: Array<{ start: number, end: number }> }} options
  */
 function encodeVideo({
   rawPath,
@@ -517,14 +526,30 @@ function encodeVideo({
   sourceDuration,
   sourceOffset,
   title,
+  cardIntervals,
 }) {
   const pad = Math.max(0, duration - sourceDuration);
-  const filters = [
+  const filters = [];
+
+  // The capture encoder can shift a near-black first card's chroma between
+  // frames. A strong temporal chroma denoise removes that reconstruction error
+  // while the opening card is on screen; the enable expression leaves every
+  // other scene untouched, so map detail and type sharpness are unchanged.
+  if (cardIntervals.length) {
+    const enable = cardIntervals
+      .map(
+        ({ start, end }) => `between(t,${start.toFixed(3)},${end.toFixed(3)})`,
+      )
+      .join("+");
+    filters.push(`hqdn3d=3:3:96:96:enable='${enable}'`);
+  }
+
+  filters.push(
     "scale=1280:720:flags=lanczos",
     "setsar=1",
     "fps=30",
     "format=yuv420p",
-  ];
+  );
 
   if (pad > 0.001) {
     filters.push(`tpad=stop_mode=clone:stop_duration=${pad.toFixed(3)}`);

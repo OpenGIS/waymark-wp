@@ -1,45 +1,45 @@
 # Changing Basemaps
 
-**00:00:04.414 – 00:00:12.810**
+**00:00:04.415 – 00:00:12.811**
 
 Waymark Maps are edited in the WordPress admin. Open the Map you want to work on, and the Editor loads with your saved markers, lines and shapes.
 
-**00:00:13.313 – 00:00:15.293**
+**00:00:13.313 – 00:00:15.355**
 
 [The map zooms out to fit the whole route]
 
-**00:00:15.669 – 00:00:22.650**
+**00:00:16.246 – 00:00:23.227**
 
 In the top-right corner is the layers control. It only appears when more than one Basemap is configured in Waymark Settings.
 
-**00:00:23.493 – 00:00:33.015**
+**00:00:24.079 – 00:00:33.601**
 
 Waymark ships with Open Street Map, and this site also has Open Topo Map. Topographic tiles show contours and terrain, which is often easier to draw against.
 
-**00:00:34.284 – 00:00:41.193**
+**00:00:35.104 – 00:00:42.013**
 
 Select Open Topo Map, and the tiles redraw underneath your work. Your markers and lines stay exactly where they were.
 
-**00:00:42.216 – 00:00:47.885**
+**00:00:43.057 – 00:00:48.726**
 
 It's a change of view, not a change to the Map. Reload the Editor and you'll be back to its default.
 
-**00:00:49.101 – 00:00:53.339**
+**00:00:50.180 – 00:00:54.418**
 
 Switch back to Open Street Map when you want a cleaner, quieter picture.
 
-**00:00:54.606 – 00:01:02.747**
+**00:00:55.842 – 00:01:03.983**
 
 What visitors see is set separately. The Map's Shortcode takes a basemap attribute, and without one the first Basemap in Settings is used.
 
-**00:01:04.748 – 00:01:12.401**
+**00:01:06.004 – 00:01:13.657**
 
 Basemaps themselves live in Waymark Settings. Each row has a name, a tile URL, attribution and a maximum zoom.
 
-**00:01:13.396 – 00:01:19.726**
+**00:01:14.724 – 00:01:21.054**
 
 Drag the rows to reorder them. The first Basemap becomes the default for every Map that doesn't specify one.
 
-**00:01:20.229 – 00:01:21.900**
+**00:01:21.563 – 00:01:23.253**
 
 [The page scrolls back to the Basemaps heading]
