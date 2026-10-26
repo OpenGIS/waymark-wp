@@ -249,174 +249,187 @@ function waymark_setup_repeatable_settings() {
   jQuery(".waymark-settings-tab .waymark-repeatable").each(function () {
     var container = jQuery(this);
 
-    //Each form table
-    jQuery(".form-table", container).each(function () {
-      var form = jQuery(this);
-      var clones = [];
+    //Already split into one row per value. Running again would re-split the
+    //generated rows, duplicate the add button and double up input names.
+    if (container.attr("data-waymark-split") === "1") {
+      container.removeAttr("hidden");
+      return;
+    }
 
-      form.remove();
+    try {
+      //Each form table
+      jQuery(".form-table", container).each(function () {
+        var form = jQuery(this);
+        var clones = [];
 
-      //Each input
-      jQuery(".waymark-input", form).each(function () {
-        var input = jQuery(this);
-        //Copy ID to class
-        input.addClass("waymark-" + input.data("id"));
+        form.remove();
 
-        //Get values
-        if (input.get(0).nodeName != "SELECT") {
-          var values = input.val();
-        } else {
-          var values = input.data("multi-value");
-        }
-
-        //Ensure is string
-        if (typeof values != "string") {
-          values = values.toString();
-        }
-
-        //Determine clone values
-        values = values.split(waymark_multi_value_seperator);
-        for (i in values) {
-          if (typeof clones[i] !== "object") {
-            clones[i] = {};
-          }
-          clones[i][input.data("id")] = values[i];
-        }
-      });
-
-      //Each clone
-      for (i = 0; i < clones.length; i++) {
-        var clone = form.clone();
-
-        //Create input
-        for (var j in clones[i]) {
-          var set_value = clones[i][j];
-
-          var input = jQuery(".waymark-input-" + j, clone);
-
-          //This is a Select without a valid option
-          if (
-            input.get(0).nodeName == "SELECT" &&
-            !jQuery("option[value='" + clones[i][j] + "']", input).length
-          ) {
-            //Use first as default
-            set_value = jQuery("option", input).first().val();
-          }
-
-          //Set value
-          input.attr("value", set_value).val(set_value);
-
-          //Make uneditable
-          if (
-            input
-              .parents(".waymark-control-group")
-              .hasClass("waymark-uneditable")
-          ) {
-            input.attr("readonly", "readonly");
-          }
-        }
-
-        //Index every input name, including columns without a value for this row
-        jQuery(".waymark-input", clone).each(function () {
+        //Each input
+        jQuery(".waymark-input", form).each(function () {
           var input = jQuery(this);
-          var name = input.attr("name");
-          var suffix = "[" + i + "]";
+          //Copy ID to class
+          input.addClass("waymark-" + input.data("id"));
 
-          //Already indexed for this row
-          if (name.slice(-suffix.length) === suffix) {
-            return;
+          //Get values
+          if (input.get(0).nodeName != "SELECT") {
+            var values = input.val();
+          } else {
+            var values = input.data("multi-value");
           }
 
-          //Replace the multi-value suffix
-          if (name.slice(-2) === "[]") {
-            name = name.slice(0, -2);
+          //Ensure is string
+          if (typeof values != "string") {
+            values = values.toString();
           }
 
-          input.attr("name", name + suffix);
+          //Determine clone values
+          values = values.split(waymark_multi_value_seperator);
+          for (i in values) {
+            if (typeof clones[i] !== "object") {
+              clones[i] = {};
+            }
+            clones[i][input.data("id")] = values[i];
+          }
         });
 
-        //Delete button
-        var delete_button = jQuery("<div />")
-          .text("x")
-          .attr("title", waymark_php_lang.repeatable_delete_title)
-          .addClass("waymark-delete")
+        //Each clone
+        for (i = 0; i < clones.length; i++) {
+          var clone = form.clone();
+
+          //Create input
+          for (var j in clones[i]) {
+            var set_value = clones[i][j];
+
+            var input = jQuery(".waymark-input-" + j, clone);
+
+            //This is a Select without a valid option
+            if (
+              input.get(0).nodeName == "SELECT" &&
+              !jQuery("option[value='" + clones[i][j] + "']", input).length
+            ) {
+              //Use first as default
+              set_value = jQuery("option", input).first().val();
+            }
+
+            //Set value
+            input.attr("value", set_value).val(set_value);
+
+            //Make uneditable
+            if (
+              input
+                .parents(".waymark-control-group")
+                .hasClass("waymark-uneditable")
+            ) {
+              input.attr("readonly", "readonly");
+            }
+          }
+
+          //Index every input name, including columns without a value for this row
+          jQuery(".waymark-input", clone).each(function () {
+            var input = jQuery(this);
+            var name = input.attr("name");
+            var suffix = "[" + i + "]";
+
+            //Already indexed for this row
+            if (name.slice(-suffix.length) === suffix) {
+              return;
+            }
+
+            //Replace the multi-value suffix
+            if (name.slice(-2) === "[]") {
+              name = name.slice(0, -2);
+            }
+
+            input.attr("name", name + suffix);
+          });
+
+          //Delete button
+          var delete_button = jQuery("<div />")
+            .text("x")
+            .attr("title", waymark_php_lang.repeatable_delete_title)
+            .addClass("waymark-delete")
+            .on("click", function (e) {
+              e.preventDefault();
+
+              var form = jQuery(this).parents(".form-table");
+              form.remove();
+
+              return false;
+            });
+          clone.append(delete_button);
+
+          container.append(clone);
+          waymark_set_group_title(clone);
+          container.attr("data-count", i);
+          waymark_setup_parameter_tooltips();
+        }
+
+        var add_button = jQuery("<button />")
+          .append('<i class="ion ion-plus"></i>')
+          .append(
+            jQuery("<span />")
+              .addClass("waymark-add-label")
+              .text(waymark_php_lang.add_type),
+          )
+          .attr("aria-label", waymark_php_lang.add_type)
+          .addClass("button waymark-add")
           .on("click", function (e) {
             e.preventDefault();
 
-            var form = jQuery(this).parents(".form-table");
-            form.remove();
+            //Increment count
+            var container = jQuery(this).parents(".waymark-repeatable");
+            var count_old = parseInt(container.attr("data-count"));
+            var count_new = count_old + 1;
+            container.attr("data-count", count_new);
+
+            //Modify clone
+            var clone = form.clone();
+            jQuery(".waymark-input", clone).each(function () {
+              var input = jQuery(this);
+              var input_name = input.attr("name") + "[" + count_new + "]";
+
+              //Update
+              input.attr("name", input_name);
+              input.attr("placeholder", "");
+
+              //Clear text inputs
+              if (input.get(0).nodeName != "SELECT") {
+                input.val("");
+              }
+
+              switch (input.data("id")) {
+                case "line_colour":
+                case "shape_colour":
+                case "icon_colour":
+                case "marker_colour":
+                  waymark_setup_colour_picker(input);
+
+                  break;
+
+                case "meta_options":
+                  input.parents("tr").hide();
+
+                  break;
+              }
+            });
+
+            jQuery(this).before(clone);
+            waymark_set_group_title(clone);
+            waymark_setup_parameter_tooltips();
+            waymark_setup_select_meta_type();
+            waymark_setup_select_icon_type();
 
             return false;
           });
-        clone.append(delete_button);
+        container.append(add_button);
+        //form.wrap(container);
+        container.sortable();
+      });
 
-        container.append(clone);
-        waymark_set_group_title(clone);
-        container.attr("data-count", i);
-        waymark_setup_parameter_tooltips();
-      }
-
-      var add_button = jQuery("<button />")
-        .append('<i class="ion ion-plus"></i>')
-        .append(
-          jQuery("<span />")
-            .addClass("waymark-add-label")
-            .text(waymark_php_lang.add_type),
-        )
-        .attr("aria-label", waymark_php_lang.add_type)
-        .addClass("button waymark-add")
-        .on("click", function (e) {
-          e.preventDefault();
-
-          //Increment count
-          var container = jQuery(this).parents(".waymark-repeatable");
-          var count_old = parseInt(container.attr("data-count"));
-          var count_new = count_old + 1;
-          container.attr("data-count", count_new);
-
-          //Modify clone
-          var clone = form.clone();
-          jQuery(".waymark-input", clone).each(function () {
-            var input = jQuery(this);
-            var input_name = input.attr("name") + "[" + count_new + "]";
-
-            //Update
-            input.attr("name", input_name);
-            input.attr("placeholder", "");
-
-            //Clear text inputs
-            if (input.get(0).nodeName != "SELECT") {
-              input.val("");
-            }
-
-            switch (input.data("id")) {
-              case "line_colour":
-              case "shape_colour":
-              case "icon_colour":
-              case "marker_colour":
-                waymark_setup_colour_picker(input);
-
-                break;
-
-              case "meta_options":
-                input.parents("tr").hide();
-
-                break;
-            }
-          });
-
-          jQuery(this).before(clone);
-          waymark_set_group_title(clone);
-          waymark_setup_parameter_tooltips();
-          waymark_setup_select_meta_type();
-          waymark_setup_select_icon_type();
-
-          return false;
-        });
-      container.append(add_button);
-      //form.wrap(container);
-      container.sortable();
-    });
+      container.attr("data-waymark-split", "1");
+    } finally {
+      container.removeAttr("hidden");
+    }
   });
 }
 

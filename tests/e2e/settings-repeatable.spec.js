@@ -201,6 +201,12 @@ test("keeps a ragged repeatable column indexed through a settings save", async (
     const rows = repeatable.locator("table.form-table");
     await expect(rows).toHaveCount(2);
 
+    // The section is rendered hidden and only revealed once the split script
+    // removes the attribute from the container.
+    await expect(repeatable).not.toHaveAttribute("hidden");
+    await expect(repeatable).toBeVisible();
+    await expect(rows.nth(0)).toBeVisible();
+
     const rowNames = await rows.evaluateAll((tables) =>
       tables.map((table) =>
         Array.from(table.querySelectorAll("input.waymark-input")).map((input) =>
@@ -232,6 +238,7 @@ test("keeps a ragged repeatable column indexed through a settings save", async (
       "name",
       `${MAX_ZOOM_NAME}[1]`,
     );
+    await expect(maxZoomInputs.nth(0)).toBeVisible();
 
     const body = page.locator("body");
     await expect(body).not.toHaveClass(/php-error/);

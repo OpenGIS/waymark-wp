@@ -14,6 +14,11 @@ class Waymark_JS {
 
 	static function enqueue_scripts() {
 		wp_register_script('waymark_admin_js', Waymark_Helper::asset_url('js/admin.min.js'), ['jquery', 'jquery-ui-sortable', 'jquery-effects-core', 'wp-color-picker'], Waymark_Config::get_version());
+
+		//Needed by the repeatable splitter, which now runs while the settings
+		//markup is parsed rather than waiting for DOM-ready.
+		wp_add_inline_script('waymark_admin_js', 'var waymark_multi_value_seperator = ' . wp_json_encode(Waymark_Config::get_item('multi_value_seperator')) . ';', 'before');
+
 		wp_localize_script('waymark_admin_js', 'waymark_php_lang', [
 			'repeatable_delete_title' => esc_attr__('Remove!', 'waymark'),
 			'marker_icon_icon_label' => esc_attr__('Name', 'waymark'),

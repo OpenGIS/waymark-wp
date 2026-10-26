@@ -1765,7 +1765,8 @@ class Waymark_Settings {
 
 				//Repeatable?
 				if (array_key_exists('repeatable', $section_data) && $section_data['repeatable']) {
-					echo '<div class="waymark-repeatable" data-count="0">' . "\n";
+					echo '<noscript><style>#waymark-admin-container .waymark-repeatable[hidden] { display: block !important; }</style></noscript>' . "\n";
+					echo '<div class="waymark-repeatable" data-count="0" hidden>' . "\n";
 				}
 
 				echo '		<table class="form-table">' . "\n";
@@ -1775,6 +1776,11 @@ class Waymark_Settings {
 				//Repeatable?
 				if (array_key_exists('repeatable', $section_data) && $section_data['repeatable']) {
 					echo '</div>' . "\n";
+
+					//Split the joined values as soon as the container has been parsed. The
+					//function is guarded so a build that scopes it away leaves the
+					//DOM-ready fallback in charge.
+					echo '<script>(function () { if (typeof waymark_setup_repeatable_settings !== "function") { return; } try { waymark_setup_repeatable_settings(); } catch (error) {} })();</script>' . "\n";
 				}
 
 				//Footer
