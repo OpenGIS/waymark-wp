@@ -44,15 +44,18 @@ npm test
 
 ## What CI does on push
 
-`.github/workflows/ci.yml` detects the version change and:
+`.github/workflows/ci.yml` reads `Version:` from the `Waymark.php` header and checks the WordPress.org SVN `tags/` directory. The gate is the deployed SVN state, not the local readme — an existing tag for that version means the release is already live.
+
+When the tag is absent, CI:
 
 - syncs `readme.txt` / `package.json` versions (`grunt sync_version`)
 - rebuilds CSS, JS, `languages/waymark.pot` and `readme.md` (`grunt build`)
 - deploys to WordPress.org SVN (including `.wordpress-org/` assets)
-- creates a GitHub Release tagged `vX.Y.Z`
+- verifies the tag now exists in SVN — a failure stops the job before the sync-back commit and GitHub Release
 - commits the synced artefacts back to `master` (`chore: sync release artefacts for vX.Y.Z`)
+- creates a GitHub Release tagged `vX.Y.Z`
 
-No manual deploy step beyond the push. If the version did not change, the workflow exits without deploying.
+No manual deploy step beyond the push. When the tag already exists, the deploy job is skipped and only the readme/assets job runs.
 
 ## Manual recovery
 
@@ -62,7 +65,7 @@ The sync + build are idempotent and available locally:
 npx grunt sync_version build
 ```
 
-If CI fails before the deploy step, run the command above, inspect the result, then re-run the workflow from the GitHub Actions tab. For local development, use `npm run grunt` for a one-shot build or `npm run grunt:watch` to rebuild on change — do not run bare `grunt` (the default task ends with a blocking watch).
+If CI fails before the deploy step, run the command above, inspect the result, then re-run the workflow from the GitHub Actions tab. The workflow also exposes `workflow_dispatch`, so a failed deploy can be re-run manually — the SVN tag check makes that safe, skipping a version that already deployed. For local development, use `npm run grunt` for a one-shot build or `npm run grunt:watch` to rebuild on change — do not run bare `grunt` (the default task ends with a blocking watch).
 
 ## Local distributable
 
@@ -85,4 +88,9 @@ The readme screenshots are generated from the tested demo data. Recapture them w
 > [!WARNING]
 > Every asset that should stay live must be present in `.wordpress-org/` — the deploy deletes anything missing. Maintain the full set, not just changed files.
 
-Readme and `.wordpress-org/` changes deploy automatically on any push to `master` that does not change `Version:` in `Waymark.php` — the `readme_assets` job commits `readme.txt` and the assets to SVN `trunk` and to the current stable tag (WordPress.org serves the readme from the tag directory, so both must be updated). Version bumps still deploy everything through the `deploy` job.
+Readme and `.wordpress-org/` changes deploy automatically when the `deploy` job is skipped — the `readme_assets` job commits `readme.txt` and the assets to SVN `trunk` and to the current stable tag (WordPress.org serves the readme from the tag directory, so both must be updated). Version bumps still deploy everything through the `deploy` job.
+
+The readme/assets job first verifies that `readme.txt`'s `Stable tag` exists as an SVN tag.
+
+> [!WARNING]
+> Never hand-edit or pre-sync `Stable tag` to a version that has not been deployed. The readme/assets job fails rather than publishing when the stable tag has no matching SVN tag, so a local `Stable tag` ahead of the live release blocks the readme and assets deploy.

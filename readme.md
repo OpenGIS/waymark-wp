@@ -76,7 +76,6 @@ For developers:
 - [Cres & Lošinj Trail – Lošinj Trail 2025](https://clt.remarkable.events/losinj-trail-en/)
 - [hikingTICINO](https://www.hikingticino.com/wanderungen/category-wanderung/)
 - [Horizontes – PT281](https://horizontes.pt/pt281/)
-- [Iggy's Hikes – Staze na Medvednici](https://www.iggyshikes.com/staze-na-medvednici/)
 - [Il Cammino del Lago Maggiore – Le 11 tappe](https://www.camminolagomaggiore.it/11-tappe-cammino-lago-maggiore/)
 - [Merritt Mountain Bike Association – Iron Mountain](https://merrittbike.ca/our-trails/iron-mountain/)
 - [Trekkaholic – Trekking al lago Bianco in Alpe Veglia](https://www.trekkaholic.it/piemonte/trekking-lago-bianco-alpe-veglia/)
