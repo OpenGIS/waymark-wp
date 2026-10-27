@@ -44,5 +44,28 @@
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
     "generatedAt": "2026-10-27T17:32:33.962Z"
+  },
+  "adding-map-meta": {
+    "id": "adding-map-meta",
+    "title": "Adding Map Meta",
+    "scenarioVersion": "1",
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "file": "/assets/video/adding-map-meta.mp4",
+    "duration": 142.976,
+    "width": 1280,
+    "height": 720,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "size": 5301443,
+    "sha256": "5edf3d6c06cbb37a7a0a2219f1c98749c8310a9874c815cdc19e9e2378a26ff8",
+    "poster": "/assets/video/posters/adding-map-meta.jpg",
+    "posterSource": "replay",
+    "captions": "/assets/video/captions/adding-map-meta.en.vtt",
+    "transcript": "/assets/video/transcripts/adding-map-meta.md",
+    "narrationProvider": "deepgram",
+    "narrationVoice": "flux-kit-en",
+    "narrationRate": 175,
+    "generatedAt": "2026-10-27T21:16:12.020Z"
   }
 }

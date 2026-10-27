@@ -1,0 +1,207 @@
+{
+  "version": "1",
+  "id": "adding-map-meta",
+  "title": "Adding Map Meta",
+  "output": "docs/public/assets/video/adding-map-meta.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:02:18",
+  "pad": 0.4,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Adding Map Meta",
+        "subtitle": "Describing a Map in the Editor and on the Public Map"
+      },
+      "hold": 2.2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay."
+    },
+    {
+      "id": "open-editor",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "selector": "#waymark-map .leaflet-tile-loaded",
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark_map_meta",
+        "visible": true
+      },
+      "notes": "The Map Editor metabox (id waymark_map_meta, heading Map Editor) loads at the top of the page. The Collections box and the Shortcode box are visible in the sidebar, matching the legacy poster's context. The map is at zoom 10, which the OpenStreetMap tile pack covers. The selector waits for a painted tile; the opening card pre-warms this page."
+    },
+    {
+      "id": "description",
+      "action": "scrollIntoView",
+      "selector": ".map_description-container",
+      "block": "start",
+      "highlight": {
+        "selector": ".map_description-container",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#map_description",
+        "value": "Ride from Port Hardy"
+      },
+      "notes": "Description is the ungrouped field above the groups. The visible editor is TinyMCE; the real textarea is hidden, so the assertion reads its value. The frame shows the Description field and the About group with the prefilled Journal Entry."
+    },
+    {
+      "id": "details",
+      "action": "click",
+      "selector": "#waymark-parameter-group-details > legend",
+      "block": "start",
+      "highlight": {
+        "selector": "#waymark-parameter-group-details > legend",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark-parameter-group-details legend"
+      },
+      "assert": {
+        "selector": "input[name=\"map_date\"]",
+        "visible": true,
+        "value": "2026-06-15"
+      },
+      "notes": "The groups are accordions; the first group opens by default. Clicking the Details legend opens its content and closes About, which lifts the legend up the page. The cursor target is a descendant spelling of the same legend, so the recorder re-homes the pointer after the action instead of leaving it over the opened fields. The highlight stays on the stable legend while the content expands below. The date input has no id because the label's for attribute does not resolve, so it is selected by name. The assert waits for the open group before narration starts."
+    },
+    {
+      "id": "settings-fields",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-meta",
+      "selector": ".waymark-settings-tab-meta .waymark-input-meta_title",
+      "highlight": {
+        "selector": ".waymark-settings-tab-meta .waymark-settings-section-inputs .waymark-repeatable .form-table",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-meta .waymark-settings-section-inputs .waymark-repeatable .form-table",
+        "minCount": 4
+      },
+      "notes": "content=waymark-settings-tab-meta opens the Meta tab; the tab=meta query string is ignored by the settings loader. The repeatable rows are built by admin.js from the serialised multi-value inputs, so the selector waits for a visible Meta Title input. Four rows prove the seeded fields: Description, Journal Entry, Date and Distance."
+    },
+    {
+      "id": "settings-groups",
+      "action": "scrollIntoView",
+      "selector": ".waymark-settings-tab-meta .waymark-settings-section-groups",
+      "block": "start",
+      "highlight": {
+        "selector": ".waymark-settings-tab-meta .waymark-settings-section-groups",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-meta .waymark-settings-section-groups .waymark-input-group_title",
+        "minCount": 2
+      },
+      "notes": "The Groups section defines About and Details. The two inputs are the titles that become the group headings in the Editor and on the public Map. The Save Changes button at the bottom is never clicked."
+    },
+    {
+      "id": "front-map",
+      "action": "goto",
+      "url": "{{baseURL}}/map/cape-scott-trail/",
+      "selector": ".waymark-map .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map-meta",
+        "visible": true
+      },
+      "notes": "The public Map Details page for the seeded Cape Scott Trail permalink. The page opens on the title and featured image; the map and meta follow. The map fits at zoom 9, which the OpenStreetMap tile pack covers. Anonymous: no admin bar."
+    },
+    {
+      "id": "front-meta",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map-meta",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-map-meta-ungrouped",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-meta-map_description",
+        "text": "Ride from Port Hardy"
+      },
+      "poster": {
+        "selector": ".waymark-map-meta-ungrouped",
+        "aspect": "16:9",
+        "pad": 8
+      },
+      "anonymous": true,
+      "notes": "The rendered meta begins with the featured-image thumbnail, Description, Collection and Export, then the grouped About and Details sections. block center keeps the whole 703px meta inside the 720px anonymous viewport and leaves the top margin the poster crop needs. The poster crops the ungrouped block: a 16:9 frame of the rendered meta with the lighthouse thumbnail and the Description, not a bare map. The poster marker wins over posterAt."
+    },
+    {
+      "id": "front-details",
+      "action": "click",
+      "selector": ".waymark-meta-group-details > .waymark-meta-group-title",
+      "block": "start",
+      "highlight": {
+        "selector": ".waymark-meta-group-details > .waymark-meta-group-title",
+        "pad": 8
+      },
+      "cursor": {
+        "to": ".waymark-meta-group-details .waymark-meta-group-title"
+      },
+      "assert": {
+        "selector": ".waymark-meta-map_date",
+        "visible": true,
+        "text": "2026-06-15"
+      },
+      "anonymous": true,
+      "notes": "The front-end accordion uses the same legend click. Details is closed by default; opening it reveals the rendered Date and Distance. The group title is already visible after the meta scroll, so the click does not change the scroll position; this silent beat shows the group opening. The cursor target is a descendant spelling of the same title, so the recorder re-homes the pointer after About collapses instead of leaving it over the opened fields. The highlight stays on the stable group title while the content expands. The click does not navigate. The next scene holds the expanded group and wraps it in the highlight.",
+      "hold": 0.4,
+      "caption": "The Details group opens"
+    },
+    {
+      "id": "front-details-view",
+      "action": "scrollIntoView",
+      "selector": ".waymark-meta-group-details",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-meta-group-details",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-meta-map_distance_km",
+        "visible": true,
+        "text": "91.4"
+      },
+      "anonymous": true,
+      "notes": "Block center frames the open Details group so both the Date and Distance values are fully visible. The highlight wraps the stable open group. The group headings match the Editor's About and Details groups."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Adding Map Meta",
+        "subtitle": "Meta is edited under the Map,\nconfigured in Settings,\nand rendered with the Map."
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card over the public Map Details page."
+    }
+  ],
+  "audioAfterActionMax": 0.9
+}
