@@ -1,37 +1,37 @@
 # Using Collections
 
-**00:00:02.443 – 00:00:16.033**
+**00:00:02.435 – 00:00:16.025**
 
 Collections live in the WordPress admin, under Waymark. Open Waymark, then Collections. The create form sits on the left, and every existing Collection is listed on the right. A Collection groups Maps, and gives the group a Shortcode and a public page.
 
-**00:00:16.971 – 00:00:32.561**
+**00:00:16.876 – 00:00:32.466**
 
 The list is a hierarchy. Vancouver Island is the parent, with Day Hikes and Backpacking indented beneath it. The indentation shows which Collection belongs to which, so a large library stays readable. The Count column shows how many Maps each Collection holds.
 
-**00:00:33.364 – 00:00:44.794**
+**00:00:33.248 – 00:00:44.678**
 
 Each row ends with a Shortcode. Copy it into a page or post to embed that Collection. The Collection Shortcode takes a collection_id attribute, and the parent Shortcode covers the whole group.
 
-**00:00:45.750 – 00:00:55.805**
+**00:00:45.632 – 00:00:55.687**
 
 This is the form for adding a Collection. Name is the title visitors will see. Slug becomes the address, and Description is optional. You can change all three later.
 
-**00:00:56.581 – 00:01:05.926**
+**00:00:56.433 – 00:01:05.778**
 
 Parent places the new Collection under an existing one, and the list mirrors the hierarchy. None makes it top level. Create Collection adds it to the list.
 
-**00:01:08.230 – 00:01:28.575**
+**00:01:08.081 – 00:01:28.426**
 
 Collections are assigned from the Map Editor. The Collections box lists the same hierarchy, and a Map can belong to more than one Collection. This Map is in Vancouver Island and Backpacking. Tick each Collection it belongs to, then select Update. The box sits beside the Map Editor, so you can assign without leaving the screen.
 
-**00:01:30.080 – 00:01:43.185**
+**00:01:29.928 – 00:01:43.033**
 
 Every Collection also has a public page. The View link opens it. The page gathers every Map in the Collection under the Collection heading. The page uses the site's normal layout, so no Shortcode is needed.
 
-**00:01:44.687 – 00:01:53.992**
+**00:01:44.537 – 00:01:53.842**
 
 A page can hold more than one Shortcode. This one has a single Map at the top, and a Collection further down. Both sit in the page content as Shortcodes.
 
-**00:01:54.951 – 00:02:06.998**
+**00:01:54.793 – 00:02:06.840**
 
 Here, one Shortcode renders the whole Collection as a single Map. The title comes from the Collection, and the Details link opens the Collection page. The Map carries the Overlays from every Map in the group.

@@ -6,13 +6,13 @@
     "playwright": "1.63.0",
     "chromium": "153.0.8010.12",
     "file": "/assets/video/changing-basemaps.mp4",
-    "duration": 88.5,
+    "duration": 88.533,
     "width": 1280,
     "height": 720,
     "videoCodec": "h264",
     "audioCodec": "aac",
-    "size": 5120442,
-    "sha256": "501eb44de1173f7541c72b8999277ccd15649a6c3eae154e96125e03918f809c",
+    "size": 4986473,
+    "sha256": "4046591630695501a9674397ab154bb58e8b69decce3fd684e3919101b5eeb62",
     "poster": "/assets/video/posters/changing-basemaps.jpg",
     "posterSource": "replay",
     "captions": "/assets/video/captions/changing-basemaps.en.vtt",
@@ -20,7 +20,7 @@
     "narrationProvider": "deepgram",
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
-    "generatedAt": "2026-10-27T16:41:44.624Z"
+    "generatedAt": "2026-10-27T17:26:12.950Z"
   },
   "using-collections": {
     "id": "using-collections",
@@ -29,13 +29,13 @@
     "playwright": "1.63.0",
     "chromium": "153.0.8010.12",
     "file": "/assets/video/using-collections.mp4",
-    "duration": 131.861,
+    "duration": 131.691,
     "width": 1280,
     "height": 720,
     "videoCodec": "h264",
     "audioCodec": "aac",
-    "size": 5287642,
-    "sha256": "cabcb66ee965437c55d97820d2bccdc45421f9f560771e98597bb0b7e08a964d",
+    "size": 5160531,
+    "sha256": "a353343481a554f4be0180e0d6dcf962be47555ca234b947a003c350d1d824b0",
     "poster": "/assets/video/posters/using-collections.jpg",
     "posterSource": "replay",
     "captions": "/assets/video/captions/using-collections.en.vtt",
@@ -43,6 +43,6 @@
     "narrationProvider": "deepgram",
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
-    "generatedAt": "2026-10-27T15:40:12.983Z"
+    "generatedAt": "2026-10-27T17:32:33.962Z"
   }
 }
