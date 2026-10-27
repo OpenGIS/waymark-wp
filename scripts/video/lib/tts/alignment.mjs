@@ -21,6 +21,9 @@ export const ALIGNMENT_VERSION = 1;
 const MAX_MERGE_TOKENS = 3;
 const DEFAULT_LOOK_AHEAD = 3;
 const DEFAULT_MIN_CONFIDENCE = 0.5;
+// Word timings are quantised to 10ms and can touch or slightly overlap at a
+// scene boundary; only a real overlap means the transcript was mis-ordered.
+const MAX_WORD_OVERLAP = 0.5;
 
 /**
  * Lowercase, strip punctuation, collapse whitespace and drop a spaced em dash.
@@ -410,7 +413,7 @@ export function alignScriptToWords({
         );
       }
 
-      if (!(start > previousEnd)) {
+      if (start < previousEnd - MAX_WORD_OVERLAP) {
         throw new Error(
           `Scene "${state.id}": first matched word starts at ` +
             `${start.toFixed(3)}s, not after scene "${previous.id}" ends at ` +
