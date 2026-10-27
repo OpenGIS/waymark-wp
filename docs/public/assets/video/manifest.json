@@ -67,5 +67,28 @@
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
     "generatedAt": "2026-10-27T21:16:12.020Z"
+  },
+  "markers": {
+    "id": "markers",
+    "title": "Markers",
+    "scenarioVersion": "1",
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "file": "/assets/video/markers.mp4",
+    "duration": 138.733,
+    "width": 1280,
+    "height": 720,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "size": 6317365,
+    "sha256": "3c2dd4d24aa53817e5770759a3cc6a4d5004a8807fbc481634f14d130eeae52a",
+    "poster": "/assets/video/posters/markers.jpg",
+    "posterSource": "replay",
+    "captions": "/assets/video/captions/markers.en.vtt",
+    "transcript": "/assets/video/transcripts/markers.md",
+    "narrationProvider": "deepgram",
+    "narrationVoice": "flux-kit-en",
+    "narrationRate": 175,
+    "generatedAt": "2026-10-27T23:12:46.853Z"
   }
 }

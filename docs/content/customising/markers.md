@@ -3,7 +3,7 @@ title: Markers
 description: Learn how Waymark Markers are displayed, including icons, markup and CSS customisation.
 ---
 
-::video-figure{src="/assets/video/markers.mp4" poster="/assets/video/posters/markers.jpg" label="Waymark - Markers"}
+::video-figure{src="/assets/video/markers.mp4" poster="/assets/video/posters/markers.jpg" label="Waymark - Markers" captions="/assets/video/captions/markers.en.vtt"}
 ::
 
 ---

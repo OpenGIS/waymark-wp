@@ -1,0 +1,185 @@
+{
+  "version": "1",
+  "id": "markers",
+  "title": "Markers",
+  "output": "docs/public/assets/video/markers.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:02:20",
+  "pad": 0.35,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Markers",
+        "subtitle": "Marker Types and how a Marker reads on the Map"
+      },
+      "hold": 2.2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay."
+    },
+    {
+      "id": "open-editor",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "selector": "#waymark-map .leaflet-tile-loaded",
+      "highlight": {
+        "selector": "#waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "The Map Editor for the seeded Cape Scott Trail. It settles at zoom 10 with the route and 13 Markers in view. Live counts at 1280\u00d7720: `.waymark-marker` 13; `.waymark-marker-photo` 6, `.waymark-marker-beer` 2, `.waymark-marker-food` 1, `.waymark-marker-alert` 2, `.waymark-marker-information` 1, `.waymark-marker-camp` 1. The OSM tile pack holds z9, z10 and z15, so the editor's z10 is covered. The assertion proves every Marker icon is in the pane. The map is at its natural zoom; no zoom is pinned and no field is changed. The card pre-warm has already rendered this page."
+    },
+    {
+      "id": "editor-popup",
+      "action": "openPopup",
+      "selector": "#waymark-map .waymark-marker-beer >> nth=1",
+      "highlight": {
+        "selector": "#waymark-map .leaflet-popup",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark-map .waymark-info-title input",
+        "value": "The Scarlet Ibis"
+      },
+      "pad": 0.3,
+      "notes": "The seeded 'The Scarlet Ibis' is a Beer Type, not a Photo Type; the demo has no Photo Marker with both an image and a description. The two Beer Markers share `.waymark-marker-beer` and the icon carries no title attribute, so `>> nth=1` selects the second seeded Beer Marker; the title assertion proves the target. Live values: title input 'The Scarlet Ibis', type select 'beer' (Beer, Food, Photo, Alert, Information, Camp), image field `.../scarlet-ibis-1024x768.jpeg`, thumbnail `.../scarlet-ibis-150x150.jpeg`, description textarea 'Good food and drink, especially after a long ride!'. The popup is 318\u00d7341 at x 369, y 237, fully inside the map. It is an editing form: Type select, Title input, image URL with Upload Image, TinyMCE description, Lat,Lng, Duplicate Marker and Delete Marker. The description textarea is hidden behind TinyMCE; the visible editor shows the same text. The popup is never submitted."
+    },
+    {
+      "id": "settings-list",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers",
+      "selector": ".waymark-settings-tab-markers .waymark-marker_icon",
+      "highlight": {
+        "selector": ".waymark-settings-section-marker_types > h2",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-markers table.form-table",
+        "minCount": 6
+      },
+      "pad": 0.3,
+      "notes": "Waymark \u2192 Settings \u2192 Markers. The tab holds one repeatable with six rows; live titles are Beer, Food, Photo, Alert, Information and Camp. The section is 3,465 px tall, so at 1280\u00d7720 only one row is visible at a time. The first row starts at y 231 and ends at y 750, so its Colour field is clipped; the highlight sits on the stable 'Marker Types' heading and the assertion proves all six rows. The Save Changes control is never clicked."
+    },
+    {
+      "id": "settings-row",
+      "action": "scrollIntoView",
+      "selector": ".waymark-settings-tab-markers table.form-table:has(.waymark-marker_icon[value='ion-camera'])",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-settings-tab-markers table.form-table:has(.waymark-marker_icon[value='ion-camera'])",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-markers table.form-table:has(.waymark-marker_icon[value='ion-camera']) .waymark-marker_title",
+        "value": "Photo"
+      },
+      "pad": 0.3,
+      "notes": "The Photo row is selected by the icon value, not DOM order: `table.form-table:has(.waymark-marker_icon[value='ion-camera'])` matches 1. The row is 718\u00d7518.7; centred, it sits at y 116.9..635.6, so the whole row fits inside the 720 px viewport below the 32 px admin bar. The icon preview (`ion ion-camera`) and both colour swatches are visible: Background #fbfbfb, icon Colour #475260. Icon Type is Font Icon; the same select offers Text (or Emoji!) and HTML. Name holds `ion-camera`; Colour holds #475260. No value is changed."
+    },
+    {
+      "id": "front-map",
+      "action": "goto",
+      "url": "{{baseURL}}/map/cape-scott-trail/",
+      "selector": ".waymark-map .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map",
+        "visible": true
+      },
+      "pad": 0.3,
+      "notes": "The public Cape Scott Trail permalink, logged out. Anonymous: no admin bar (0 matches). The page opens on the title and featured image; the map is below the fold. The map is 645\u00d7450 and settles at zoom 9, covered by the OSM z9 tiles. The selector waits for a painted tile. The map assertion is a visibility check, not a scroll."
+    },
+    {
+      "id": "front-markers",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "anonymous": true,
+      "pad": 0.3,
+      "notes": "Scrolls the 645\u00d7450 map into the centre. Live counts: `.waymark-marker` 13; photo 6, beer 2, food 1, alert 2, information 1, camp 1. Public zoom is 9 and does not change. No admin bar. The map fits the frame; the gallery and elevation profile sit below, outside the viewport."
+    },
+    {
+      "id": "front-popup",
+      "action": "openPopup",
+      "selector": ".waymark-map .waymark-marker-beer >> nth=1",
+      "highlight": {
+        "selector": ".waymark-map .leaflet-popup",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-info-title",
+        "text": "The Scarlet Ibis"
+      },
+      "anonymous": true,
+      "pad": 0.4,
+      "notes": "The same second Beer Marker is clicked on the public map. The public popup is 301\u00d7295 at x 467.5, y 139.3, fully inside the map; the click leaves the zoom at 9. Live values: title 'The Scarlet Ibis', type 'Beer', description 'Good food and drink, especially after a long ride!'. The image is a background-image anchor with href `.../scarlet-ibis-1024x768.jpeg` and a 260\u00d7200 display using `.../scarlet-ibis-300x225.jpeg`. The public popup has no inputs and no buttons; the Editor popup has the Type select, Title input, image URL and Upload Image, rich-text Description, Lat,Lng, Duplicate and Delete. Both show title, type, image and description. Poster is marked at the end of this scene, so the marker timestamp and the poster image agree.",
+      "poster": {
+        "selector": ".waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      }
+    },
+    {
+      "id": "front-popup-hold",
+      "action": "pause",
+      "highlight": {
+        "selector": ".waymark-map .leaflet-popup",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "anonymous": true,
+      "pad": 0.4,
+      "notes": "Closing line over the open public popup. The poster marker sits here. The active `.leaflet-popup` highlight shifts the 16:9 crop of `.waymark-map` up so the whole popup is inside the 645\u00d7363 crop; the crop starts inside the map rather than cutting the title. The poster replay is anonymous too. No cursor. The popup stays open behind the closing card."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Markers",
+        "subtitle": "One Type, every Marker.\nIcon and colour stay consistent,\non the Editor and the public Map."
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card over the public map, with the popup still open behind it."
+    }
+  ],
+  "audioAfterActionMax": 0.7
+}
