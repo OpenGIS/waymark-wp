@@ -170,7 +170,8 @@ node scripts/video/record.mjs [scripts/video/scenarios/<id>.json]
 # say uses the per-line fallback. Writes work/audio/<id>/ and a timings.json
 # that drives the recorder's holds.
 node scripts/video/tts.mjs [<id>] [--provider <id>] [--voice <name>] \
-  [--rate 175] [--scene <scene-id>] [--lexicon <path>] [--force] [--verbose]
+  [--rate 175] [--scene <scene-id>] [--lexicon <path>] \
+  [--chunk-chars <n>] [--force] [--verbose]
 
 # Build one video end to end from work/timeline-<id>.json and the narration
 # timings. Writes the MP4, poster, WebVTT, transcript and manifest.
@@ -325,11 +326,31 @@ Deepgram has both synthesis and word-level speech-to-text, so it uses **one cont
 [video] TTS: say has no word-timestamp alignment; using per-line synthesis (cadence may vary between lines).
 ```
 
-1. The narration file is read in scenario order. Scenes marked `(no narration)` are skipped. The remaining scene texts are joined with a blank line, so the provider reads them as paragraphs, and sent as one whole-script request through the provider's `synthesise()` path, starting at the run rate.
+1. The narration file is read in scenario order. Scenes marked `(no narration)` are skipped. The remaining scene texts are joined with a blank line. When the provider-ready text (after pronunciation rewriting) is within the chunk limit it is sent as one whole-script request through the provider's `synthesise()` path, starting at the run rate. When it is longer, the script is split at scene boundaries into the fewest chunks that fit and each chunk is requested separately (see [Long scripts](#long-scripts)).
 2. The whole performance is written to `work/audio/<id>/performance.wav` as 48 kHz mono 16-bit PCM.
-3. Silence trim (30 ms lead, 120 ms tail) and `loudnorm=I=-16:TP=-1.5:LRA=11` are applied **once** to the whole performance. Every scene cut comes from that mastered file, so the film has one gain structure and one register.
+3. Silence trim (30 ms lead, 120 ms tail) and `loudnorm=I=-16:TP=-1.5:LRA=11` are applied **once** to the whole performance. Every scene cut comes from that mastered file, so the film has one gain structure and one register. A chunked performance is normalised per chunk and then joined into one master before the cut step.
 4. The mastered WAV is sent as raw bytes to Deepgram STT (`/v1/listen`, `nova-3`, `smart_format=true`, `punctuate=true`). The known script is aligned to the returned word timestamps.
 5. Each narrated scene is cut from the master. The cut starts 30 ms before its first aligned word and ends 120 ms after its last, clamped to the previous cut, the next cut and the file bounds.
+
+#### Long scripts
+
+Deepgram's batch TTS accepts at most **2,000 characters** of input `text`. Pronunciation overrides inflate that text (`{"word": ..., "pronounce": ...}`), so a script can reach the ceiling even when the authored narration is shorter. To keep headroom, the continuous path splits the provider-ready script at **scene boundaries** when it exceeds **1,800 characters**. It never cuts mid-sentence and uses the fewest chunks that fit. A script that already fits is still one request with the same cache key.
+
+```text
+[video] TTS chunks: 3 (limit 1800 chars) — boundaries after scene "create-form", "page-collection".
+```
+
+Override the limit with `--chunk-chars <n>` or `VIDEO_TTS_CHUNK_CHARS`; the flag wins. The value must be a whole number from **1 to 1,900**, so it stays comfortably below the provider's hard ceiling. A single scene longer than the limit cannot be split without cutting mid-sentence: it is sent as one request with a warning and remains subject to the 2,000-character limit.
+
+Each chunk is normalised on its own. Joining the masters inserts 90 ms of silence at every seam; with the normal 120 ms tail and 30 ms lead, that recreates the roughly 240 ms paragraph pause the single-request path produces between scenes. Alignment, cut planning, staged promotion and stamping then run on the joined master unchanged, and the reconstruction summary still reports `delta 0.000s`.
+
+The chunk plan (boundary scene ids and each chunk's text) is part of the performance cache key, so moving a boundary by changing the limit or editing the lexicon regenerates the take. A cache hit makes no request and leaves `timings.json` and `stamp.json` untouched. A pre-chunk single-request master (recorded before chunking existed) remains valid until it is next generated; after that its plan is recorded and later limit changes invalidate normally.
+
+If any chunk fails, the run aborts instead of falling back to another provider. Staging is removed, the previous performance and scene WAVs are untouched, and the command exits non-zero:
+
+```text
+[video] TTS failed: TTS chunk 2/3 after scene "create-form" failed: HTTP 413: ...
+```
 
 Alignment is monotonic and forward-only. Both sides are lowercased, stripped of punctuation, whitespace-collapsed and the spaced em dash is dropped. Each script word is matched to the next STT word that equals it, with a three-token look-ahead for insertions and deletions. Short concatenations handle common STT differences such as `top-right` → `top right`, `Basemap` → `base map` and `Open Street Map` → `OpenStreetMap`; a conservative edit-distance match covers a misheard long word. A scene with no confident match, or a scene whose first word does not follow the previous scene, fails the run and names the scene and words. The run does not guess a cut point.
 
@@ -437,13 +458,13 @@ Word timestamps are read from `results.channels[0].alternatives[0].words[]`, wit
 - `DEEPGRAM_REGION` selects the endpoint: unset is `https://api.deepgram.com`; `eu`, `au` and `in` use the matching regional host.
 - `DEEPGRAM_BASE_URL` overrides the whole base URL, which is useful for a local test server.
 - Per-line requests time out after 30 seconds; a continuous TTS request uses 120 seconds. `408`, `429`, `500`, `502`, `503` and `504` are retried up to three attempts with exponential backoff and jitter, honouring `Retry-After` when present. `400`, `401`, `402`, `403`, `413` and `415` are fatal and do not retry.
-- Each request is limited to 2,000 characters. A longer per-line scene fails before the request and names the scene and the character count; a continuous script that exceeds the limit fails against the `performance` request.
+- Each request is limited to 2,000 characters. The continuous path splits at scene boundaries when the provider-ready text exceeds the chunk limit (default 1,800, range 1–1,900), so a long script no longer fails with `413`/`text_too_long`. A per-line scene, an unsplittable single scene, or a chunk that still exceeds the hard limit fails before or at the request and names the scene and character count.
 - Error bodies may be the legacy shape (`err_code`, `err_msg`), the modern shape (`category`, `message`, `details`), or plain text. The provider prints one readable line with the HTTP status and whichever fields exist.
 - `--verbose` logs the `dg-model-name`, `dg-request-id`, `dg-pronunciations-applied` and `dg-warnings` response headers. The STT model and request id are recorded in the `alignment` block of `timings.json`.
 
 Deepgram is a paid API: every uncached synthesis is a request — one per line in the per-line path, or up to four whole-performance takes in continuous mode. Check current pricing before a large run, and rely on the cache for reruns. Cloud audio is not guaranteed to be bit-identical across calls, so the cache is also what keeps an already-recorded take stable.
 
-The repository loads `.env` from the root when it exists, using `process.loadEnvFile` inside a try/catch. It is never required and its contents are never logged. `.env.example` documents `DEEPGRAM_API_KEY`, `DEEPGRAM_REGION`, `DEEPGRAM_BASE_URL`, `VIDEO_TTS_PROVIDER`, `VIDEO_TTS_VOICE`, `VIDEO_TTS_TARGET_WPM`, `VIDEO_TTS_PACE_BAND_WPM` and `VIDEO_TTS_MAX_ATTEMPTS`; `.env` and its local variants are gitignored. `VIDEO_TTS_LEXICON` is also read by `tts.mjs` when set.
+The repository loads `.env` from the root when it exists, using `process.loadEnvFile` inside a try/catch. It is never required and its contents are never logged. `.env.example` documents `DEEPGRAM_API_KEY`, `DEEPGRAM_REGION`, `DEEPGRAM_BASE_URL`, `VIDEO_TTS_PROVIDER`, `VIDEO_TTS_VOICE`, `VIDEO_TTS_TARGET_WPM`, `VIDEO_TTS_PACE_BAND_WPM` and `VIDEO_TTS_MAX_ATTEMPTS`; `.env` and its local variants are gitignored. `VIDEO_TTS_LEXICON` and `VIDEO_TTS_CHUNK_CHARS` are also read by `tts.mjs` when set.
 
 ### Pronunciation
 
@@ -465,7 +486,7 @@ The continuous and per-line pace ladders still make up to four takes, but every 
 
 Narration defines timing. `tts.mjs` writes `work/audio/<id>/timings.json` with each narrated scene's text, WAV path, measured duration, speech duration, word count, measured pace, attempt count and the rates requested for each attempt, plus the guard settings, a SHA-256 cache hash and the provider metadata. The `say` provider keeps a raw `.aiff` beside the normalised 48 kHz mono 16-bit PCM WAV; the Deepgram response is written to a temporary WAV and removed after normalisation.
 
-A continuous run keeps the same per-scene fields and adds `mode: "continuous"`, `performanceHash`, `overallWpm`, `takeAttempts`, `attemptRates`, `paceSamples` (the sampled requested-rate and measured-wpm pairs), a `performance` block (master path, duration, narrated span, inter-scene gaps, head/tail trim and the reconstruction delta) and an `alignment` block. Each scene also carries an `alignment` object with its confidence, matched and unmatched word counts, first and last matched words and cut boundaries. The existing fields keep their names and meanings for the recorder, build and captions; `duration` remains the cut WAV's duration and `file` remains its path. In continuous mode `firstWpm`, `attempts` and `attemptRates` describe the whole take rather than a per-scene retry.
+A continuous run keeps the same per-scene fields and adds `mode: "continuous"`, `performanceHash`, `overallWpm`, `takeAttempts`, `attemptRates`, `paceSamples` (the sampled requested-rate and measured-wpm pairs), a `chunks` block (count, limit, seam boundaries and per-chunk character counts), a `performance` block (master path, duration, narrated span, inter-scene gaps, head/tail trim and the reconstruction delta) and an `alignment` block. Each scene also carries an `alignment` object with its confidence, matched and unmatched word counts, first and last matched words and cut boundaries. The existing fields keep their names and meanings for the recorder, build and captions; `duration` remains the cut WAV's duration and `file` remains its path. In continuous mode `firstWpm`, `attempts` and `attemptRates` describe the whole take rather than a per-scene retry.
 
 Narration starts after the action has settled, plus a fixed lead beat, minus any J-cut, not at the scene start. For a narrated scene the recorder computes:
 
@@ -487,7 +508,7 @@ hold          = max(0, sceneDuration - actionEnd)
 
 `pad` defaults to `0.5` at scenario level and can be overridden per scene. A scene without audio (a silent beat such as `settle` or `outro`) uses its own `hold`, which defaults to `0`, and lasts `actionEnd + hold`; the `minHold` floor does not apply to silent scenes. When `timings.json` is absent every scene uses its own `hold` and the recorder warns at the end of the run. The timeline records `audio`, `audioDuration`, `audioOffset`, `jcut`, `minHold`, `hold` and `actionEnd` for every scene. `hold` is the silence actually held after the action, so for a narrated scene it is smaller than `audioDuration` whenever the action overlaps the start of the narration.
 
-Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, any provider speed multiplier, the pace settings, the pace-guard version, the pronunciation plan version, the lexicon content hash and the post-processing version. A continuous performance also includes its mode, alignment version and the whole-script text in the key. Switching provider, voice, rate, speed, pronunciation or lexicon therefore regenerates rather than reusing the wrong audio. Reruns reuse existing WAVs and `--force` regenerates everything. `--scene <id>` regenerates one scene on the per-line path; it requires compatible per-line cache entries for the other scenes, so after a continuous performance regenerate the whole run instead of mixing modes. `timings.json` records the provider, voice, rate, pace guard, model metadata, a `pronunciations` block and, when a fallback happened, the requested provider and the reason.
+Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, any provider speed multiplier, the pace settings, the pace-guard version, the pronunciation plan version, the lexicon content hash and the post-processing version. A continuous performance also includes its mode, alignment version, whole-script text and, when it was split, the chunk plan (boundary scene ids and per-chunk text) in the key. Switching provider, voice, rate, speed, pronunciation or lexicon therefore regenerates rather than reusing the wrong audio. A cache hit makes no request and leaves `timings.json` and `stamp.json` byte-identical. Reruns reuse existing WAVs and `--force` regenerates everything. `--scene <id>` regenerates one scene on the per-line path; it requires compatible per-line cache entries for the other scenes, so after a continuous performance regenerate the whole run instead of mixing modes. `timings.json` records the provider, voice, rate, pace guard, model metadata, a `pronunciations` block, a `chunks` block for continuous runs and, when a fallback happened, the requested provider and the reason.
 
 Before recording starts, `record.mjs` performs an unrecorded warm-up for a first `goto` or `card` scene, including the scenario's `waitForMap` settle. This removes cold start-up cost. It then puts the first scene on screen on the recorded page before the timeline origin: a `goto` navigates to its URL and performs its wait, while a `card` first navigates to the first non-card `goto` scene's URL, waits for its selector and the map, applies `hideSelectors`, and only then injects the card overlay. The take therefore opens on the fully rendered first scene rather than the blank page, and the page revealed when the card ends is already painted. The pre-warm is recorded but skipped by the build using the timeline's `video.offset`. Neither warm-up runs between scenes, and a scenario whose first action is neither `goto` nor `card` is not pre-warmed.
 

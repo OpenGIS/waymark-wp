@@ -72,9 +72,12 @@ function installVideoCursor() {
       width: 24px;
       height: 24px;
       margin: -12px 0 0 -12px;
-      border: 3px solid rgba(37, 99, 235, 0.95);
+      border: 3px solid rgba(13, 215, 13, 0.95);
       border-radius: 50%;
-      background: rgba(37, 99, 235, 0.12);
+      background: rgba(13, 215, 13, 0.12);
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.45),
+        0 0 0 4px rgba(13, 215, 13, 0.18);
       transform: scale(0.35);
       opacity: 0.85;
       transition:

@@ -49,6 +49,11 @@ import {
   roundWpm,
 } from "./lib/tts/pace.mjs";
 import { ALIGNMENT_VERSION, alignScriptToWords } from "./lib/tts/alignment.mjs";
+import {
+  chunkPlanSignature,
+  planChunks,
+  resolveChunkChars,
+} from "./lib/tts/chunk.mjs";
 import { buildStamp, writeJsonAtomic, writeStamp } from "./lib/tts/stamp.mjs";
 import {
   availability,
@@ -73,12 +78,17 @@ const DEFAULT_LEXICON_PATH = path.join(
 const CONTINUOUS_LEAD_SECONDS = 0.03;
 const CONTINUOUS_TAIL_SECONDS = 0.12;
 const CONTINUOUS_REQUEST_TIMEOUT_MS = 120_000;
+const CONTINUOUS_SEAM_SILENCE_SECONDS = 0.09;
 
 async function main() {
   loadDotEnv(REPO_ROOT, "TTS");
 
   const options = parseArgs(process.argv.slice(2));
   const pace = resolvePaceOptions(process.env);
+  const chunkChars = resolveChunkChars({
+    flag: options.chunkChars,
+    env: process.env,
+  });
 
   if (options.help) {
     printUsage();
@@ -160,6 +170,7 @@ async function main() {
     previousById,
     pace,
     lexicon,
+    chunkChars,
   });
 
   const scenes = narrated
@@ -203,6 +214,9 @@ async function main() {
     timings.paceSamples = selected.continuous.paceSamples;
     timings.performance = selected.continuous.performance;
     timings.alignment = selected.continuous.alignment;
+    if (selected.continuous.chunks) {
+      timings.chunks = selected.continuous.chunks;
+    }
   }
 
   if (selected.fallbackFrom) {
@@ -224,7 +238,10 @@ async function main() {
     timings,
   });
 
-  if (selected.commit) {
+  if (selected.cached) {
+    // A cache hit leaves timings.json and stamp.json untouched, including their
+    // generatedAt values, so an unchanged narration cannot churn the stamp.
+  } else if (selected.commit) {
     selected.commit({ timings, timingsPath, stamp });
   } else {
     writeJsonAtomic(timingsPath, timings);
@@ -261,8 +278,8 @@ async function main() {
  * synthesis failure restarts the run on the next candidate so one video never
  * mixes voices.
  *
- * @param {{ candidates: object[], options: object, narrated: object[], audioDir: string, previous: object | null, previousById: Map<string, object>, pace: object, lexicon: { path: string, hash: string, lexicon: object } }} args
- * @returns {Promise<{ provider: object, voice: string, rate: number, pronunciation: object, generated: Map<string, object>, rows: object[], continuous: object | null, fallbackFrom: string | null, fallbackReason: string | null }>}
+ * @param {{ candidates: object[], options: object, narrated: object[], audioDir: string, previous: object | null, previousById: Map<string, object>, pace: object, lexicon: { path: string, hash: string, lexicon: object }, chunkChars: number }} args
+ * @returns {Promise<{ provider: object, voice: string, rate: number, pronunciation: object, generated: Map<string, object>, rows: object[], continuous: object | null, cached?: boolean, commit?: Function, fallbackFrom: string | null, fallbackReason: string | null }>}
  */
 async function selectAndSynthesise({
   candidates,
@@ -273,6 +290,7 @@ async function selectAndSynthesise({
   previousById,
   pace,
   lexicon,
+  chunkChars,
 }) {
   let index = 0;
   let fallbackFrom = null;
@@ -315,6 +333,7 @@ async function selectAndSynthesise({
             previous,
             pace,
             pronunciation,
+            chunkChars,
           });
         } else {
           if (provider.supportsContinuous !== true && options.scene === null) {
@@ -347,6 +366,8 @@ async function selectAndSynthesise({
           generated: result.generated,
           rows: result.rows,
           continuous: result.continuous ?? null,
+          cached: result.cached === true,
+          commit: result.commit,
           fallbackFrom,
           fallbackReason,
         };
@@ -602,13 +623,19 @@ async function synthesiseRun({
  * Synthesise the whole narration as one continuous performance, master it once,
  * align the known script to its STT word timestamps, and cut one WAV per scene.
  *
+ * When the whole-script synthesis text fits the chunk limit, this is exactly one
+ * request. Otherwise the script is split at scene boundaries, each part is
+ * requested and normalised, and the parts are joined into one master with the
+ * usual inter-scene pause at every seam. Alignment, cut planning, promotion and
+ * stamping all run on the joined master.
+ *
  * The performance is the unit of pace: a whole take is re-rendered at a nudged
  * rate only when the overall pace is outside the band. Per-scene pace is
  * reported but never triggers a retry. Every cut comes from the same mastered
  * file, so there is one gain structure and one register across the film.
  *
- * @param {{ provider: object, voice: string, voiceSource: string, options: object, narrated: object[], audioDir: string, previous: object | null, pace: object, pronunciation: object }} args
- * @returns {Promise<{ generated: Map<string, object>, rows: object[], continuous: object }>}
+ * @param {{ provider: object, voice: string, voiceSource: string, options: object, narrated: object[], audioDir: string, previous: object | null, pace: object, pronunciation: object, chunkChars: number }} args
+ * @returns {Promise<{ generated: Map<string, object>, rows: object[], continuous: object, cached?: boolean }>}
  */
 async function synthesiseContinuousRun({
   provider,
@@ -620,11 +647,19 @@ async function synthesiseContinuousRun({
   previous,
   pace,
   pronunciation,
+  chunkChars,
 }) {
   const performanceText = buildPerformanceText(narrated);
   const synthesisText = buildPerformanceSynthesisText(narrated, pronunciation);
   const performancePath = path.join(audioDir, "performance.wav");
-  const hash = hashPerformance(
+  const plan = planChunks({
+    narrated,
+    texts: pronunciation.texts,
+    limit: chunkChars,
+  });
+  const chunkSignature =
+    plan.chunks.length > 1 ? chunkPlanSignature(plan) : null;
+  const legacyHash = hashPerformance(
     performanceText,
     provider,
     voice,
@@ -633,13 +668,38 @@ async function synthesiseContinuousRun({
     pronunciation.lexiconHash,
     synthesisText,
   );
+  const hash = chunkSignature
+    ? hashPerformance(
+        performanceText,
+        provider,
+        voice,
+        pronunciation.rate,
+        pace,
+        pronunciation.lexiconHash,
+        synthesisText,
+        chunkSignature,
+      )
+    : legacyHash;
+  const cached = options.force
+    ? null
+    : findContinuousCache({
+        previous,
+        narrated,
+        performancePath,
+        hash,
+        legacyHash,
+      });
 
-  if (
-    !options.force &&
-    canReuseContinuous({ previous, narrated, performancePath, hash })
-  ) {
-    return reuseContinuous({ previous, narrated, hash });
+  if (cached) {
+    return reuseContinuous({
+      previous,
+      narrated,
+      hash: cached.hash,
+      legacy: cached.legacy,
+    });
   }
+
+  logChunkPlan(plan);
 
   const stagingDir = path.join(audioDir, ".next");
   const stagedPerformancePath = path.join(stagingDir, "performance.wav");
@@ -654,13 +714,19 @@ async function synthesiseContinuousRun({
       voiceSource,
       options,
       performanceText,
-      synthesisText,
+      chunks: plan.chunks.map((chunk) => ({
+        ...chunk,
+        expectedPronunciations: chunk.scenes.reduce(
+          (total, sceneId) =>
+            total + (pronunciation.sceneCounts.get(sceneId) ?? 0),
+          0,
+        ),
+      })),
       performancePath: stagedPerformancePath,
       audioDir,
       pace,
       rate: pronunciation.rate,
       locked: pronunciation.locked,
-      expectedPronunciations: pronunciation.count,
     });
 
     const performanceDuration = probeDuration(stagedPerformancePath);
@@ -761,6 +827,7 @@ async function synthesiseContinuousRun({
       takeAttempts: take.attempts,
       attemptRates: take.attemptRates,
       paceSamples: take.paceSamples,
+      chunks: summariseChunkPlan(plan),
       performance,
       alignment: {
         version: ALIGNMENT_VERSION,
@@ -819,6 +886,54 @@ function buildPerformanceSynthesisText(narrated, pronunciation) {
     .map((scene) => pronunciation.texts.get(scene.id) ?? scene.narration)
     .map((text) => text.trim())
     .join("\n\n");
+}
+
+/**
+ * Report the split before any request is made. A plan that fits in one request
+ * stays quiet; an oversized single scene is called out because it cannot be
+ * split further without cutting mid-sentence.
+ *
+ * @param {{ limit: number, chunks: Array<{ scenes: string[], chars: number }>, boundaries: string[] }} plan
+ */
+function logChunkPlan(plan) {
+  if (plan.chunks.length > 1) {
+    const boundaries = plan.boundaries
+      .map((sceneId) => `"${sceneId}"`)
+      .join(", ");
+    console.log(
+      `[video] TTS chunks: ${plan.chunks.length} (limit ${plan.limit} chars) ` +
+        `— boundaries after scene ${boundaries}.`,
+    );
+  }
+
+  for (const chunk of plan.chunks) {
+    if (chunk.scenes.length === 1 && chunk.chars > plan.limit) {
+      console.warn(
+        `[video] TTS chunks: scene "${chunk.scenes[0]}" is ${chunk.chars} ` +
+          `characters, above the ${plan.limit}-character limit but cannot be ` +
+          `split at a scene boundary; sending it as one request.`,
+      );
+    }
+  }
+}
+
+/**
+ * Record the plan beside the timings so a later run can see how the master was
+ * assembled and which seam boundaries were used.
+ *
+ * @param {{ limit: number, chunks: Array<{ scenes: string[], chars: number }>, boundaries: string[] }} plan
+ * @returns {{ count: number, limit: number, boundaries: string[], parts: Array<{ scenes: string[], chars: number }> }}
+ */
+function summariseChunkPlan(plan) {
+  return {
+    count: plan.chunks.length,
+    limit: plan.limit,
+    boundaries: plan.boundaries,
+    parts: plan.chunks.map((chunk) => ({
+      scenes: chunk.scenes,
+      chars: chunk.chars,
+    })),
+  };
 }
 
 /**
@@ -884,12 +999,50 @@ function canReuseContinuous({ previous, narrated, performancePath, hash }) {
 }
 
 /**
+ * Find a reusable continuous performance. A current cache entry matches the
+ * full chunk-aware key. A pre-chunk entry has no `chunks` block and was mastered
+ * as one request, so its legacy key is still accepted; it stays valid until the
+ * performance is next generated, at which point the chunk plan is recorded and
+ * later limit changes invalidate normally.
+ *
+ * @param {{ previous: object | null, narrated: object[], performancePath: string, hash: string, legacyHash: string }} options
+ * @returns {{ hash: string, legacy: boolean } | null}
+ */
+function findContinuousCache({
+  previous,
+  narrated,
+  performancePath,
+  hash,
+  legacyHash,
+}) {
+  if (canReuseContinuous({ previous, narrated, performancePath, hash })) {
+    return { hash, legacy: false };
+  }
+
+  if (
+    previous &&
+    !previous.chunks &&
+    previous.performanceHash === legacyHash &&
+    canReuseContinuous({
+      previous,
+      narrated,
+      performancePath,
+      hash: legacyHash,
+    })
+  ) {
+    return { hash: legacyHash, legacy: true };
+  }
+
+  return null;
+}
+
+/**
  * Rebuild the in-memory result from a cached continuous timings file.
  *
- * @param {{ previous: object, narrated: object[], hash: string }} options
- * @returns {{ generated: Map<string, object>, rows: object[], continuous: object }}
+ * @param {{ previous: object, narrated: object[], hash: string, legacy?: boolean }} options
+ * @returns {{ generated: Map<string, object>, rows: object[], continuous: object, cached: boolean }}
  */
-function reuseContinuous({ previous, narrated, hash }) {
+function reuseContinuous({ previous, narrated, hash, legacy = false }) {
   const generated = new Map();
   const rows = [];
 
@@ -909,17 +1062,24 @@ function reuseContinuous({ previous, narrated, hash }) {
     });
   }
 
-  console.log("[video] TTS: continuous performance reused from cache.");
+  console.log(
+    legacy
+      ? "[video] TTS: continuous performance reused from cache " +
+          "(pre-chunk single-request master)."
+      : "[video] TTS: continuous performance reused from cache.",
+  );
 
   return {
     generated,
     rows,
+    cached: true,
     continuous: {
       hash,
       overallWpm: previous.overallWpm,
       takeAttempts: previous.takeAttempts,
       attemptRates: previous.attemptRates ?? [],
       paceSamples: previous.paceSamples ?? [],
+      chunks: previous.chunks ?? null,
       performance: previous.performance,
       alignment: previous.alignment,
     },
@@ -927,10 +1087,61 @@ function reuseContinuous({ previous, narrated, hash }) {
 }
 
 /**
- * Render whole-performance takes until one lands inside the pace band, then
- * promote the closest take to `performance.wav`.
+ * Join normalised chunk masters into one performance, padding each seam with
+ * the inter-scene silence the single-request path would have placed there.
+ * Every chunk already ends with a 120 ms tail and begins with a 30 ms lead, so
+ * the extra silence tops the speech-to-speech pause up to roughly 240 ms.
  *
- * @param {{ provider: object, voice: string, voiceSource: string, options: object, performanceText: string, synthesisText: string, performancePath: string, audioDir: string, pace: object, rate: number, locked: boolean, expectedPronunciations: number }} options
+ * @param {{ chunkPaths: string[], outPath: string, gapSeconds: number }} options
+ */
+function concatenatePerformanceChunks({ chunkPaths, outPath, gapSeconds }) {
+  const inputs = chunkPaths.flatMap((chunkPath) => ["-i", chunkPath]);
+  const chains = [];
+  const labels = [];
+
+  for (let index = 0; index < chunkPaths.length; index += 1) {
+    const label = `chunk${index}`;
+    const padding =
+      index < chunkPaths.length - 1
+        ? `,apad=pad_dur=${gapSeconds.toFixed(6)}`
+        : "";
+
+    chains.push(
+      `[${index}:a]aformat=sample_fmts=s16:sample_rates=48000:` +
+        `channel_layouts=mono${padding}[${label}]`,
+    );
+    labels.push(`[${label}]`);
+  }
+
+  chains.push(`${labels.join("")}concat=n=${chunkPaths.length}:v=0:a=1[out]`);
+
+  run("ffmpeg", [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    ...inputs,
+    "-filter_complex",
+    chains.join(";"),
+    "-map",
+    "[out]",
+    "-ar",
+    "48000",
+    "-ac",
+    "1",
+    "-c:a",
+    "pcm_s16le",
+    outPath,
+  ]);
+}
+
+/**
+ * Render whole-performance takes until one lands inside the pace band, then
+ * promote the closest take to `performance.wav`. A take may span one request or
+ * several scene-aligned chunks joined into one master; the pace is always
+ * measured on the joined performance.
+ *
+ * @param {{ provider: object, voice: string, voiceSource: string, options: object, performanceText: string, chunks: Array<{ text: string, after: string | null, expectedPronunciations: number }>, performancePath: string, audioDir: string, pace: object, rate: number, locked: boolean }} options
  * @returns {Promise<{ duration: number, speechSeconds: number, wordCount: number, wpm: number, firstWpm: number, attempts: number, requestedRate: number, attemptRates: number[] }>}
  */
 async function synthesisePerformance({
@@ -939,13 +1150,12 @@ async function synthesisePerformance({
   voiceSource,
   options,
   performanceText,
-  synthesisText,
+  chunks,
   performancePath,
   audioDir,
   pace,
   rate,
   locked,
-  expectedPronunciations,
 }) {
   const attemptDir = path.join(audioDir, ".performance");
   const takes = [];
@@ -968,30 +1178,63 @@ async function synthesisePerformance({
             }),
           );
       const attemptPath = path.join(attemptDir, `performance-${attempt}.wav`);
-      let result;
+      const chunkPaths = [];
 
-      try {
-        result = await provider.synthesise({
-          text: synthesisText,
-          voice,
-          rate: requestedRate,
-          outPath: attemptPath,
-          env: process.env,
-          sceneId: "performance",
-          verbose: options.verbose,
-          timeoutMs: CONTINUOUS_REQUEST_TIMEOUT_MS,
-          expectedPronunciations,
-          allowVoiceSubstitution: voiceSource !== "flag",
-          log: console.log,
-        });
-      } catch (error) {
-        error.isProviderFailure = true;
-        throw error;
+      for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
+        const chunk = chunks[chunkIndex];
+        const chunkPath =
+          chunks.length === 1
+            ? attemptPath
+            : path.join(
+                attemptDir,
+                `performance-${attempt}-chunk-${chunkIndex + 1}.wav`,
+              );
+
+        try {
+          await provider.synthesise({
+            text: chunk.text,
+            voice,
+            rate: requestedRate,
+            outPath: chunkPath,
+            env: process.env,
+            sceneId:
+              chunks.length === 1
+                ? "performance"
+                : `performance chunk ${chunkIndex + 1}`,
+            verbose: options.verbose,
+            timeoutMs: CONTINUOUS_REQUEST_TIMEOUT_MS,
+            expectedPronunciations: chunk.expectedPronunciations,
+            allowVoiceSubstitution: voiceSource !== "flag",
+            log: console.log,
+          });
+        } catch (error) {
+          const previousBoundary =
+            chunkIndex > 0 ? chunks[chunkIndex - 1].after : null;
+          const boundary = previousBoundary
+            ? ` after scene "${previousBoundary}"`
+            : "";
+          const wrapped = new Error(
+            `TTS chunk ${chunkIndex + 1}/${chunks.length}${boundary} ` +
+              `failed: ${oneLine(error?.message ?? error)}`,
+          );
+          // A chunk is part of one performance. Abort the run rather than
+          // falling back to a different provider and mixing the take.
+          wrapped.isChunkFailure = true;
+          throw wrapped;
+        }
+
+        chunkPaths.push(chunkPath);
       }
 
-      const duration = Number.isFinite(result?.duration)
-        ? result.duration
-        : probeDuration(attemptPath);
+      if (chunkPaths.length > 1) {
+        concatenatePerformanceChunks({
+          chunkPaths,
+          outPath: attemptPath,
+          gapSeconds: CONTINUOUS_SEAM_SILENCE_SECONDS,
+        });
+      }
+
+      const duration = probeDuration(attemptPath);
       const measured = measurePace(attemptPath, performanceText);
 
       takes.push({
@@ -1292,6 +1535,7 @@ function roundConfidence(value) {
  * @param {{ targetWpm: number, bandWpm: number, maxAttempts: number }} pace
  * @param {string} lexiconHash
  * @param {string} synthesisText
+ * @param {Array<object> | null} [chunkPlan]
  * @returns {string}
  */
 function hashPerformance(
@@ -1302,6 +1546,7 @@ function hashPerformance(
   pace,
   lexiconHash,
   synthesisText,
+  chunkPlan = null,
 ) {
   const speed =
     typeof provider.speedForRate === "function"
@@ -1325,6 +1570,7 @@ function hashPerformance(
         pronunciations: lexiconHash,
         pronunciationPlan: PRONUNCIATION_VERSION,
         postProcess: POST_PROCESS_VERSION,
+        ...(chunkPlan ? { chunks: chunkPlan } : {}),
       }),
     )
     .digest("hex");
@@ -1558,7 +1804,7 @@ function logChosenPace(sceneId, info, pace, cached) {
  * Parse the CLI arguments.
  *
  * @param {string[]} argv
- * @returns {{ scenarioId: string | null, provider: string | null, voice: string | null, rate: number, scene: string | null, lexicon: string | null, force: boolean, verbose: boolean, help: boolean }}
+ * @returns {{ scenarioId: string | null, provider: string | null, voice: string | null, rate: number, scene: string | null, lexicon: string | null, chunkChars: string | null, force: boolean, verbose: boolean, help: boolean }}
  */
 function parseArgs(argv) {
   const options = {
@@ -1568,6 +1814,7 @@ function parseArgs(argv) {
     rate: DEFAULT_RATE,
     scene: null,
     lexicon: null,
+    chunkChars: null,
     force: false,
     verbose: false,
     help: false,
@@ -1596,7 +1843,8 @@ function parseArgs(argv) {
       argument === "--voice" ||
       argument === "--rate" ||
       argument === "--scene" ||
-      argument === "--lexicon"
+      argument === "--lexicon" ||
+      argument === "--chunk-chars"
     ) {
       const value = argv[index + 1];
       if (value === undefined || value.startsWith("--")) {
@@ -1618,6 +1866,8 @@ function parseArgs(argv) {
         options.rate = rate;
       } else if (argument === "--lexicon") {
         options.lexicon = value;
+      } else if (argument === "--chunk-chars") {
+        options.chunkChars = value;
       } else {
         options.scene = value;
       }
@@ -1942,6 +2192,9 @@ function printUsage() {
       "  --scene <id>       process one scene only (per-line path)",
       "  --lexicon <path>   pronunciation lexicon (default:",
       "                     scripts/video/narration/pronunciations.json)",
+      "  --chunk-chars <n>  split long continuous scripts at scene boundaries",
+      "                     when the provider-ready text exceeds n characters",
+      "                     (default: 1800, accepted range 1-1900)",
       "  --force            ignore the cache and regenerate",
       "  --verbose          log provider model and request identifiers",
       "",
@@ -1949,9 +2202,11 @@ function printUsage() {
       "  DEEPGRAM_API_KEY, DEEPGRAM_REGION, DEEPGRAM_BASE_URL",
       "  VIDEO_TTS_PROVIDER, VIDEO_TTS_VOICE, VIDEO_TTS_LEXICON",
       "  VIDEO_TTS_TARGET_WPM, VIDEO_TTS_PACE_BAND_WPM, VIDEO_TTS_MAX_ATTEMPTS",
+      "  VIDEO_TTS_CHUNK_CHARS",
       "",
       "A continuous-capable provider (Deepgram) synthesises the whole script",
-      "once, then aligns and cuts it per scene. Other providers use per-line",
+      "once, or in scene-aligned chunks when it is too long for one request,",
+      "then aligns and cuts it per scene. Other providers use per-line",
       "synthesis. A .env file in the repository root is loaded when present.",
       "Audio is written to scripts/video/work/audio/<id>/ with a timings.json",
       "file beside it. Run from the repository root.",

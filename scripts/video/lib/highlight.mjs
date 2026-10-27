@@ -5,8 +5,9 @@
 // with an id-scoped `!important` transition, which beats the deterministic
 // `* { transition: none !important }` reset on specificity.
 //
-// One visual language is used everywhere: a blue outline, a soft halo and a
-// drop shadow. `highlight: null` means no outline. Each scene owns its outline
+// One visual language is used everywhere: a green outline, a dark definition
+// ring, a soft halo and a drop shadow. `highlight: null` means no outline. Each
+// scene owns its outline
 // state: a scene with a highlight draws or updates it after its action, and a
 // scene without one clears it. Re-applying the same selector only moves the
 // rectangle, so consecutive scenes never fade the outline out and back in.
@@ -22,10 +23,11 @@ const CSS = `
     z-index: 2147483646;
     box-sizing: border-box;
     pointer-events: none !important;
-    border: 3px solid rgba(37, 99, 235, 0.95);
+    border: 3px solid rgba(13, 215, 13, 0.95);
     border-radius: 6px;
     box-shadow:
-      0 0 0 4px rgba(37, 99, 235, 0.18),
+      0 0 0 1px rgba(0, 0, 0, 0.45),
+      0 0 0 4px rgba(13, 215, 13, 0.18),
       0 8px 24px rgba(0, 0, 0, 0.28);
     opacity: 0;
     transition: opacity ${FADE_MS}ms ease-out !important;
