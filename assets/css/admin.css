@@ -490,6 +490,9 @@ body.waymark_page_waymark-settings #waymark-settings-nav .waymark-docs-link.butt
     margin-left: 3px;
   }
 }
+body.waymark_page_waymark-settings div.waymark-settings-tab[hidden] {
+  display: none !important;
+}
 body.waymark_page_waymark-settings div.waymark-settings-tab > small {
   display: block;
   margin-top: 20px;

@@ -510,6 +510,11 @@ body.waymark_page_waymark-settings {
   //    }
   //  }
   div.waymark-settings-tab {
+    //Inactive panels are hidden server-side until the nav script selects one.
+    &[hidden] {
+      display: none !important;
+    }
+
     //Pro Tip
     > small {
       display: block;

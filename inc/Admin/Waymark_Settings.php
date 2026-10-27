@@ -54,6 +54,7 @@ class Waymark_Settings {
 			'sections' => [
 				'layers' => [
 					'repeatable' => true,
+					'add_label' => __('Add Type', 'waymark'),
 					// translators: The name of the section for adding Basemaps
 					'title' => esc_html__('Basemaps', 'waymark'),
 					// translators: The description of the section for adding Basemaps
@@ -141,6 +142,7 @@ class Waymark_Settings {
 			'sections' => [
 				'marker_types' => [
 					'repeatable' => true,
+					'add_label' => __('Add Type', 'waymark'),
 					// translators: The title of the section for adding Marker Types
 					'title' => esc_html__('Marker', 'waymark') . ' ' . esc_html__('Types', 'waymark'),
 					'description' => '<span class="waymark-lead">' . __('Customise how Markers are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.', 'waymark') . '</span>',
@@ -315,6 +317,7 @@ class Waymark_Settings {
 			'sections' => [
 				'line_types' => [
 					'repeatable' => true,
+					'add_label' => __('Add Type', 'waymark'),
 					// translators: The title of the section for adding Line Types
 					'title' => esc_html__('Line', 'waymark') . ' ' . esc_html__('Types', 'waymark'),
 					'description' => '<span class="waymark-lead">' . __('Customise how Lines are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.', 'waymark') . '</span>',
@@ -433,6 +436,7 @@ class Waymark_Settings {
 			'sections' => [
 				'shape_types' => [
 					'repeatable' => true,
+					'add_label' => __('Add Type', 'waymark'),
 					// translators: The title of the section for adding Shape Types
 					'title' => esc_html__('Shape', 'waymark') . ' ' . esc_html__('Types', 'waymark'),
 					'description' => '<span class="waymark-lead">' . __('Customise how Shapes are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.', 'waymark') . '</span>',
@@ -661,6 +665,7 @@ class Waymark_Settings {
 				],
 				'groups' => [
 					'repeatable' => true,
+					'add_label' => __('Create Group', 'waymark'),
 					// translators: The title of the section for adding Meta Groups
 					'title' => esc_html__('Groups', 'waymark'),
 					// translators: The description of the section for adding Meta Groups
@@ -1686,6 +1691,7 @@ class Waymark_Settings {
 			}
 		}
 		$active_help = $this->get_active_help($active_content);
+		$active_tab_key = $this->get_active_tab_key($active_content);
 
 		echo '<div id="waymark-admin-container" class="waymark-active-' . esc_attr($active_content) . '">' . "\n";
 
@@ -1729,9 +1735,13 @@ class Waymark_Settings {
 		echo '		<form action="' . esc_url(admin_url('options.php')) . '" method="post">' . "\n";
 		settings_fields($this->page_slug);
 
+		//With JavaScript disabled, reveal every panel so all settings remain reachable.
+		echo '<noscript><style>#waymark-admin-container .waymark-settings-tab[hidden] { display: block !important; }</style></noscript>' . "\n";
+
 		//For each tab
 		foreach ($this->tabs as $tab_key => $tab_data) {
-			echo '	<div class="waymark-settings-tab waymark-settings-tab-' . esc_attr($tab_key) . '">' . "\n";
+			$tab_hidden = ($tab_key === $active_tab_key) ? '' : ' hidden';
+			echo '	<div class="waymark-settings-tab waymark-settings-tab-' . esc_attr($tab_key) . '"' . $tab_hidden . '>' . "\n";
 
 			//Tab description?
 			if (array_key_exists('description', $tab_data)) {
@@ -1766,7 +1776,8 @@ class Waymark_Settings {
 				//Repeatable?
 				if (array_key_exists('repeatable', $section_data) && $section_data['repeatable']) {
 					echo '<noscript><style>#waymark-admin-container .waymark-repeatable[hidden] { display: block !important; }</style></noscript>' . "\n";
-					echo '<div class="waymark-repeatable" data-count="0" hidden>' . "\n";
+					$add_label = isset($section_data['add_label']) ? $section_data['add_label'] : __('Create Item', 'waymark');
+					echo '<div class="waymark-repeatable" data-count="0" data-add-label="' . esc_attr($add_label) . '" hidden>' . "\n";
 				}
 
 				echo '		<table class="form-table">' . "\n";
@@ -1802,6 +1813,26 @@ class Waymark_Settings {
 
 		echo '	</div>' . "\n";
 		echo '</div>' . "\n";
+	}
+
+	private function get_active_tab_key($active_content) {
+		if (strpos($active_content, 'waymark-settings-tab-') === 0) {
+			$tab_key = substr($active_content, strlen('waymark-settings-tab-'));
+
+			if (array_key_exists($tab_key, $this->tabs)) {
+				return $tab_key;
+			}
+		} elseif (strpos($active_content, 'waymark-settings-section-') === 0) {
+			$section_key = substr($active_content, strlen('waymark-settings-section-'));
+
+			foreach ($this->tabs as $tab_key => $tab_data) {
+				if (array_key_exists($section_key, $tab_data['sections'])) {
+					return $tab_key;
+				}
+			}
+		}
+
+		return substr($this->default_content, strlen('waymark-settings-tab-'));
 	}
 
 	public function settings_nav($current = 'tiles', $active_help = null) {

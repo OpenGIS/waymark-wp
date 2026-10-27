@@ -364,14 +364,15 @@ function waymark_setup_repeatable_settings() {
           waymark_setup_parameter_tooltips();
         }
 
+        var add_label =
+          container.attr("data-add-label") || waymark_php_lang.add_type;
+
         var add_button = jQuery("<button />")
           .append('<i class="ion ion-plus"></i>')
           .append(
-            jQuery("<span />")
-              .addClass("waymark-add-label")
-              .text(waymark_php_lang.add_type),
+            jQuery("<span />").addClass("waymark-add-label").text(add_label),
           )
-          .attr("aria-label", waymark_php_lang.add_type)
+          .attr("aria-label", add_label)
           .addClass("button waymark-add")
           .on("click", function (e) {
             e.preventDefault();
@@ -668,7 +669,7 @@ function waymark_setup_settings_nav() {
     return false;
   }
 
-  tabs.hide();
+  tabs.hide().attr("hidden", "hidden");
 
   admin_container.removeClass(function (index, className) {
     return (className.match(/(^|\s)waymark-active-\S+/g) || []).join(" ");
@@ -682,13 +683,13 @@ function waymark_setup_settings_nav() {
 
     if (section.length) {
       section.show();
-      section.closest(".waymark-settings-tab").show();
+      section.closest(".waymark-settings-tab").show().removeAttr("hidden");
     }
   } else {
     var tab = jQuery("." + init_tab_key, admin_container).first();
 
     if (tab.length) {
-      tab.show();
+      tab.show().removeAttr("hidden");
     }
   }
 }

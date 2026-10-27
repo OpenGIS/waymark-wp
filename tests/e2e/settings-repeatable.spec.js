@@ -192,7 +192,29 @@ test("keeps a ragged repeatable column indexed through a settings save", async (
     }
 
     await waymark.login(page);
+
+    // The active panel must already be the only visible tab at
+    // DOMContentLoaded, before the nav script runs and swaps tabs.
+    await page.addInitScript(() => {
+      window.__waymarkFirstPaintTabs = null;
+      document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+          window.__waymarkFirstPaintTabs = Array.from(
+            document.querySelectorAll(".waymark-settings-tab:not([hidden])"),
+          ).map((tab) => tab.className);
+        },
+        true,
+      );
+    });
+
     await page.goto(SETTINGS_PATH);
+
+    const firstPaintTabs = await page.evaluate(
+      () => window.__waymarkFirstPaintTabs,
+    );
+    expect(firstPaintTabs).toHaveLength(1);
+    expect(firstPaintTabs[0]).toContain("waymark-settings-tab-tiles");
 
     // The repeatable script replaces the single PHP-rendered table with one
     // table per saved row, then indexes every input in each clone.
@@ -282,4 +304,45 @@ test("keeps a ragged repeatable column indexed through a settings save", async (
       restoreSettings(original);
     }
   }
+});
+
+test("labels each repeatable add button for its section", async ({
+  page,
+  waymark,
+}) => {
+  await waymark.login(page);
+
+  // The Groups section sits under the Meta tab, whose repeatable control used
+  // to say "Add Type" like every other section.
+  await page.goto(
+    waymark.adminUrl(
+      "/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-meta",
+    ),
+  );
+
+  const groupsAdd = page.locator(
+    ".waymark-settings-section-groups .waymark-repeatable .waymark-add",
+  );
+  await expect(groupsAdd).toBeVisible();
+  await expect(groupsAdd.locator(".waymark-add-label")).toHaveText(
+    "Create Group",
+  );
+  await expect(groupsAdd).toHaveAttribute("aria-label", "Create Group");
+  await expect(groupsAdd).not.toContainText("Add Type");
+
+  // A section that genuinely adds Types keeps its label.
+  await page.goto(
+    waymark.adminUrl(
+      "/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers",
+    ),
+  );
+
+  const markerTypesAdd = page.locator(
+    ".waymark-settings-section-marker_types .waymark-repeatable .waymark-add",
+  );
+  await expect(markerTypesAdd).toBeVisible();
+  await expect(markerTypesAdd.locator(".waymark-add-label")).toHaveText(
+    "Add Type",
+  );
+  await expect(markerTypesAdd).toHaveAttribute("aria-label", "Add Type");
 });
