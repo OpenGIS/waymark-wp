@@ -662,10 +662,30 @@ Voice selection is `--voice` > `VIDEO_TTS_VOICE` > the provider default. The def
 Per-line synthesis gives every line its own delivery, so a run can mix registers even when the requested rate is fixed. Deepgram therefore synthesises the whole script once. A provider without word timestamps (say) falls back to the per-line path with one warning that cadence may vary between lines.
 
 1. Read the narration in scenario order, skip `(no narration)` scenes and join the remaining texts with a blank line.
-2. Send the combined text through the provider’s `synthesise()` path, starting at the run rate, and write the kept take to `work/audio/<id>/performance.wav` (48 kHz mono 16-bit PCM).
-3. Apply the 30 ms lead / 120 ms tail silence trim and `loudnorm=I=-16:TP=-1.5:LRA=11` **once** to the whole performance. Every scene cut comes from that mastered file, so the gain structure is shared across the film.
+2. Send the combined provider-ready text through the provider’s `synthesise()` path, starting at the run rate, and write the kept take to `work/audio/<id>/performance.wav` (48 kHz mono 16-bit PCM). When the text exceeds the chunk limit it is split at scene boundaries and requested as several chunks, then joined into the same single master (see below).
+3. Apply the 30 ms lead / 120 ms tail silence trim and `loudnorm=I=-16:TP=-1.5:LRA=11` **once** to the whole performance. Every scene cut comes from that mastered file, so the gain structure is shared across the film. A chunked performance is normalised per chunk and joined before this step.
 4. Send the mastered WAV as raw bytes to Deepgram STT (`/v1/listen`, `nova-3`, `smart_format=true`, `punctuate=true`) and read word timestamps from `results.channels[0].alternatives[0].words[]`, falling back to `results.utterances[]`.
 5. Align the known script to those words and cut each scene from the master: start 30 ms before the first aligned word, end 120 ms after the last, clamped to the previous cut, the next cut and the file bounds.
+
+#### Long scripts
+
+Deepgram’s batch TTS accepts at most **2,000 characters** per request. Pronunciation overrides add inline objects, so the provider-ready text is longer than the authored narration. The continuous path therefore splits at **scene boundaries** when the provider-ready script exceeds **1,800 characters**, using the fewest chunks that fit and never cutting mid-sentence. A script that already fits stays one request with the same cache key.
+
+```text
+[video] TTS chunks: 3 (limit 1800 chars) — boundaries after scene "create-form", "page-collection".
+```
+
+The limit is `--chunk-chars <n>` or `VIDEO_TTS_CHUNK_CHARS` (flag wins), a whole number from **1 to 1,900**. A single scene longer than the limit cannot be split without cutting mid-sentence, so it is sent as one request with a warning and remains subject to the 2,000-character ceiling.
+
+Each chunk is normalised on its own. Joining the masters inserts 90 ms of silence at every seam, which with the normal 120 ms tail and 30 ms lead recreates the roughly 240 ms paragraph pause of the single-request path. Alignment, cut planning, staged promotion and stamping run on the joined master unchanged and still report `delta 0.000s`.
+
+The chunk plan (boundary scene ids and per-chunk text) is part of the performance cache key, so a limit change that moves a boundary or a lexicon edit regenerates the take. A cache hit makes no request and leaves `timings.json` and `stamp.json` untouched. A pre-chunk single-request master remains valid until it is next generated, after which its plan is recorded and later limit changes invalidate normally.
+
+If any chunk fails, the run aborts without falling back to another provider. Staging is removed, the previous performance and scene WAVs are untouched, and the command exits non-zero, naming the chunk and the scene before it.
+
+```text
+[video] TTS failed: TTS chunk 2/3 after scene "create-form" failed: HTTP 413: ...
+```
 
 Alignment is monotonic and forward-only. Both sides are lowercased, stripped of punctuation, whitespace-collapsed and the spaced em dash is dropped. Each script word is matched to the next STT word that equals it, with a three-token look-ahead for insertions and deletions. Short concatenations handle `top-right` → `top right`, `Basemap` → `base map` and `Open Street Map` → `OpenStreetMap`; a conservative edit-distance match covers a misheard long word. A scene with no confident match, or a scene whose first word does not follow the previous scene, fails the run with the scene id and the words that failed. The run never guesses a cut point.
 
@@ -704,7 +724,7 @@ The transcript is used only to place cuts; it is never the delivered narration.
 - `DEEPGRAM_REGION` selects the endpoint: unset is `https://api.deepgram.com`; `eu`, `au` and `in` use the matching regional host.
 - `DEEPGRAM_BASE_URL` overrides the whole base URL, which is useful for a local test server.
 - Per-line requests time out after 30 seconds; a continuous TTS request uses 120 seconds. `408`, `429`, `500`, `502`, `503` and `504` are retried up to three attempts with exponential backoff and jitter, honouring `Retry-After`. `400`, `401`, `402`, `403`, `413` and `415` are fatal and do not retry.
-- Each request is limited to 2,000 characters. A longer per-line scene fails before the request and names the scene and the character count; a continuous script that exceeds the limit fails against the `performance` request.
+- Each request is limited to 2,000 characters. The continuous path splits at scene boundaries when the provider-ready text exceeds the chunk limit (default 1,800, range 1–1,900), so a long script no longer fails with `413`/`text_too_long`. A per-line scene, an unsplittable single scene, or a chunk that still exceeds the hard limit fails before or at the request and names the scene and character count. A failed chunk aborts the run rather than falling back to a different provider.
 - Error bodies may be the legacy shape (`err_code`, `err_msg`), the modern shape (`category`, `message`, `details`), or plain text. The provider prints one readable line with the HTTP status and whichever fields exist.
 - `--verbose` logs the `dg-model-name` and `dg-request-id` response headers.
 
@@ -714,7 +734,7 @@ The `say` provider keeps a raw `.aiff` take, converts it to 48 kHz mono WAV with
 
 Both providers write `timings.json` beside the audio. It records the provider, voice, rate, pace settings, model metadata and speed where applicable, plus one entry per narrated scene with its speech duration, word count, measured pace, attempt count, final requested rate and the rates requested for each attempt. When a fallback happened it also records the requested provider and the reason. A continuous run adds `mode: "continuous"`, `performanceHash`, `overallWpm`, `takeAttempts`, `attemptRates`, `paceSamples`, a `performance` block and an `alignment` block. Each scene also carries an `alignment` object with confidence, matched and unmatched word counts, first and last matched words and cut boundaries. Existing fields keep their names; in continuous mode `duration` is the cut WAV duration and `firstWpm`, `attempts` and `attemptRates` describe the whole take.
 
-Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, any provider speed multiplier, the pace settings, the pace-guard version, the pronunciation plan version, the lexicon content hash and the post-processing version. A continuous performance also includes its mode, alignment version and the whole-script text in the key. Switching provider, voice, rate, speed, pronunciation or lexicon therefore regenerates rather than reusing the wrong audio. Reruns reuse existing WAVs, `--voice` and `--rate` override the defaults, `--force` regenerates everything and `--scene <id>` regenerates one scene on the per-line path, which requires compatible per-line cache entries for the other scenes; regenerate the whole run after a continuous performance. `timings.json` is the recorder’s source of truth for holds and records the pronunciation count and distinct words.
+Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, any provider speed multiplier, the pace settings, the pace-guard version, the pronunciation plan version, the lexicon content hash and the post-processing version. A continuous performance also includes its mode, alignment version, whole-script text and, when split, the chunk plan (boundary scene ids and per-chunk text) in the key. Switching provider, voice, rate, speed, pronunciation, lexicon or a chunk boundary therefore regenerates rather than reusing the wrong audio. A cache hit makes no request and leaves `timings.json` and `stamp.json` untouched. Reruns reuse existing WAVs, `--voice` and `--rate` override the defaults, `--force` regenerates everything and `--scene <id>` regenerates one scene on the per-line path, which requires compatible per-line cache entries for the other scenes; regenerate the whole run after a continuous performance. `timings.json` is the recorder’s source of truth for holds and records the pronunciation count, distinct words and, for continuous runs, the chunk plan.
 
 ```sh
 node scripts/video/tts.mjs changing-basemaps --provider deepgram
@@ -766,7 +786,7 @@ TTS engines frequently mispronounce product names, abbreviations and place names
 
 ### Continuous performance and scene cuts
 
-A provider with word timestamps (Deepgram) synthesises the whole script once and cuts it per scene from one mastered performance. That is the preferred path because it gives the film one register and one gain structure. A provider without an aligned transcript (`say`) still generates one audio file per scene, and an explicit `--scene` uses the same per-line path.
+A provider with word timestamps (Deepgram) synthesises the whole script once and cuts it per scene from one mastered performance. That is the preferred path because it gives the film one register and one gain structure. When the provider-ready script exceeds the chunk limit, it is split at scene boundaries and the chunk masters are joined into that same single performance before the cuts. A provider without an aligned transcript (`say`) still generates one audio file per scene, and an explicit `--scene` uses the same per-line path.
 
 The continuous master is loudness-normalised once, after synthesis:
 
