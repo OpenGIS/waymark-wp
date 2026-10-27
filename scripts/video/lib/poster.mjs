@@ -28,6 +28,12 @@ export const POSTER_DEFAULTS = Object.freeze({
 // and antialiasing cannot clip it.
 const POSTER_EDGE_MARGIN = 2;
 
+// A highlight can extend beyond the poster element (a Leaflet popup outline
+// above the map is the common case). In that case the crop is placed against
+// the outline rather than centred inside the element, so it needs its own
+// margin. The value covers the 4 px green halo plus a 2 px breathing space.
+const POSTER_HIGHLIGHT_MARGIN = 6;
+
 const POSTER_KEYS = new Set(["selector", "aspect", "pad"]);
 
 /**
@@ -269,6 +275,19 @@ function positionAxis({
   }
 
   if (!constrain) {
+    // The outline extends beyond the poster element, so include a margin
+    // around it rather than placing the crop edge on the outline itself.
+    const marginStart = includeStart - POSTER_HIGHLIGHT_MARGIN;
+    const marginEnd = includeEnd + POSTER_HIGHLIGHT_MARGIN;
+
+    if (position > marginStart) {
+      position = marginStart;
+    }
+
+    if (position + length < marginEnd) {
+      position = marginEnd - length;
+    }
+
     return position;
   }
 

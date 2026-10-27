@@ -126,6 +126,108 @@ export async function showHighlight(page, highlight) {
 }
 
 /**
+ * Keep an already-drawn outline on its target while the page is still moving.
+ *
+ * A Leaflet popup autoPan, an explicit scroll or a late layout pass can move
+ * the target after an action has returned. The outline is fixed in viewport
+ * coordinates, so it is repositioned on every animation frame until the
+ * target's rounded rectangle has held still for `quietMs`. Following the
+ * target means the outline never has to jump to a corrected position once the
+ * motion ends.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {{ selector: string, pad?: number }} highlight
+ * @param {{ quietMs?: number, timeoutMs?: number }} [options]
+ * @returns {Promise<{ tracked: boolean, stable: boolean, elapsed: number, rect: { x: number, y: number, width: number, height: number } | null }>}
+ */
+export async function trackHighlight(page, highlight, options = {}) {
+  const { selector, pad = 8 } = highlight;
+  const quietMs = options.quietMs ?? 160;
+  const timeoutMs = options.timeoutMs ?? 2000;
+
+  return page.evaluate(
+    ({
+      selector: target,
+      pad: padding,
+      quietMs: quiet,
+      timeoutMs: timeout,
+      elementId,
+    }) =>
+      new Promise((resolve) => {
+        const element = document.getElementById(elementId);
+
+        if (!element) {
+          resolve({ tracked: false, stable: false, elapsed: 0, rect: null });
+          return;
+        }
+
+        const startedAt = performance.now();
+        let lastKey = null;
+        let lastChangeAt = startedAt;
+        let latest = null;
+
+        function step() {
+          const now = performance.now();
+          const targetElement = document.querySelector(target);
+
+          if (targetElement) {
+            const bounds = targetElement.getBoundingClientRect();
+
+            if (bounds.width || bounds.height) {
+              const key = [
+                Math.round(bounds.x),
+                Math.round(bounds.y),
+                Math.round(bounds.width),
+                Math.round(bounds.height),
+              ].join(",");
+
+              if (key !== lastKey) {
+                lastKey = key;
+                lastChangeAt = now;
+              }
+
+              latest = {
+                x: bounds.x,
+                y: bounds.y,
+                width: bounds.width,
+                height: bounds.height,
+              };
+
+              element.style.left = `${bounds.x - padding}px`;
+              element.style.top = `${bounds.y - padding}px`;
+              element.style.width = `${bounds.width + padding * 2}px`;
+              element.style.height = `${bounds.height + padding * 2}px`;
+            }
+          }
+
+          const stable = now - lastChangeAt >= quiet;
+
+          if (stable || now - startedAt >= timeout) {
+            resolve({
+              tracked: Boolean(latest),
+              stable,
+              elapsed: now - startedAt,
+              rect: latest,
+            });
+            return;
+          }
+
+          requestAnimationFrame(step);
+        }
+
+        requestAnimationFrame(step);
+      }),
+    {
+      selector,
+      pad: Number(pad),
+      quietMs,
+      timeoutMs,
+      elementId: HIGHLIGHT_ID,
+    },
+  );
+}
+
+/**
  * Fade out and remove the outline. Safe to call when no outline exists.
  *
  * @param {import("@playwright/test").Page} page

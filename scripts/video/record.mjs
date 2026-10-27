@@ -53,6 +53,23 @@ const CARD_PREWARM_SETTLE_MS = 3500;
 // `jcut` can pull the line earlier from here.
 const LEAD_BEAT = 0.3;
 
+// How long the replayed page must hold still before the poster is drawn. The
+// take has a narration-length hold after each action, but the poster replay
+// moves straight on, so a Leaflet popup pan or a late layout pass can still be
+// running when the action returns. Fixed overlays are painted in viewport
+// coordinates, so a target that moves after the outline is drawn leaves it out
+// of register with the page content.
+const POSTER_REPLAY_SETTLE_QUIET_MS = 300;
+
+// The recorded take can open a popup or scroll the page after its action has
+// returned, so the highlighted target may still be moving when the outline is
+// first drawn. The outline is fixed in viewport coordinates, so it is kept on
+// the target until the geometry settles. The follow runs inside the scene's
+// existing hold, not before the action end, so it neither lengthens the scene
+// nor moves narration.
+const TAKE_HIGHLIGHT_TRACK_QUIET_MS = 160;
+const TAKE_HIGHLIGHT_TRACK_TIMEOUT_MS = 2000;
+
 // Scenario-level selectors to hide. Kept here so `navigateTo` can reapply them
 // the moment a navigation commits, rather than waiting for the action to end.
 let activeHideSelectors = [];
@@ -1163,7 +1180,27 @@ async function runScenes(
 
       timeline.setAudioOffset(sceneId, audioOffset);
       timeline.setHold(sceneId, holdSeconds);
-      await hold(page, holdSeconds);
+
+      // Keep the outline on the target until any post-action motion finishes.
+      // The outline is already visible, so it follows a moving popup rather
+      // than jumping to its final position after the narration has started.
+      let trackSeconds = 0;
+      if (resolved.highlight) {
+        // Never follow for longer than the scene's own hold: the outline is
+        // repositioned inside the existing beat, so the scene cannot grow.
+        const trackTimeoutMs = Math.min(
+          TAKE_HIGHLIGHT_TRACK_TIMEOUT_MS,
+          Math.max(0, Math.round(holdSeconds * 1000)),
+        );
+        const trackStartedAt = Date.now();
+        await libs.highlight.trackHighlight(page, resolved.highlight, {
+          quietMs: TAKE_HIGHLIGHT_TRACK_QUIET_MS,
+          timeoutMs: trackTimeoutMs,
+        });
+        trackSeconds = (Date.now() - trackStartedAt) / 1000;
+      }
+
+      await hold(page, Math.max(0, holdSeconds - trackSeconds));
 
       const posterConfig = posterConfigForScene(resolved, sceneId);
 
@@ -1292,6 +1329,7 @@ async function capturePosterReplay({
     });
 
     let anonymousState = false;
+    let posterScene = null;
 
     for (let index = 0; index <= sceneIndex; index += 1) {
       const scene = scenario.scenes[index];
@@ -1318,7 +1356,16 @@ async function capturePosterReplay({
         hideSelectors: session.hideSelectors,
         reload: switched,
       });
+
+      posterScene = resolved;
     }
+
+    // Let any scroll, layout pass or Leaflet pan finish before drawing the
+    // still. The overlays are then repositioned against the settled geometry
+    // immediately before the screenshot, so the outline cannot be left behind
+    // by content that was still moving when the scene's action returned.
+    await settlePosterReplay(replay.page, libs.fixtures, posterScene, config);
+    await applySceneHighlight(replay.page, posterScene, libs);
 
     // A fill scene would otherwise leave its fake caret in the still.
     await libs.cursor.clearCaret(replay.page);
@@ -1434,6 +1481,75 @@ async function capturePosterReplay({
 }
 
 /**
+ * Wait for the replayed page to stop moving. The measurement covers the scroll
+ * position, the poster target and the highlighted target, so a late layout pass,
+ * a scroll and a Leaflet popup pan all delay the capture until the geometry is
+ * steady. The caller then draws the fixed outline against that geometry.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {object} fixtures
+ * @param {object | null} scene
+ * @param {{ selector: string }} config
+ */
+async function settlePosterReplay(page, fixtures, scene, config) {
+  const selectors = [config.selector];
+  if (scene?.highlight?.selector) {
+    selectors.push(scene.highlight.selector);
+  }
+
+  const measure = async () => {
+    const scroll = await page.evaluate(() => ({
+      x: Math.round(window.scrollX),
+      y: Math.round(window.scrollY),
+    }));
+
+    const boxes = [];
+    for (const selector of selectors) {
+      const box = await page
+        .locator(selector)
+        .first()
+        .boundingBox()
+        .catch(() => null);
+
+      boxes.push(
+        box
+          ? {
+              x: Math.round(box.x),
+              y: Math.round(box.y),
+              width: Math.round(box.width),
+              height: Math.round(box.height),
+            }
+          : null,
+      );
+    }
+
+    return { scroll, boxes };
+  };
+
+  await fixtures.waitForLayoutStable(measure, {
+    quietMs: POSTER_REPLAY_SETTLE_QUIET_MS,
+    pollMs: 100,
+    timeoutMs: 5000,
+  });
+}
+
+/**
+ * Draw or clear a scene's outline. Shared by the take replay and the poster
+ * replay so both use the same selector and padding.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {object} scene
+ * @param {object} libs
+ */
+async function applySceneHighlight(page, scene, libs) {
+  if (scene.highlight) {
+    await libs.highlight.showHighlight(page, scene.highlight);
+  } else {
+    await libs.highlight.clearHighlight(page, { fade: false });
+  }
+}
+
+/**
  * Apply one scene's action and overlays during a replay. Narration, holds,
  * timeline bookkeeping and assertions are deliberately skipped.
  *
@@ -1469,11 +1585,7 @@ async function replayScene({
     await libs.browser.applyHiddenSelectors(page, hideSelectors);
   }
 
-  if (scene.highlight) {
-    await libs.highlight.showHighlight(page, scene.highlight);
-  } else {
-    await libs.highlight.clearHighlight(page, { fade: false });
-  }
+  await applySceneHighlight(page, scene, libs);
 
   if (scene.cursor === null) {
     await libs.cursor.hideCursor(page);

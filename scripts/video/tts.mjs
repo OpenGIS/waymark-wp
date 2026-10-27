@@ -239,8 +239,13 @@ async function main() {
   });
 
   if (selected.cached) {
-    // A cache hit leaves timings.json and stamp.json untouched, including their
-    // generatedAt values, so an unchanged narration cannot churn the stamp.
+    // A cache hit proves the spoken audio is unchanged, so rewriting the
+    // timings and stamp cannot alter a delivery. It is required when the scene
+    // list changed (adding or removing a silent beat): the cached audio is
+    // still correct, but the stamp must describe the current scene list or the
+    // recorder will refuse it.
+    writeJsonAtomic(timingsPath, timings);
+    writeStamp(audioDir, stamp);
   } else if (selected.commit) {
     selected.commit({ timings, timingsPath, stamp });
   } else {

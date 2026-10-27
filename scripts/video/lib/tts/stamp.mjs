@@ -45,13 +45,19 @@ export function hashJson(value) {
 }
 
 /**
- * Canonical hash of the spoken text, independent of narration-file formatting.
+ * Canonical hash of the spoken text, independent of narration-file formatting
+ * and of silent scenes. Adding or removing a silent beat changes the scenario
+ * but not the audio, so it must not invalidate a cached performance.
  *
  * @param {Array<{ id: string, narration: string }>} narrated
  * @returns {string}
  */
 export function narrationTextHash(narrated) {
-  return hashJson(narrated.map(({ id, narration }) => [id, narration]));
+  const spoken = narrated
+    .filter(({ narration }) => (narration ?? "").trim() !== "")
+    .map(({ id, narration }) => [id, narration]);
+
+  return hashJson(spoken);
 }
 
 /**
