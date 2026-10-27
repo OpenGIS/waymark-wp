@@ -15,6 +15,28 @@ const LOUDNORM_FILTER = "loudnorm=I=-16:TP=-1.5:LRA=11";
 // an older chain are regenerated instead of silently reused.
 export const POST_PROCESS_VERSION = 3;
 
+/**
+ * Load `.env` from the repository root when it exists. Never required, and its
+ * contents are never logged.
+ *
+ * @param {string} repoRoot
+ * @param {string} [label]
+ */
+export function loadDotEnv(repoRoot, label = "video") {
+  const envPath = path.join(repoRoot, ".env");
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+
+  try {
+    process.loadEnvFile(envPath);
+  } catch {
+    console.warn(
+      `[video] ${label}: .env exists but could not be loaded; continuing without it.`,
+    );
+  }
+}
+
 const TRIM_LEAD_SECONDS = 0.03;
 const TRIM_TAIL_SECONDS = 0.12;
 const TRIM_SAMPLE_RATE = 48_000;

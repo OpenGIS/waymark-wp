@@ -1,0 +1,227 @@
+{
+  "version": "1",
+  "id": "using-collections",
+  "title": "Using Collections",
+  "output": "docs/public/assets/video/using-collections.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:00:38",
+  "pad": 0.5,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Using Collections",
+        "subtitle": "Organising Maps into Collections"
+      },
+      "hold": 2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay."
+    },
+    {
+      "id": "open-collections",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map",
+      "selector": "#wpbody-content > .wrap h1",
+      "hold": 17,
+      "audioOffset": 0.4,
+      "jcut": 0,
+      "highlight": null,
+      "cursor": null,
+      "assert": {
+        "selector": "#the-list tr",
+        "minCount": 3
+      },
+      "notes": "The Collections screen holds the create form on the left and the Collection list on the right. The heading selector waits for the page to render; the row count proves the seeded Collections are present."
+    },
+    {
+      "id": "list-hierarchy",
+      "action": "assertText",
+      "selector": "#tag-2 .row-title",
+      "value": "Vancouver Island",
+      "hold": 17,
+      "highlight": {
+        "selector": "#the-list",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#tag-2 .column-posts",
+        "text": "3"
+      },
+      "notes": "One beat proves the hierarchy and the Count. The assertText action reads the parent row title; the assert block reads the same row's Count cell, re-homing the old list-counts proof. The pointer is hidden and the real mouse is parked so no hover-only row actions appear in the frame."
+    },
+    {
+      "id": "shortcode-column",
+      "action": "pause",
+      "hold": 13,
+      "jcut": 0.05,
+      "highlight": {
+        "selector": "#tag-2 .column-shortcode",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#tag-2 .column-shortcode input",
+        "value": "[Waymark collection_id=\"2\"]"
+      },
+      "notes": "The Shortcode cell is scoped to the Vancouver Island row. The poster crop takes the whole admin content column, so the thumbnail shows the Collections heading, the create form and the list with the Shortcode cell outlined."
+    },
+    {
+      "id": "create-form",
+      "action": "fill",
+      "selector": "#tag-name",
+      "value": "Coastal Walks",
+      "hold": 14,
+      "audioOffset": 0.45,
+      "highlight": {
+        "selector": "#addtag",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#tag-name"
+      },
+      "assert": {
+        "selector": "#tag-name",
+        "value": "Coastal Walks"
+      },
+      "notes": "Reference, not a save. The name is typed only so the field is legible; the form is never submitted and the recording cannot create a Collection. The value assertion proves the typed name."
+    },
+    {
+      "id": "create-parent",
+      "action": "select",
+      "selector": "#parent",
+      "value": "2",
+      "hold": 14,
+      "jcut": 0.4,
+      "highlight": {
+        "selector": "#addtag",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#parent"
+      },
+      "assert": {
+        "selector": "#parent",
+        "value": "2"
+      },
+      "notes": "Selecting an existing Collection in the Parent list shows nesting without saving. The Create Collection button stays on screen but is never clicked; the narration names it only as the final step and says nothing is saved here.",
+      "pad": 0.3
+    },
+    {
+      "id": "map-collections",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "selector": "#waymark_collectiondiv",
+      "hold": 24,
+      "highlight": {
+        "selector": "#waymark_collectiondiv",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#in-waymark_collection-4-2",
+        "checked": true
+      },
+      "notes": "The Map Editor loads at zoom 10, which the pinned OpenStreetMap pack covers. The Collections box is visible without scrolling. The checkbox assertion proves the Map is in Backpacking; Vancouver Island is checked in the same box and Day Hikes is unchecked. The Map Editor paints its map about 2.2s after navigation, so the line is held back to start on a rendered map rather than an empty panel.",
+      "pad": 0.3,
+      "audioOffset": 2.0
+    },
+    {
+      "id": "archive",
+      "action": "goto",
+      "url": "{{baseURL}}/collection/vancouver-island/",
+      "selector": ".waymark-shortcode .leaflet-tile-loaded",
+      "hold": 13,
+      "highlight": null,
+      "cursor": null,
+      "assert": {
+        "selector": "h1.wp-block-query-title, .waymark-shortcode",
+        "minCount": 4,
+        "text": "Collection: Vancouver Island"
+      },
+      "notes": "The combined selector re-homes the old archive-heading assertion without adding a scene: the h1 is first in DOM order, so the text check reads the Collection name, and the four matches (one heading plus three Shortcodes) prove every Map is embedded on the archive page.",
+      "pad": 0.3,
+      "anonymous": true
+    },
+    {
+      "id": "demo-page",
+      "action": "goto",
+      "url": "{{baseURL}}/waymark-demo/",
+      "selector": ".waymark-shortcode .leaflet-tile-loaded",
+      "hold": 13,
+      "highlight": null,
+      "cursor": null,
+      "assert": {
+        "selector": ".waymark-shortcode",
+        "minCount": 2
+      },
+      "notes": "The demo page holds a single Map Shortcode and a Collection Shortcode. The assertion counts both.",
+      "anonymous": true
+    },
+    {
+      "id": "page-collection",
+      "action": "scrollIntoView",
+      "selector": ".waymark-shortcode:has(.waymark-collection-id-2)",
+      "block": "center",
+      "hold": 17,
+      "jcut": 0.4,
+      "pad": 0.8,
+      "highlight": {
+        "selector": ".waymark-shortcode:has(.waymark-collection-id-2)",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-shortcode:has(.waymark-collection-id-2) .waymark-title",
+        "visible": true,
+        "text": "Vancouver Island"
+      },
+      "notes": "The title assertion is re-homed here as a text check alongside the existing visible check, so the old page-collection-title beat is no longer needed. The collection_id Shortcode is scoped by its collection class, so the single Map Shortcode above cannot match. block center keeps the whole shortcode inside the viewport. The poster is marked here, one scene before the closing card, so the marker timestamp and the poster image agree.",
+      "poster": {
+        "selector": ".waymark-shortcode:has(.waymark-collection-id-2)",
+        "aspect": "16:9",
+        "pad": 60
+      },
+      "anonymous": true
+    },
+    {
+      "id": "hold-collection",
+      "action": "pause",
+      "hold": 1.2,
+      "highlight": {
+        "selector": ".waymark-shortcode:has(.waymark-collection-id-2)",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "notes": "Silent beat that lets the collection Shortcode settle before the closing card."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Using Collections",
+        "subtitle": "Collections group Maps.\nThe archive and Shortcode decide\nwhere visitors see them."
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card. The Collection Shortcode remains on screen behind it."
+    }
+  ],
+  "audioAfterActionMax": 0.9
+}

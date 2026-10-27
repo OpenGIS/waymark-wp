@@ -2,6 +2,7 @@
 //
 // `say` writes an AIFF take at the requested words per minute. `afconvert`
 // downsamples it to 48 kHz mono, then the shared normaliser applies loudnorm.
+// It has no aligned transcript, so it is a per-line provider only.
 "use strict";
 
 import fs from "node:fs";
@@ -135,6 +136,7 @@ export default {
   id: "say",
   label: "macOS say",
   defaultVoice: DEFAULT_VOICE,
+  supportsContinuous: false,
 
   /**
    * @param {object} env
@@ -176,6 +178,17 @@ export default {
     } catch {
       return voice;
     }
+  },
+
+  /**
+   * `say` takes whole words per minute, so a ladder rate is rounded before it
+   * is requested or recorded.
+   *
+   * @param {number} rate
+   * @returns {number}
+   */
+  clampRate(rate) {
+    return Math.round(rate);
   },
 
   /**

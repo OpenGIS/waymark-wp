@@ -1,8 +1,12 @@
 // Deepgram Flux TTS narration provider.
 //
-// One batch request per scene on /v2/speak returns a complete 48 kHz mono
-// 16-bit PCM WAV. The response is written straight to a temporary file and
-// then passed through the same loudnorm step as the say provider.
+// In continuous mode the whole script is one batch request on /v2/speak. The
+// per-line fallback makes one request per scene. Each response is a complete
+// 48 kHz mono 16-bit PCM WAV, written to a temporary file and passed through
+// the same loudnorm step as the say provider.
+//
+// The provider also exposes /v1/listen so the orchestrator can align the known
+// script to word timestamps after a continuous performance is mastered.
 "use strict";
 
 import fs from "node:fs";
@@ -19,6 +23,7 @@ import {
 
 const MAX_TEXT_LENGTH = 2000;
 const REQUEST_TIMEOUT_MS = 30_000;
+const STT_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 const BASE_DELAY_MS = 500;
 const MAX_RETRY_AFTER_MS = 60_000;
@@ -27,6 +32,7 @@ const BASELINE_WPM = 175;
 const MIN_SPEED = 0.5;
 const MAX_SPEED = 1.5;
 const SPEED_STEP = 0.05;
+const STT_MODEL = "nova-3";
 
 const REGION_URLS = {
   eu: "https://api.eu.deepgram.com",
@@ -80,6 +86,17 @@ export function rateToSpeed(rate) {
   const clamped = Math.min(MAX_SPEED, Math.max(MIN_SPEED, raw));
   const stepped = Math.round(clamped / SPEED_STEP) * SPEED_STEP;
   return Number(stepped.toFixed(2));
+}
+
+/**
+ * Convert a Deepgram speed multiplier back to the words-per-minute rate it
+ * represents.
+ *
+ * @param {number} speed
+ * @returns {number}
+ */
+export function speedToRate(speed) {
+  return speed * BASELINE_WPM;
 }
 
 /**
@@ -152,12 +169,13 @@ function sleep(ms) {
  * Describe a network-level failure without dumping a stack.
  *
  * @param {unknown} error
+ * @param {number} [timeoutMs]
  * @returns {string}
  */
-function networkError(error) {
+function networkError(error, timeoutMs = REQUEST_TIMEOUT_MS) {
   const name = error?.name;
   if (name === "TimeoutError" || name === "AbortError") {
-    return `request timed out after ${REQUEST_TIMEOUT_MS / 1000} seconds`;
+    return `request timed out after ${timeoutMs / 1000} seconds`;
   }
 
   const cause = error?.cause?.code ?? error?.cause?.message;
@@ -229,6 +247,39 @@ async function describeResponseError(response) {
 }
 
 /**
+ * Read word timestamps from either the channel alternative or the utterance
+ * list. The batch API normally returns `results.channels[0]...words`, but
+ * `results.utterances[]` is accepted when that is what comes back.
+ *
+ * @param {object} payload
+ * @returns {Array<{ word?: string, punctuated_word?: string, start: number, end: number }>}
+ */
+function extractTranscriptWords(payload) {
+  const channelWords =
+    payload?.results?.channels?.[0]?.alternatives?.[0]?.words;
+
+  if (Array.isArray(channelWords) && channelWords.length) {
+    return channelWords;
+  }
+
+  const utterances = payload?.results?.utterances;
+
+  if (Array.isArray(utterances)) {
+    const words = [];
+
+    for (const utterance of utterances) {
+      if (Array.isArray(utterance?.words)) {
+        words.push(...utterance.words);
+      }
+    }
+
+    return words;
+  }
+
+  return [];
+}
+
+/**
  * Log the Deepgram model and request identifiers at verbose level.
  *
  * @param {Response} response
@@ -249,12 +300,58 @@ function logHeaders(response, verbose, log) {
         `request-id=${requestId ?? "unknown"}.`,
     );
   }
+
+  const warnings = response.headers.get("dg-warnings");
+  if (warnings) {
+    log(`[video] TTS deepgram: dg-warnings: ${oneLine(warnings)}.`);
+  }
+}
+
+/**
+ * Audit the pronunciation headers on a synthesis response. An unescaped brace
+ * or a provider-side refusal shows up as zero (or fewer than expected) applied
+ * overrides, which would otherwise be spoken aloud without any visible error.
+ *
+ * @param {Response} response
+ * @param {{ sceneId?: string, expectedPronunciations?: number, verbose?: boolean, log?: (message: string) => void }} options
+ */
+function auditPronunciations(
+  response,
+  { sceneId, expectedPronunciations = 0, verbose = false, log = () => {} },
+) {
+  const applied = response.headers.get("dg-pronunciations-applied");
+  const appliedCount = applied === null ? null : Number(applied);
+
+  if (verbose && applied !== null) {
+    log(
+      `[video] TTS deepgram: scene "${sceneId ?? "unknown"}" ` +
+        `dg-pronunciations-applied=${applied}.`,
+    );
+  }
+
+  if (expectedPronunciations <= 0) {
+    return;
+  }
+
+  if (!Number.isFinite(appliedCount) || appliedCount < expectedPronunciations) {
+    console.warn(
+      `[video] TTS deepgram: scene "${sceneId ?? "unknown"}" expected ` +
+        `${expectedPronunciations} pronunciation override(s); ` +
+        `dg-pronunciations-applied was ${applied ?? "missing"}.`,
+    );
+  }
 }
 
 export default {
   id: "deepgram",
   label: "Deepgram",
   defaultVoice: "flux-kit-en",
+  supportsContinuous: true,
+
+  // Flux rejects inline pronunciation objects when the request speed is not
+  // exactly 1.0 (CONTROL_COMBINATION_INVALID), so a run with overrides is
+  // pinned to the words-per-minute rate that maps to speed 1.0.
+  pronunciationRate: speedToRate(1),
 
   /**
    * @param {object} env
@@ -283,6 +380,17 @@ export default {
   },
 
   /**
+   * Clamp a requested rate to the speed range and step Deepgram accepts, so a
+   * caller never records or requests a value the API would silently change.
+   *
+   * @param {number} rate
+   * @returns {number}
+   */
+  clampRate(rate) {
+    return speedToRate(rateToSpeed(rate));
+  },
+
+  /**
    * Provider-specific metadata recorded beside the take.
    *
    * @param {{ voice: string, rate: number }} options
@@ -293,9 +401,119 @@ export default {
   },
 
   /**
+   * Transcribe a mastered WAV and return its word timestamps. The raw WAV is
+   * sent as the request body; the transcript is used only to align the known
+   * script, never as the delivered narration.
+   *
+   * @param {{ wavPath: string, env: object, verbose?: boolean, log?: (message: string) => void }} options
+   * @returns {Promise<{ words: Array<object>, model: string, requestId: string | null }>}
+   */
+  async transcribeWav({ wavPath, env, verbose = false, log = () => {} }) {
+    const apiKey = (env.DEEPGRAM_API_KEY ?? "").trim();
+    if (!apiKey) {
+      throw new Error("Deepgram cannot transcribe without DEEPGRAM_API_KEY.");
+    }
+
+    const buffer = fs.readFileSync(wavPath);
+    if (!isRiffWave(buffer)) {
+      throw new Error(
+        `Deepgram transcription requires a WAV file: ${wavPath}.`,
+      );
+    }
+
+    const baseUrl = apiBaseUrl(env);
+    const url = new URL(`${baseUrl}/v1/listen`);
+    url.searchParams.set("model", STT_MODEL);
+    url.searchParams.set("smart_format", "true");
+    url.searchParams.set("punctuate", "true");
+
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+      let response;
+
+      try {
+        response = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Token ${apiKey}`,
+            "Content-Type": "audio/wav",
+          },
+          body: buffer,
+          signal: AbortSignal.timeout(STT_TIMEOUT_MS),
+        });
+      } catch (error) {
+        lastError = new Error(
+          `Deepgram transcription failed: ` +
+            `${networkError(error, STT_TIMEOUT_MS)}.`,
+        );
+
+        if (attempt < MAX_ATTEMPTS) {
+          const delay = backoffMs(attempt);
+          if (verbose) {
+            log(
+              `[video] TTS deepgram: ${oneLine(lastError.message)} ` +
+                `Retrying in ${delay} ms (attempt ${attempt + 1}/${MAX_ATTEMPTS}).`,
+            );
+          }
+          await sleep(delay);
+          continue;
+        }
+
+        throw lastError;
+      }
+
+      logHeaders(response, verbose, log);
+
+      if (response.ok) {
+        const payload = await response.json();
+        const words = extractTranscriptWords(payload);
+
+        if (!words.length) {
+          throw new Error(
+            `Deepgram transcription returned no word timestamps for ${wavPath}.`,
+          );
+        }
+
+        return {
+          words,
+          model: STT_MODEL,
+          requestId:
+            response.headers.get("dg-request-id") ??
+            payload?.metadata?.request_id ??
+            null,
+        };
+      }
+
+      const detail = await describeResponseError(response);
+      const retryable =
+        RETRYABLE_STATUSES.has(response.status) &&
+        !FATAL_STATUSES.has(response.status);
+
+      if (retryable && attempt < MAX_ATTEMPTS) {
+        const delay =
+          retryAfterMs(response.headers.get("retry-after")) ??
+          backoffMs(attempt);
+        if (verbose) {
+          log(
+            `[video] TTS deepgram: ${detail}. Retrying in ${delay} ms ` +
+              `(attempt ${attempt + 1}/${MAX_ATTEMPTS}).`,
+          );
+        }
+        await sleep(delay);
+        continue;
+      }
+
+      throw new Error(`Deepgram transcription ${detail}`);
+    }
+
+    throw lastError ?? new Error("Deepgram transcription failed.");
+  },
+
+  /**
    * Request one scene from Deepgram and return the normalised WAV duration.
    *
-   * @param {{ text: string, voice: string, rate: number, outPath: string, env: object, sceneId?: string, verbose?: boolean, log?: (message: string) => void }} options
+   * @param {{ text: string, voice: string, rate: number, outPath: string, env: object, sceneId?: string, verbose?: boolean, timeoutMs?: number, expectedPronunciations?: number, log?: (message: string) => void }} options
    * @returns {Promise<{ voice: string, model: string, speed: number, duration: number }>}
    */
   async synthesise({
@@ -306,6 +524,8 @@ export default {
     env,
     sceneId,
     verbose = false,
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    expectedPronunciations = 0,
     log = () => {},
   }) {
     if (typeof text !== "string" || text.trim() === "") {
@@ -347,11 +567,11 @@ export default {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ text }),
-          signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+          signal: AbortSignal.timeout(timeoutMs),
         });
       } catch (error) {
         lastError = new Error(
-          `Deepgram request failed: ${networkError(error)}.`,
+          `Deepgram request failed: ${networkError(error, timeoutMs)}.`,
         );
         if (attempt < MAX_ATTEMPTS) {
           const delay = backoffMs(attempt);
@@ -370,6 +590,13 @@ export default {
       logHeaders(response, verbose, log);
 
       if (response.ok) {
+        auditPronunciations(response, {
+          sceneId,
+          expectedPronunciations,
+          verbose,
+          log,
+        });
+
         const buffer = Buffer.from(await response.arrayBuffer());
 
         if (!isRiffWave(buffer)) {

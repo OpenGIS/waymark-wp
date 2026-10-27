@@ -29,7 +29,6 @@ export const WORK_DIR = path.join(REPO_ROOT, "scripts", "video", "work");
 export const RAW_DIR = path.join(WORK_DIR, "raw");
 export const AUTH_DIR = path.join(WORK_DIR, "auth");
 export const STORAGE_STATE_PATH = path.join(AUTH_DIR, "storage-state.json");
-export const TIMELINE_PATH = path.join(WORK_DIR, "timeline.json");
 export const HIDDEN_STYLE_ATTRIBUTE = "data-waymark-hidden-selectors";
 
 // Media that ends more than this much before the timeline end is treated as
@@ -176,6 +175,69 @@ export function formatViolations(violations) {
 }
 
 /**
+ * Format an error for a one-line context message.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function oneLineMessage(value) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Switch a context between the authenticated session and an anonymous visitor.
+ * Playwright records video per context, so an anonymous scene cannot use a
+ * second context; clearing and restoring cookies inside the recording context
+ * is the only way to keep one continuous take. Restoring is treated as fatal
+ * when it fails, because continuing would record a logged-out admin scene.
+ *
+ * @param {import("@playwright/test").BrowserContext} context
+ * @param {Array<object>} authCookies Captured before the first anonymous scene.
+ * @param {boolean} anonymous
+ * @param {string} label Scene or replay label for the error message.
+ */
+export async function setAnonymousState(
+  context,
+  authCookies,
+  anonymous,
+  label,
+) {
+  if (anonymous) {
+    await context.clearCookies();
+    return;
+  }
+
+  if (!Array.isArray(authCookies) || authCookies.length === 0) {
+    throw new Error(
+      `${label}: cannot restore the authenticated session because no cookies ` +
+        `were captured before the anonymous scene. The take was stopped.`,
+    );
+  }
+
+  await context.clearCookies();
+
+  try {
+    await context.addCookies(authCookies);
+  } catch (error) {
+    throw new Error(
+      `${label}: failed to restore the authenticated WordPress session ` +
+        `(${oneLineMessage(error?.message ?? error)}). The take was stopped ` +
+        `so it cannot continue into a logged-out admin scene.`,
+    );
+  }
+
+  const restored = await context.cookies();
+  if (!restored.some((cookie) => cookie.name.includes("wordpress_logged_in"))) {
+    throw new Error(
+      `${label}: the authenticated WordPress cookie was not restored. The ` +
+        `take was stopped so it cannot continue into a logged-out admin scene.`,
+    );
+  }
+}
+
+/**
  * Launch the pinned Chromium build.
  */
 export async function launchBrowser() {
@@ -272,17 +334,19 @@ export async function assertAuthenticated(browser, baseURL) {
 }
 
 /**
- * Warm the first scene's page in an unrecorded context. This removes the cold
- * first-load variance (server, PHP and database caches) so the first recorded
- * scene loads promptly and its narration does not play over a blank page.
+ * Warm the page behind the first scene in an unrecorded context. This removes
+ * the cold first-load variance (server, PHP and database caches) so the first
+ * recorded scene loads promptly and its narration does not play over a blank
+ * page.
  *
- * The target may be a navigation or a card. A card is local HTML with no
- * WordPress dependency, so the map wait is skipped for it even when the
- * scenario contains `waitForMap` scenes.
+ * A card is an overlay, so it does not replace the target page. A card opening
+ * therefore warms the first non-card `goto` URL, waits for its selector and the
+ * map when the scenario has a `waitForMap` scene, and only then injects the
+ * card. A card-only scenario with no `goto` has no page to warm.
  *
  * @param {import("@playwright/test").Browser} browser
  * @param {string} baseURL
- * @param {{ target: { kind: "goto", url: string, selector?: string | null } | { kind: "card", card: object }, hideSelectors?: string[], waitForMap?: boolean, zoom?: number }} options
+ * @param {{ target?: { kind: "goto", url: string, selector?: string | null } | { kind: "card", card: object } | null, card?: object | null, hideSelectors?: string[], waitForMap?: boolean, zoom?: number, anonymous?: boolean }} options
  */
 export async function warmUp(browser, baseURL, options) {
   const {
@@ -293,19 +357,21 @@ export async function warmUp(browser, baseURL, options) {
     settleMap,
   } = fixtures();
 
-  const target = options.target;
-  const isCard = target?.kind === "card";
+  const target = options.target ?? null;
+  const card = options.card ?? (target?.kind === "card" ? target.card : null);
+  const navigation = target?.kind === "goto" ? target : null;
+  const isCard = Boolean(card);
 
-  if (isCard) {
-    if (
-      !target.card ||
-      typeof target.card !== "object" ||
-      Array.isArray(target.card)
-    ) {
-      throw new Error("Warm-up card requires a card object.");
+  if (isCard && (typeof card !== "object" || Array.isArray(card))) {
+    throw new Error("Warm-up card requires a card object.");
+  }
+
+  if (navigation) {
+    if (typeof navigation.url !== "string" || navigation.url.trim() === "") {
+      throw new Error("Warm-up navigation requires a URL.");
     }
-  } else if (typeof target?.url !== "string" || target.url.trim() === "") {
-    throw new Error("Warm-up navigation requires a URL.");
+  } else if (!isCard) {
+    throw new Error("Warm-up requires a navigation target or a card.");
   }
 
   const hideSelectors = Array.isArray(options.hideSelectors)
@@ -325,6 +391,12 @@ export async function warmUp(browser, baseURL, options) {
     await installExternalRequestGuard(context, violations);
     await stubExternalAssets(context);
 
+    // The warm-up mirrors the first scene. It is only anonymous when that
+    // scene opts in; otherwise it keeps the authenticated cold-start warm-up.
+    if (options.anonymous) {
+      await context.clearCookies();
+    }
+
     const page = await context.newPage();
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(45000);
@@ -333,36 +405,41 @@ export async function warmUp(browser, baseURL, options) {
     await installHiddenSelectors(page, hideSelectors);
     await installTileRoutes(page, { violations });
 
-    if (isCard) {
-      await showCard(page, target.card);
-    } else {
-      await page.goto(target.url, { waitUntil: "load" });
+    if (navigation) {
+      await page.goto(navigation.url, { waitUntil: "load" });
       await page.evaluate(() => document.fonts.ready.then(() => undefined));
 
-      if (typeof target.selector === "string" && target.selector !== "") {
+      if (
+        typeof navigation.selector === "string" &&
+        navigation.selector !== ""
+      ) {
         await page
-          .locator(target.selector)
+          .locator(navigation.selector)
           .first()
           .waitFor({ state: "visible" });
       }
+
+      if (options.waitForMap) {
+        await page.waitForFunction(
+          () => Boolean(window.Waymark && window.Waymark.map),
+          null,
+          { timeout: 30000 },
+        );
+        await settleMap(page);
+
+        if (options.zoom !== undefined) {
+          await page.evaluate((zoom) => {
+            if (window.Waymark && window.Waymark.map) {
+              window.Waymark.map.setZoom(zoom, { animate: false });
+            }
+          }, options.zoom);
+          await settleMap(page);
+        }
+      }
     }
 
-    if (!isCard && options.waitForMap) {
-      await page.waitForFunction(
-        () => Boolean(window.Waymark && window.Waymark.map),
-        null,
-        { timeout: 30000 },
-      );
-      await settleMap(page);
-
-      if (options.zoom !== undefined) {
-        await page.evaluate((zoom) => {
-          if (window.Waymark && window.Waymark.map) {
-            window.Waymark.map.setZoom(zoom, { animate: false });
-          }
-        }, options.zoom);
-        await settleMap(page);
-      }
+    if (isCard) {
+      await showCard(page, card);
     }
   } finally {
     await context.close().catch(() => {});
@@ -383,7 +460,7 @@ export async function warmUp(browser, baseURL, options) {
  *
  * @param {import("@playwright/test").Browser} browser
  * @param {string} baseURL
- * @param {{ hideSelectors?: string[], prepare?: (page: import("@playwright/test").Page) => Promise<void> }} [options]
+ * @param {{ hideSelectors?: string[], prepare?: (page: import("@playwright/test").Page) => Promise<void>, anonymous?: boolean }} [options]
  */
 export async function startRecording(browser, baseURL, options = {}) {
   const {
@@ -410,6 +487,14 @@ export async function startRecording(browser, baseURL, options = {}) {
   });
 
   try {
+    // Capture the authenticated cookies before any anonymous pre-warm so the
+    // take can restore them for a later authenticated scene.
+    const authCookies = await context.cookies();
+
+    if (options.anonymous) {
+      await context.clearCookies();
+    }
+
     // The video recorder starts when the page is created. `recordingStartedAt`
     // marks that origin, while `t0` is taken after the optional pre-warm, so
     // the timeline starts on a fully rendered page. The difference is stored
@@ -444,6 +529,8 @@ export async function startRecording(browser, baseURL, options = {}) {
       page,
       violations,
       hideSelectors,
+      authCookies,
+      anonymous: Boolean(options.anonymous),
       t0,
       startedAt,
       videoOffset,
@@ -466,7 +553,7 @@ export async function startRecording(browser, baseURL, options = {}) {
  * @param {import("@playwright/test").Browser} browser
  * @param {string} baseURL
  * @param {{ hideSelectors?: string[] }} [options]
- * @returns {Promise<{ context: import("@playwright/test").BrowserContext, page: import("@playwright/test").Page, violations: Array<object> }>}
+ * @returns {Promise<{ context: import("@playwright/test").BrowserContext, page: import("@playwright/test").Page, violations: Array<object>, authCookies: Array<object> }>}
  */
 export async function startReplay(browser, baseURL, options = {}) {
   const {
@@ -490,6 +577,9 @@ export async function startReplay(browser, baseURL, options = {}) {
   });
 
   try {
+    // The replay starts authenticated so it can reproduce admin scenes; an
+    // anonymous poster scene clears these cookies at its own replay step.
+    const authCookies = await context.cookies();
     const page = await context.newPage();
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(45000);
@@ -500,7 +590,7 @@ export async function startReplay(browser, baseURL, options = {}) {
     await installHiddenSelectors(page, hideSelectors);
     await installTileRoutes(page, { violations });
 
-    return { context, page, violations };
+    return { context, page, violations, authCookies };
   } catch (error) {
     await context.close().catch(() => {});
     throw error;

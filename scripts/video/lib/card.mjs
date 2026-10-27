@@ -1,14 +1,16 @@
 // Self-contained title and end cards for the video recorder.
 //
-// A card is a typographic 1280x720 frame rendered into the page itself, not an
-// ffmpeg overlay. The Open GIS mark is read from the plugin's vendored SVG and
-// inlined, so the document has no images, webfonts or external references and
-// the recorder can set it into the timeline like any other scene. Every value
-// comes from the scenario and is escaped before it reaches the document.
+// A card is a typographic 1280x720 overlay rendered over the page itself, not
+// an ffmpeg overlay. It lives in a full-viewport shadow root so WordPress admin
+// CSS cannot reach it and its own styles cannot leak into the page. The Open GIS
+// mark is read from the plugin's vendored SVG and inlined, so the overlay has no
+// images, webfonts or external references and makes no network requests. Every
+// value comes from the scenario and is escaped before it reaches the document.
 "use strict";
 
 import { readFileSync } from "node:fs";
 
+const CARD_HOST_ID = "waymark-card-overlay";
 const CARD_MARKER = "waymarkCard";
 
 const TYPE_STACK =
@@ -100,12 +102,14 @@ function cardKey(card) {
 }
 
 /**
- * Render a card as a complete HTML document.
+ * Render the contents of a card's shadow root: its styles and markup.
  *
- * The eyebrow sits at roughly 38% of the frame height: a fixed top padding
- * keeps that position stable when the subtitle wraps, while the remaining
- * space below stays generous. A newline in the subtitle is rendered as a line
- * break. All measurements are for the fixed 1280x720 recording viewport.
+ * The overlay host is fixed to the viewport, so the shadow root fills the same
+ * 1280x720 frame the old stand-alone document did. The eyebrow sits at roughly
+ * 38% of the frame height: a fixed top padding keeps that position stable when
+ * the subtitle wraps, while the remaining space below stays generous. A newline
+ * in the subtitle is rendered as a line break. All measurements are for the
+ * fixed 1280x720 recording viewport.
  *
  * @param {{ eyebrow?: string, title: string, subtitle?: string }} card
  * @returns {string}
@@ -136,30 +140,21 @@ export function renderCard(card) {
     ? `<p class="card-subtitle">${subtitle}</p>`
     : "";
 
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>${title}</title>
-<style>
-  html,
-  body {
+  return `<style>
+  :host {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: block;
     margin: 0;
-    height: 100%;
-    background: #000b00;
-    overflow: hidden;
-  }
-
-  html,
-  body {
+    background-color: #000b00;
     background-image: url("${CARD_TEXTURE}");
     background-repeat: repeat;
     background-size: 64px 64px;
-  }
-
-  body {
+    overflow: hidden;
     font-family: ${TYPE_STACK};
     -webkit-font-smoothing: antialiased;
+    color-scheme: dark;
   }
 
   .card {
@@ -233,8 +228,6 @@ export function renderCard(card) {
     color: #9bb0a3;
   }
 </style>
-</head>
-<body>
 <main class="card">
 ${eyebrowMarkup}
 <div class="card-rule" role="presentation"></div>
@@ -242,15 +235,16 @@ ${eyebrowMarkup}
 ${subtitleMarkup}
 <footer class="card-footer">${PRODUCT_NAME}</footer>
 </main>
-</body>
-</html>
 `;
 }
 
 /**
- * Put a card into the page without navigating. `setContent` leaves `page.url()`
- * untouched, so the document issues no request and the request guard stays
- * inactive. A card already on screen is left alone to avoid a repaint.
+ * Put a card over the page without navigating. The overlay is a fixed
+ * full-viewport host with a shadow root, so the real document stays loaded and
+ * painted underneath and `page.url()` keeps pointing at it. A following `goto`
+ * to that URL is therefore a no-op. The overlay issues no request, so the
+ * request guard stays inactive. A card already on screen is left alone to avoid
+ * a repaint.
  *
  * @param {import("@playwright/test").Page} page
  * @param {{ eyebrow?: string, title: string, subtitle?: string }} card
@@ -260,10 +254,10 @@ export async function showCard(page, card) {
   const key = cardKey(card);
 
   const current = await page
-    .evaluate(
-      (attribute) => document.documentElement?.dataset?.[attribute] ?? null,
-      CARD_MARKER,
-    )
+    .evaluate((id) => {
+      const host = document.getElementById(id);
+      return host?.dataset?.[CARD_MARKER] ?? null;
+    }, CARD_HOST_ID)
     .catch(() => null);
 
   if (current === key) {
@@ -271,30 +265,52 @@ export async function showCard(page, card) {
     return false;
   }
 
-  await page.setContent(renderCard(card), { waitUntil: "load" });
-
   await page.evaluate(
-    ({ attribute, value }) => {
-      document.documentElement.dataset[attribute] = value;
-      return document.fonts.ready.then(() => undefined);
+    ({ id, marker, value, markup }) => {
+      document.getElementById(id)?.remove();
+
+      const host = document.createElement("div");
+      host.id = id;
+      host.dataset[marker] = value;
+
+      const shadow = host.attachShadow({ mode: "open" });
+      shadow.innerHTML = markup;
+      (document.body ?? document.documentElement).appendChild(host);
+
+      return document.fonts.ready.then(
+        () =>
+          new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          }),
+      );
     },
-    { attribute: CARD_MARKER, value: key },
+    {
+      id: CARD_HOST_ID,
+      marker: CARD_MARKER,
+      value: key,
+      markup: renderCard(card),
+    },
   );
 
   return true;
 }
 
 /**
- * Whether the current document is a card rendered by `showCard`.
+ * Remove the card overlay, revealing the page underneath. Returns whether an
+ * overlay was present.
  *
  * @param {import("@playwright/test").Page} page
  * @returns {Promise<boolean>}
  */
-export async function isCardPage(page) {
+export async function hideCard(page) {
   return page
-    .evaluate(
-      (attribute) => Boolean(document.documentElement?.dataset?.[attribute]),
-      CARD_MARKER,
-    )
+    .evaluate((id) => {
+      const host = document.getElementById(id);
+      if (!host) {
+        return false;
+      }
+      host.remove();
+      return true;
+    }, CARD_HOST_ID)
     .catch(() => false);
 }

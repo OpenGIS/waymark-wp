@@ -5,6 +5,11 @@
 // guard measures the audible speech after normalisation and, when a take falls
 // outside the acceptable band, asks the provider for another take.
 //
+// The retry ladder deliberately re-rolls at the same rate before it nudges the
+// rate. A fresh generation is nondeterministic, so it can land in band without
+// any change in voice register. Rate changes are a last resort because they
+// alter the delivery: the film should sound like one narrator throughout.
+//
 // The defaults live here so the guard, the cache key and the documentation all
 // share one source of truth. They can be overridden per run with environment
 // variables, which keeps a different delivery possible without editing code.
@@ -14,16 +19,33 @@ import { measureSpeechDuration } from "./shared.mjs";
 
 export const PACE_DEFAULTS = Object.freeze({
   targetWpm: 165,
-  bandWpm: 20,
-  maxAttempts: 3,
+  bandWpm: 10,
+  maxAttempts: 4,
 });
 
 // Bumped whenever the retry strategy changes, so cached takes made by an older
 // guard are regenerated rather than reused.
-export const PACE_GUARD_VERSION = 1;
+export const PACE_GUARD_VERSION = 2;
 
-const MIN_REQUEST_RATE = 80;
-const MAX_REQUEST_RATE = 300;
+// Continuous performances are one take for the whole film, so there is no
+// per-scene re-roll. Retries estimate the provider's measured response instead
+// of stepping a fixed ladder: the first retry is proportional, later retries
+// use a secant through the samples that bracket the target. Four whole takes is
+// the ceiling.
+export const CONTINUOUS_PACE_VERSION = 2;
+export const CONTINUOUS_MAX_ATTEMPTS = 4;
+
+// A secant whose two samples differ by less than this is flat enough that the
+// slope is noise; step the last requested rate by 5% instead.
+const SECANT_MIN_DELTA_WPM = 0.5;
+const SECANT_FALLBACK_STEP = 0.05;
+
+// Fixed ladder relative to the provider's default rate R. The first two
+// attempts are identical on purpose (a re-roll), then the rate moves 10% and
+// finally 15% in one direction. Repeating the last rung keeps a larger
+// configured attempt count well-defined.
+const SLOWER_MULTIPLIERS = [1, 1, 0.9, 0.85];
+const FASTER_MULTIPLIERS = [1, 1, 1.1, 1.15];
 
 const ENV_TARGET = "VIDEO_TTS_TARGET_WPM";
 const ENV_BAND = "VIDEO_TTS_PACE_BAND_WPM";
@@ -163,30 +185,131 @@ export function roundWpm(wpm) {
 }
 
 /**
- * Estimate the provider request rate that would land on the target pace. The
- * next attempt asks the provider to speak natively at that rate; the audio is
- * never resampled or time-stretched.
+ * Which way the first rate nudge should move. A take that is too fast needs a
+ * slower request; a take that is too slow needs a faster one.
  *
- * The adjustment uses the square root of the ratio rather than the full ratio.
- * Provider speed quantisation and natural delivery vary, so a full correction
- * can overshoot by a wide margin on a short line. Damping keeps each retry
- * closer to the previous take while still moving in the right direction.
- *
- * @param {number} currentRate
  * @param {number} measuredWpm
+ * @param {number} targetWpm
+ * @returns {"slower" | "faster"}
+ */
+export function paceDirection(measuredWpm, targetWpm) {
+  return measuredWpm > targetWpm ? "slower" : "faster";
+}
+
+/**
+ * The requested rate for an attempt, relative to the run's default rate.
+ * Attempts 1 and 2 both use the default rate so the provider can re-roll
+ * without a register change. Attempts 3 and 4 step 10% then 15% in the chosen
+ * direction. Attempts beyond the ladder repeat its last rung.
+ *
+ * @param {number} baseRate The provider's default rate for this run (R).
+ * @param {number} attempt 1-based attempt number.
+ * @param {"slower" | "faster" | null} direction Only required from attempt 3.
+ * @returns {number}
+ */
+export function ladderRate(baseRate, attempt, direction = null) {
+  const multipliers =
+    direction === "faster" ? FASTER_MULTIPLIERS : SLOWER_MULTIPLIERS;
+  const index = Math.min(Math.max(attempt, 1), multipliers.length) - 1;
+  return baseRate * multipliers[index];
+}
+
+/**
+ * The next requested rate for a whole-performance take, estimated from the
+ * takes already sampled. An empty history returns the run rate R; one sample
+ * gives the first-order estimate `rate × target / measured`; two or more
+ * samples give a secant through the pair that brackets the target, or through
+ * the two nearest samples when the target lies outside the sampled range. A
+ * nearly flat pair or a repeated rate falls back to a 5% step in the needed
+ * direction. The result is unclamped; the caller runs it through the
+ * provider's clamp before requesting and recording it.
+ *
+ * @param {{ baseRate: number, targetWpm: number, samples: Array<{ rate: number, wpm: number }> }} options
+ * @returns {number}
+ */
+export function continuousEstimateRate({ baseRate, targetWpm, samples }) {
+  const usable = (samples ?? []).filter(
+    (sample) =>
+      Number.isFinite(sample.rate) &&
+      sample.rate > 0 &&
+      Number.isFinite(sample.wpm) &&
+      sample.wpm > 0,
+  );
+
+  if (usable.length === 0) {
+    return baseRate;
+  }
+
+  if (usable.length === 1) {
+    const [sample] = usable;
+    return sample.rate * (targetWpm / sample.wpm);
+  }
+
+  const sorted = [...usable].sort(
+    (left, right) => left.wpm - right.wpm || left.rate - right.rate,
+  );
+  const [lower, upper] = secantPair(sorted, targetWpm);
+  const denominator = upper.wpm - lower.wpm;
+
+  if (Math.abs(denominator) < SECANT_MIN_DELTA_WPM) {
+    return stepFromLatest(usable, targetWpm);
+  }
+
+  const estimate =
+    lower.rate +
+    ((targetWpm - lower.wpm) * (upper.rate - lower.rate)) / denominator;
+
+  if (
+    !Number.isFinite(estimate) ||
+    estimate <= 0 ||
+    usable.some((sample) => Math.abs(sample.rate - estimate) < 0.5)
+  ) {
+    return stepFromLatest(usable, targetWpm);
+  }
+
+  return estimate;
+}
+
+/**
+ * The two samples used for the secant: the adjacent pair that brackets the
+ * target pace, otherwise the two nearest samples on the target's side of the
+ * sampled range.
+ *
+ * @param {Array<{ rate: number, wpm: number }>} sorted Samples sorted by wpm.
+ * @param {number} targetWpm
+ * @returns {[{ rate: number, wpm: number }, { rate: number, wpm: number }]}
+ */
+function secantPair(sorted, targetWpm) {
+  if (sorted.length <= 2) {
+    return [sorted[0], sorted[1]];
+  }
+
+  for (let index = 0; index < sorted.length - 1; index += 1) {
+    if (sorted[index].wpm <= targetWpm && sorted[index + 1].wpm >= targetWpm) {
+      return [sorted[index], sorted[index + 1]];
+    }
+  }
+
+  return targetWpm < sorted[0].wpm
+    ? [sorted[0], sorted[1]]
+    : [sorted[sorted.length - 2], sorted[sorted.length - 1]];
+}
+
+/**
+ * A small step from the most recent requested rate, in the direction the last
+ * take needs to move.
+ *
+ * @param {Array<{ rate: number, wpm: number }>} samples Chronological samples.
  * @param {number} targetWpm
  * @returns {number}
  */
-export function nextRequestRate(currentRate, measuredWpm, targetWpm) {
-  if (!(measuredWpm > 0)) {
-    return currentRate;
-  }
-
-  const estimate = currentRate * Math.sqrt(targetWpm / measuredWpm);
-  return Math.min(
-    MAX_REQUEST_RATE,
-    Math.max(MIN_REQUEST_RATE, Math.round(estimate)),
-  );
+function stepFromLatest(samples, targetWpm) {
+  const latest = samples[samples.length - 1];
+  const factor =
+    latest.wpm > targetWpm
+      ? 1 - SECANT_FALLBACK_STEP
+      : 1 + SECANT_FALLBACK_STEP;
+  return latest.rate * factor;
 }
 
 /**

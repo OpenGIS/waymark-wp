@@ -6,16 +6,23 @@
 //
 // Provider contract:
 //   {
-//     id, label, defaultVoice,
+//     id, label, defaultVoice, supportsContinuous,
 //     isAvailable(env),
 //     unavailableReason?(env),
 //     hasVoice?(voice),
 //     describeVoice?(voice),
 //     describeInvalidVoice?(voice),
 //     speedForRate?(rate),
+//     clampRate?(rate),
+//     pronunciationRate?(number),  // words-per-minute rate that maps to speed 1.0
 //     timingMetadata?({ voice, rate }),
-//     synthesise({ text, voice, rate, outPath, env, sceneId, verbose, log })
+//     synthesise({ text, voice, rate, outPath, env, sceneId, verbose, log, expectedPronunciations }),
+//     transcribeWav?({ wavPath, env, verbose, log })
 //   }
+//
+// `supportsContinuous` is true only when the provider can both synthesise one
+// whole-script performance and return word timestamps for it. Providers
+// without it keep the per-line path.
 "use strict";
 
 import deepgram from "./providers/deepgram.mjs";

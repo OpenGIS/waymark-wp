@@ -134,6 +134,27 @@ export function buildCues(timeline, scenario) {
 }
 
 /**
+ * Reject a cue set in which one cue starts before the previous cue ends. The
+ * build refuses to emit overlapping captions rather than clamping or warning.
+ *
+ * @param {Array<{ id: string, start: number, end: number }>} cues
+ */
+export function assertNoCueOverlap(cues) {
+  for (let index = 1; index < cues.length; index += 1) {
+    const previous = cues[index - 1];
+    const cue = cues[index];
+
+    if (cue.start < previous.end) {
+      throw new Error(
+        `Captions overlap: cue "${cue.id}" starts at ` +
+          `${cue.start.toFixed(3)}s, before "${previous.id}" ends at ` +
+          `${previous.end.toFixed(3)}s.`,
+      );
+    }
+  }
+}
+
+/**
  * Escape the characters that would otherwise be parsed as WebVTT markup or
  * break a cue. Cue text is always kept on one line.
  *

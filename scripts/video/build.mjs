@@ -4,10 +4,10 @@
 // Usage:
 //   node scripts/video/build.mjs [scenario-id] [--no-encode] [--poster-at <time>]
 //
-// The timeline in work/timeline.json is authoritative for scene starts and
-// ends. Narration WAVs are placed at those starts, the MP4 is encoded once,
-// and the poster, captions, transcript and manifest are derived from the final
-// file.
+// The per-id timeline in work/timeline-<id>.json is authoritative for scene
+// starts and ends. Narration WAVs are placed at those starts, the MP4 is encoded
+// once, and the poster, captions, transcript and manifest are derived from the
+// final file.
 "use strict";
 
 import fs from "node:fs";
@@ -18,7 +18,9 @@ import { fileURLToPath } from "node:url";
 
 import { assembleNarration, resolveTool, runTool } from "./lib/audio.mjs";
 import { POSTER_WORK_DIR, readPngSize } from "./lib/poster.mjs";
+import { timelinePath } from "./lib/timeline.mjs";
 import {
+  assertNoCueOverlap,
   buildCues,
   parseTimestamp,
   renderTranscript,
@@ -40,7 +42,6 @@ const POSTER_DIR = path.join(DELIVERY_DIR, "posters");
 const CAPTION_DIR = path.join(DELIVERY_DIR, "captions");
 const TRANSCRIPT_DIR = path.join(DELIVERY_DIR, "transcripts");
 const MANIFEST_PATH = path.join(DELIVERY_DIR, "manifest.json");
-const TIMELINE_PATH = path.join(WORK_DIR, "timeline.json");
 const DEFAULT_SCENARIO = "changing-basemaps";
 const POSTER_DIFF_WARN = 10;
 const POSTER_COMPARE_WIDTH = 320;
@@ -60,11 +61,13 @@ function main() {
   const scenario = readJSON(scenarioPath, "scenario");
   const id = requireString(scenario.id, "scenario.id");
 
-  const timeline = readJSON(TIMELINE_PATH, "timeline");
+  const timelineFile = timelinePath(id);
+  const timeline = readJSON(timelineFile, "timeline");
   if (timeline.id !== id) {
     throw new Error(
-      `The timeline belongs to "${timeline.id}", not "${id}". ` +
-        `Re-record or point the build at the matching scenario.`,
+      `The timeline at ${displayPath(timelineFile)} belongs to ` +
+        `"${timeline.id}", not "${id}". Re-record or point the build at the ` +
+        `matching scenario.`,
     );
   }
 
@@ -88,6 +91,9 @@ function main() {
 
   const duration = timelineDuration(timeline);
   const title = requireString(scenario.title ?? id, "scenario.title");
+
+  const cues = buildCues(timeline, scenario);
+  assertNoCueOverlap(cues);
 
   const outputPath = scenario.output
     ? path.resolve(REPO_ROOT, scenario.output)
@@ -174,7 +180,6 @@ function main() {
     extractPoster(outputPath, posterPath, posterAt);
   }
 
-  const cues = buildCues(timeline, scenario);
   fs.mkdirSync(CAPTION_DIR, { recursive: true });
   fs.writeFileSync(captionsPath, renderVtt(cues), "utf8");
 
@@ -429,6 +434,8 @@ function validateInputs({ scenario, timeline, timings }) {
   const stray = fs
     .readdirSync(audioDir)
     .filter((name) => name.endsWith(".wav"))
+    // The continuous master is an input to the per-scene cuts, not a scene.
+    .filter((name) => name !== "performance.wav" || expectedFiles.has(name))
     .filter((name) => !expectedFiles.has(name));
 
   if (stray.length) {
@@ -961,8 +968,9 @@ function printUsage() {
       "  --no-encode          reuse the existing MP4 and rebuild the sidecars",
       "  --poster-at <time>   poster timestamp in seconds or HH:MM:SS",
       "",
-      "Reads work/timeline.json and work/audio/<id>/timings.json. Writes the",
-      "MP4, poster, WebVTT captions, Markdown transcript and manifest.",
+      "Reads work/timeline-<id>.json and work/audio/<id>/timings.json.",
+      "Writes the MP4, poster, WebVTT captions, Markdown transcript and",
+      "manifest.",
     ].join("\n"),
   );
 }

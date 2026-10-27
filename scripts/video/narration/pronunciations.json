@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "notes": [
+    "Shared narration pronunciation lexicon. Edit by hand; keep valid JSON.",
+    "`match` lists written variants (matched whole-word, case-insensitively).",
+    "`ipa` is British-English IPA for flux-kit-en inline pronunciation objects.",
+    "`spoken` is the plain-text respelling fallback (say provider, or when IPA is unsuitable).",
+    "`say` is optional Apple [[inpt PHON]] syntax for voices that honour it."
+  ],
+  "entries": [
+    {
+      "display": "Topo",
+      "match": ["topo"],
+      "ipa": "ˈtɒpəʊ",
+      "spoken": "top oh",
+      "say": "t1AAp2OW",
+      "notes": "TOP-oh: first syllable as in 'top', not 'toe-poe'."
+    },
+    {
+      "display": "OpenTopoMap",
+      "match": ["OpenTopoMap"],
+      "ipa": "ˈəʊpən ˈtɒpəʊ mæp",
+      "spoken": "Open top oh Map",
+      "notes": "Unspaced form only. The spaced 'Open Topo Map' is handled by the topo entry."
+    },
+    {
+      "display": "OpenStreetMap",
+      "match": ["OpenStreetMap"],
+      "ipa": "ˈəʊpən striːt mæp",
+      "spoken": "Open Street Map",
+      "notes": "Unspaced form only. The spaced form is already unambiguous."
+    },
+    {
+      "display": "GeoJSON",
+      "match": ["GeoJSON"],
+      "ipa": "ˈdʒiːəʊdʒeɪsən",
+      "spoken": "geo Jason",
+      "notes": "GEO-jason."
+    },
+    {
+      "display": "GPX",
+      "match": ["GPX"],
+      "ipa": "ˌdʒiː piː ˈeks",
+      "spoken": "G P X",
+      "notes": "Letter-by-letter: G P X."
+    },
+    {
+      "display": "KML",
+      "match": ["KML"],
+      "ipa": "ˌkeɪ em ˈel",
+      "spoken": "K M L",
+      "notes": "Letter-by-letter: K M L."
+    },
+    {
+      "display": "map_id",
+      "match": ["map_id"],
+      "ipa": "ˈmæp ˌaɪ ˈdiː",
+      "spoken": "map I D",
+      "notes": "The trailing id is spoken as the letters I D."
+    },
+    {
+      "display": "collection_id",
+      "match": ["collection_id"],
+      "ipa": "kəˈlekʃən ˌaɪ ˈdiː",
+      "spoken": "collection I D",
+      "notes": "The trailing id is spoken as the letters I D."
+    },
+    {
+      "display": "id",
+      "match": ["id"],
+      "ipa": "ˌaɪ ˈdiː",
+      "spoken": "I D",
+      "notes": "Bare identifier. Underscore forms are handled by their own entries."
+    }
+  ]
+}

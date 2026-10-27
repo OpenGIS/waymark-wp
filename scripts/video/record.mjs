@@ -14,9 +14,10 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
-import { isCardPage, showCard } from "./lib/card.mjs";
+import { hideCard, showCard } from "./lib/card.mjs";
 import { ensureVisible } from "./lib/framing.mjs";
 import { loadNarration } from "./lib/narration.mjs";
+import { createTimeline, timelinePath } from "./lib/timeline.mjs";
 import {
   POSTER_DEFAULTS,
   POSTER_SCALE,
@@ -25,9 +26,16 @@ import {
   computePosterCrop,
   parsePosterConfig,
 } from "./lib/poster.mjs";
+import {
+  assertFreshStamp,
+  resolveLexiconPath,
+  resolveNarrationIdentity,
+} from "./lib/tts/stamp.mjs";
+import { loadDotEnv } from "./lib/tts/shared.mjs";
 
 const require = createRequire(import.meta.url);
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(VIDEO_DIR, "..", "..");
 
 // A neutral point in the blank centre of the WordPress admin bar. No admin bar
 // item sits there at 1280x720, so parking the real pointer clears hover-only
@@ -39,6 +47,15 @@ const PARK_MOUSE_POINT = { x: 640, y: 8 };
 // holding the card briefly before the timeline origin keeps the encoder's
 // initial transient out of the delivered video.
 const CARD_PREWARM_SETTLE_MS = 3500;
+
+// A fixed beat between the UI action settling and the voice starting. Without
+// it the narration begins on the same frame as the action, which feels abrupt;
+// `jcut` can pull the line earlier from here.
+const LEAD_BEAT = 0.3;
+
+// Scenario-level selectors to hide. Kept here so `navigateTo` can reapply them
+// the moment a navigation commits, rather than waiting for the action to end.
+let activeHideSelectors = [];
 
 const DEFAULT_SCENARIO = path.join(
   VIDEO_DIR,
@@ -55,6 +72,8 @@ const SCENARIO_KEYS = new Set([
   "mapSlug",
   "posterAt",
   "pad",
+  "jcut",
+  "minHold",
   "audioAfterAction",
   "audioAfterActionMax",
   "hideSelectors",
@@ -70,6 +89,8 @@ const SCENE_KEYS = new Set([
   "notes",
   "hold",
   "pad",
+  "jcut",
+  "minHold",
   "audioOffset",
   "audioAfterAction",
   "audioAfterActionMax",
@@ -79,6 +100,7 @@ const SCENE_KEYS = new Set([
   "zoom",
   "poster",
   "parkMouse",
+  "anonymous",
   "url",
   "selector",
   "value",
@@ -97,6 +119,8 @@ const SCENE_KEYS = new Set([
 const CARD_KEYS = new Set(["eyebrow", "title", "subtitle"]);
 
 async function main() {
+  loadDotEnv(REPO_ROOT, "record");
+
   const args = process.argv.slice(2);
 
   const scenarioPath = args.length
@@ -117,7 +141,6 @@ async function main() {
   const browserLib = await import("./lib/browser.mjs");
   const cursorLib = await import("./lib/cursor.mjs");
   const highlightLib = await import("./lib/highlight.mjs");
-  const { createTimeline } = await import("./lib/timeline.mjs");
 
   const scenario = JSON.parse(fs.readFileSync(scenarioPath, "utf8"));
   validateScenario(scenario);
@@ -138,6 +161,7 @@ async function main() {
   }
 
   const audioTimings = loadAudioTimings(scenario.id);
+  validateNarrationStamp(scenario, narrationPath, audioTimings);
 
   const mapSlug = scenario.mapSlug ?? "cape-scott-trail";
   let mapId;
@@ -174,16 +198,33 @@ async function main() {
         ? resolveScene(firstScene, tokens, firstScene.id)
         : null;
 
+    // A card is now an overlay, so its pre-warm must load the page it will
+    // eventually reveal. Point it at the first non-card goto scene, which is
+    // the first real page the take will show.
+    const cardPageSource =
+      prewarmScene?.action === "card"
+        ? scenario.scenes.find((scene) => scene.action === "goto")
+        : null;
+    const cardPageScene = cardPageSource
+      ? resolveScene(cardPageSource, tokens, cardPageSource.id)
+      : null;
+    const mapScene = scenario.scenes.find(
+      (scene) => scene.action === "waitForMap",
+    );
+
     if (prewarmScene) {
-      const mapScene = scenario.scenes.find(
-        (scene) => scene.action === "waitForMap",
-      );
+      const warmTarget =
+        prewarmScene.action === "goto"
+          ? navigationTarget(prewarmScene)
+          : navigationTarget(cardPageScene);
 
       await browserLib.warmUp(browser, baseURL, {
-        target: prewarmTarget(prewarmScene),
+        target: warmTarget,
+        card: prewarmScene.action === "card" ? prewarmScene.card : null,
         hideSelectors: scenario.hideSelectors ?? [],
-        waitForMap: Boolean(mapScene),
+        waitForMap: Boolean(mapScene && warmTarget),
         zoom: mapScene?.zoom,
+        anonymous: prewarmScene.anonymous === true,
       });
       console.log(
         `[video] Warm-up ${prewarmScene.action === "card" ? "card" : "navigation"} complete.`,
@@ -193,11 +234,19 @@ async function main() {
     const session = await browserLib.startRecording(browser, baseURL, {
       hideSelectors: scenario.hideSelectors ?? [],
       // Put the first scene on screen before t0 so the take opens on the fully
-      // rendered scene instead of the blank page. A card is set into the page
-      // by the same hook; a goto is navigated.
+      // rendered scene instead of the blank page. A card is injected as an
+      // overlay over its already-warmed page; a goto is navigated.
       prepare: prewarmScene
-        ? (page) => prepareScene(page, prewarmScene)
+        ? (page) =>
+            prepareScene(page, prewarmScene, {
+              pageScene: cardPageScene,
+              hideSelectors: scenario.hideSelectors ?? [],
+              waitForMap: Boolean(mapScene && cardPageScene),
+              fixtures: libs.fixtures,
+              applyHiddenSelectors: browserLib.applyHiddenSelectors,
+            })
         : undefined,
+      anonymous: prewarmScene?.anonymous === true,
     });
     const timeline = createTimeline({
       id: scenario.id,
@@ -217,6 +266,7 @@ async function main() {
         libs,
         audioTimings,
       );
+      assertNoNarrationCollision(timeline);
     } catch (error) {
       failure = error;
     }
@@ -289,7 +339,7 @@ async function main() {
             difference: null,
           },
     );
-    timeline.write(browserLib.TIMELINE_PATH);
+    timeline.write(timelinePath(scenario.id));
 
     if (finish && finish.violations.length && !failure?.isViolation) {
       const violationError = new Error(
@@ -405,6 +455,9 @@ function validateScenario(scenario) {
       `Scenario "${scenario.id}": "pad" must be a non-negative number of seconds.`,
     );
   }
+
+  validateJcut(scenario.jcut, `Scenario "${scenario.id}"`);
+  validateMinHold(scenario.minHold, `Scenario "${scenario.id}"`);
 
   validateAudioAfterAction(scenario, `Scenario "${scenario.id}"`);
 }
@@ -610,6 +663,69 @@ function warnUnknownObjectKeys(label, value, allowed) {
 }
 
 /**
+ * Validate an optional J-cut. A J-cut pulls narration earlier, so it is a
+ * non-negative number of seconds no larger than the upper bound the timing
+ * model supports.
+ *
+ * @param {number | undefined} value
+ * @param {string} scope
+ */
+function validateJcut(value, scope) {
+  if (value === undefined) {
+    return;
+  }
+
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > 2.0
+  ) {
+    const shown = typeof value === "number" ? value : JSON.stringify(value);
+    throw new Error(
+      `${scope}: "jcut" must be a number between 0 and 2 seconds (got ${shown}).`,
+    );
+  }
+}
+
+/**
+ * Validate the optional minimum scene hold.
+ *
+ * @param {number | undefined} value
+ * @param {string} scope
+ */
+function validateMinHold(value, scope) {
+  if (value === undefined) {
+    return;
+  }
+
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    throw new Error(
+      `${scope}: "minHold" must be a non-negative number of seconds.`,
+    );
+  }
+}
+
+/**
+ * Validate an explicit narration offset. A J-cut can place narration before
+ * the scene start, so a small negative value is valid.
+ *
+ * @param {number | undefined} value
+ * @param {string} scope
+ */
+function validateAudioOffset(value, scope) {
+  if (value === undefined) {
+    return;
+  }
+
+  if (typeof value !== "number" || !Number.isFinite(value) || value < -2.0) {
+    throw new Error(
+      `${scope}: "audioOffset" must be a number of seconds no less than -2.`,
+    );
+  }
+}
+
+/**
  * Validate the scenario- or scene-level narration delay fields.
  *
  * @param {object} value
@@ -690,19 +806,62 @@ function loadAudioTimings(scenarioId) {
 }
 
 /**
+ * Refuse a take whose narration audio no longer matches the current narration,
+ * lexicon, provider/voice or timing data. Narrated scenes require a stamp;
+ * silent scenarios never produce one.
+ *
+ * @param {object} scenario
+ * @param {string | null} narrationPath
+ * @param {object | null} audioTimings
+ */
+function validateNarrationStamp(scenario, narrationPath, audioTimings) {
+  const narrated = scenario.scenes.filter(
+    (scene) =>
+      typeof scene.narration === "string" && scene.narration.trim() !== "",
+  );
+
+  if (!narrated.length) {
+    return;
+  }
+
+  const audioDir = path.join(VIDEO_DIR, "work", "audio", scenario.id);
+  const identity = resolveNarrationIdentity({ env: process.env });
+  const lexiconPath = resolveLexiconPath({ env: process.env });
+
+  assertFreshStamp({
+    audioDir,
+    scenarioId: scenario.id,
+    narrated,
+    narrationPath,
+    lexiconPath,
+    identity,
+    timings: audioTimings,
+  });
+
+  console.log(
+    `[video] Narration stamp: ` +
+      `${path.relative(process.cwd(), path.join(audioDir, "stamp.json"))} ` +
+      `(${identity.providerId}/${identity.voice}).`,
+  );
+}
+
+/**
  * Resolve a scene's narration timing. For a narrated scene the narration
- * starts after the action has settled, capped by `audioAfterActionMax`; the
- * post-action hold is whatever remains of the scene's target duration. A
+ * starts after the action has settled, plus the fixed lead beat and minus any
+ * J-cut, capped by `audioAfterActionMax`. The scene lasts at least its action
+ * plus `minHold`, and otherwise until the narration and pad have played. A
  * silent scene keeps its scenario hold.
  *
  * @param {object} scene
  * @param {object} scenario
  * @param {object | null} audioTimings
- * @returns {{ audio: string | null, audioDuration: number | null, hold: number, pad: number, afterAction: boolean, maxDelay: number, audioOffset: number | null }}
+ * @returns {{ audio: string | null, audioDuration: number | null, hold: number, pad: number, afterAction: boolean, maxDelay: number, audioOffset: number | null, jcut: number, minHold: number }}
  */
 function resolveTiming(scene, scenario, audioTimings) {
   const entry =
     audioTimings?.scenes.find((candidate) => candidate.id === scene.id) ?? null;
+  const jcut = scene.jcut ?? scenario.jcut ?? 0;
+  const minHold = scene.minHold ?? scenario.minHold ?? 0.15;
 
   if (entry) {
     return {
@@ -717,6 +876,8 @@ function resolveTiming(scene, scenario, audioTimings) {
       maxDelay:
         scene.audioAfterActionMax ?? scenario.audioAfterActionMax ?? 1.5,
       audioOffset: scene.audioOffset ?? null,
+      jcut,
+      minHold,
     };
   }
 
@@ -728,6 +889,8 @@ function resolveTiming(scene, scenario, audioTimings) {
     afterAction: true,
     maxDelay: 0,
     audioOffset: null,
+    jcut,
+    minHold,
   };
 }
 
@@ -777,16 +940,9 @@ function validateScene(scene, index) {
     );
   }
 
-  if (
-    scene.audioOffset !== undefined &&
-    (typeof scene.audioOffset !== "number" ||
-      !Number.isFinite(scene.audioOffset) ||
-      scene.audioOffset < 0)
-  ) {
-    throw new Error(
-      `Scene "${scene.id}": "audioOffset" must be a non-negative number of seconds.`,
-    );
-  }
+  validateJcut(scene.jcut, `Scene "${scene.id}"`);
+  validateMinHold(scene.minHold, `Scene "${scene.id}"`);
+  validateAudioOffset(scene.audioOffset, `Scene "${scene.id}"`);
 
   if (
     scene.highlight !== undefined &&
@@ -839,6 +995,10 @@ function validateScene(scene, index) {
 
   if (scene.parkMouse !== undefined && typeof scene.parkMouse !== "boolean") {
     throw new Error(`Scene "${scene.id}": "parkMouse" must be a boolean.`);
+  }
+
+  if (scene.anonymous !== undefined && typeof scene.anonymous !== "boolean") {
+    throw new Error(`Scene "${scene.id}": "anonymous" must be a boolean.`);
   }
 
   if (
@@ -903,6 +1063,8 @@ async function runScenes(
 ) {
   const { page, violations, t0, hideSelectors } = session;
   const posterRequests = [];
+  let anonymousState = Boolean(session.anonymous);
+  activeHideSelectors = hideSelectors ?? [];
 
   for (let index = 0; index < scenario.scenes.length; index += 1) {
     const scene = scenario.scenes[index];
@@ -913,11 +1075,26 @@ async function runScenes(
     resolved.audio = timing.audio;
     resolved.audioDuration = timing.audioDuration;
     resolved.hold = timing.hold;
+    resolved.jcut = timing.jcut;
+    resolved.minHold = timing.minHold;
 
     const start = (Date.now() - t0) / 1000;
     timeline.beginScene(resolved, start);
 
     try {
+      const sceneAnonymous = resolved.anonymous === true;
+      const switched = sceneAnonymous !== anonymousState;
+
+      if (switched) {
+        await libs.browser.setAnonymousState(
+          session.context,
+          session.authCookies,
+          sceneAnonymous,
+          `Scene "${sceneId}"`,
+        );
+        anonymousState = sceneAnonymous;
+      }
+
       if (resolved.parkMouse) {
         await libs.cursor.moveCursorTo(
           page,
@@ -932,6 +1109,7 @@ async function runScenes(
         scene: resolved,
         sceneId,
         libs,
+        reload: switched,
       });
 
       if (resolved.action === "goto" && hideSelectors.length) {
@@ -968,13 +1146,19 @@ async function runScenes(
       const actionEnd = record.actionEnd;
       const audioOffset = timing.audioDuration
         ? (timing.audioOffset ??
-          (timing.afterAction ? Math.min(actionEnd, timing.maxDelay) : 0))
+          (timing.afterAction
+            ? Math.min(actionEnd, timing.maxDelay) + LEAD_BEAT - timing.jcut
+            : 0))
         : 0;
-      const holdSeconds = timing.audioDuration
+      const durationFloor = actionEnd + timing.minHold;
+      const sceneDuration = timing.audioDuration
         ? Math.max(
-            0,
-            audioOffset + timing.audioDuration + timing.pad - actionEnd,
+            durationFloor,
+            audioOffset + timing.audioDuration + timing.pad,
           )
+        : actionEnd + timing.hold;
+      const holdSeconds = timing.audioDuration
+        ? Math.max(0, sceneDuration - actionEnd)
         : timing.hold;
 
       timeline.setAudioOffset(sceneId, audioOffset);
@@ -997,6 +1181,13 @@ async function runScenes(
         });
       }
 
+      // Remove an opening or mid-take card at the end of its scene so the next
+      // scene starts on the fully painted page underneath. A closing card is
+      // the last frame of the take and stays up until recording stops.
+      if (resolved.action === "card" && index < scenario.scenes.length - 1) {
+        await hideCard(page);
+      }
+
       assertNoViolations(violations, sceneId, libs.browser);
     } finally {
       await libs.cursor.clearCaret(page).catch(() => {});
@@ -1006,6 +1197,46 @@ async function runScenes(
   }
 
   return posterRequests;
+}
+
+/**
+ * Fail when a J-cut pulls a line back into the previous line's speech. Only a
+ * negative offset can overlap the preceding scene, so the pass only inspects
+ * those. A scene with no preceding narrated scene has nothing to collide with.
+ *
+ * @param {object} timeline
+ */
+function assertNoNarrationCollision(timeline) {
+  let previous = null;
+
+  for (const scene of timeline.scenes) {
+    const narrated =
+      Number.isFinite(scene.audioDuration) && scene.audioDuration > 0;
+
+    if (!narrated) {
+      continue;
+    }
+
+    const offset = Number.isFinite(scene.audioOffset) ? scene.audioOffset : 0;
+
+    if (offset < 0 && previous) {
+      const speechStart = scene.start + offset;
+      const previousEnd =
+        previous.start + previous.audioOffset + previous.audioDuration;
+
+      if (speechStart < previousEnd) {
+        const jcut = Number.isFinite(scene.jcut) ? scene.jcut : 0;
+        throw new Error(
+          `Scene "${scene.id}": jcut of ${jcut.toFixed(2)}s starts ` +
+            `narration at ${speechStart.toFixed(2)}s, which overlaps ` +
+            `"${previous.id}" ending at ${previousEnd.toFixed(2)}s. Reduce ` +
+            `the jcut or lengthen the previous scene's pad.`,
+        );
+      }
+    }
+
+    previous = scene;
+  }
 }
 
 /**
@@ -1060,10 +1291,24 @@ async function capturePosterReplay({
       hideSelectors: session.hideSelectors,
     });
 
+    let anonymousState = false;
+
     for (let index = 0; index <= sceneIndex; index += 1) {
       const scene = scenario.scenes[index];
       const id = validateScene(scene, index);
       const resolved = resolveScene(scene, tokens, id);
+      const sceneAnonymous = resolved.anonymous === true;
+      const switched = sceneAnonymous !== anonymousState;
+
+      if (switched) {
+        await libs.browser.setAnonymousState(
+          replay.context,
+          replay.authCookies,
+          sceneAnonymous,
+          `Scene "${id}" poster replay`,
+        );
+        anonymousState = sceneAnonymous;
+      }
 
       await replayScene({
         page: replay.page,
@@ -1071,6 +1316,7 @@ async function capturePosterReplay({
         sceneId: id,
         libs,
         hideSelectors: session.hideSelectors,
+        reload: switched,
       });
     }
 
@@ -1191,9 +1437,16 @@ async function capturePosterReplay({
  * Apply one scene's action and overlays during a replay. Narration, holds,
  * timeline bookkeeping and assertions are deliberately skipped.
  *
- * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object, hideSelectors: string[] }} options
+ * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object, hideSelectors: string[], reload?: boolean }} options
  */
-async function replayScene({ page, scene, sceneId, libs, hideSelectors }) {
+async function replayScene({
+  page,
+  scene,
+  sceneId,
+  libs,
+  hideSelectors,
+  reload = false,
+}) {
   if (scene.parkMouse) {
     await libs.cursor.moveCursorTo(
       page,
@@ -1209,6 +1462,7 @@ async function replayScene({ page, scene, sceneId, libs, hideSelectors }) {
     sceneId,
     libs,
     silent: true,
+    reload,
   });
 
   if (scene.action === "goto" && hideSelectors.length) {
@@ -1239,21 +1493,28 @@ async function replayScene({ page, scene, sceneId, libs, hideSelectors }) {
 /**
  * Dispatch one action.
  *
- * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object, silent?: boolean }} options
+ * @param {{ page: import("@playwright/test").Page, scene: object, sceneId: string, libs: object, silent?: boolean, reload?: boolean }} options
  * @returns {Promise<{ cursorSelector?: string, cursorPoint?: { x: number, y: number } }>}
  */
-async function runAction({ page, scene, sceneId, libs, silent = false }) {
+async function runAction({
+  page,
+  scene,
+  sceneId,
+  libs,
+  silent = false,
+  reload = false,
+}) {
   const { fixtures, cursor } = libs;
 
   switch (scene.action) {
     case "goto": {
       const url = requireString(scene, sceneId, "url");
 
-      // `setContent` keeps the previous URL, so a goto after a card must
-      // navigate even when the URL string has not changed.
-      const onCard = await isCardPage(page);
-
-      if (onCard || !sameURL(page.url(), url)) {
+      // The URL survives an overlay card, so a goto to the page already loaded
+      // for the card is a no-op and does not discard the warmed document. A
+      // cookie-state switch must reload even when the URL is unchanged, or the
+      // page could keep the old admin bar (or lose the new one) for the scene.
+      if (reload || !sameURL(page.url(), url)) {
         await navigateTo(page, url, scene);
       }
 
@@ -1388,24 +1649,7 @@ async function runAction({ page, scene, sceneId, libs, silent = false }) {
     }
 
     case "waitForMap": {
-      await page.waitForFunction(
-        () => Boolean(window.Waymark && window.Waymark.map),
-        null,
-        { timeout: 30000 },
-      );
-      await fixtures.settleMap(page);
-
-      if (scene.zoom !== undefined) {
-        // A scenario may pin the zoom so the framing matches the frozen tile
-        // pack. Set it without animation, then settle the new tile batch.
-        await page.evaluate((zoom) => {
-          if (window.Waymark && window.Waymark.map) {
-            window.Waymark.map.setZoom(zoom, { animate: false });
-          }
-        }, scene.zoom);
-        await fixtures.settleMap(page);
-      }
-
+      await waitForMapReady(page, fixtures, scene.zoom);
       return {};
     }
 
@@ -1526,29 +1770,69 @@ async function runAction({ page, scene, sceneId, libs, silent = false }) {
 }
 
 /**
- * Describe the first scene as a pre-warm target. A card is local HTML, so it
- * has no URL to navigate to and no WordPress map to settle.
+ * Describe a scene as a navigation target for the unrecorded warm-up.
  *
- * @param {object} scene
- * @returns {{ kind: "card", card: object } | { kind: "goto", url: string, selector?: string }}
+ * @param {object | null} scene
+ * @returns {{ kind: "goto", url: string, selector?: string } | null}
  */
-function prewarmTarget(scene) {
-  if (scene.action === "card") {
-    return { kind: "card", card: scene.card };
+function navigationTarget(scene) {
+  if (!scene || scene.action !== "goto") {
+    return null;
   }
 
   return { kind: "goto", url: scene.url, selector: scene.selector };
 }
 
 /**
- * Put the first scene on screen before t0. The pre-warm uses the same hook for
- * every first action, so a card cannot regress to a blank opening.
+ * Wait for the editor map and settle it, optionally pinning the zoom so the
+ * framing matches the frozen tile pack. This is the wait shared by the
+ * `waitForMap` action and the card pre-warm.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {object} fixtures
+ * @param {number} [zoom]
+ */
+async function waitForMapReady(page, fixtures, zoom) {
+  await page.waitForFunction(
+    () => Boolean(window.Waymark && window.Waymark.map),
+    null,
+    { timeout: 30000 },
+  );
+  await fixtures.settleMap(page);
+
+  if (zoom !== undefined) {
+    await page.evaluate((value) => {
+      if (window.Waymark && window.Waymark.map) {
+        window.Waymark.map.setZoom(value, { animate: false });
+      }
+    }, zoom);
+    await fixtures.settleMap(page);
+  }
+}
+
+/**
+ * Put the first scene on screen before t0. A card is injected as an overlay
+ * over the page it will later reveal, so that page is navigated, settled and
+ * hidden-selector-cleaned first. A goto navigates directly.
  *
  * @param {import("@playwright/test").Page} page
  * @param {object} scene
+ * @param {{ pageScene?: object | null, hideSelectors?: string[], waitForMap?: boolean, zoom?: number, fixtures?: object, applyHiddenSelectors?: (page: import("@playwright/test").Page, selectors: string[]) => Promise<number> }} [options]
  */
-async function prepareScene(page, scene) {
+async function prepareScene(page, scene, options = {}) {
   if (scene.action === "card") {
+    if (options.pageScene) {
+      await navigateTo(page, options.pageScene.url, options.pageScene);
+
+      if (options.hideSelectors?.length) {
+        await options.applyHiddenSelectors?.(page, options.hideSelectors);
+      }
+
+      if (options.waitForMap) {
+        await waitForMapReady(page, options.fixtures, options.zoom);
+      }
+    }
+
     await showCard(page, scene.card);
     await page.waitForTimeout(CARD_PREWARM_SETTLE_MS);
     return;
@@ -1566,7 +1850,19 @@ async function prepareScene(page, scene) {
  * @param {object} scene
  */
 async function navigateTo(page, url, scene) {
-  await page.goto(url, { waitUntil: "load" });
+  // Commit first, then hide immediately: waiting for `load` leaves the
+  // permalink row (and any other dev-only chrome) on screen for the whole
+  // navigation, which is long enough to land in a frame.
+  await page.goto(url, { waitUntil: "commit" });
+
+  if (activeHideSelectors.length > 0) {
+    const { applyHiddenSelectors } = await import("./lib/browser.mjs");
+    await applyHiddenSelectors(page, activeHideSelectors).catch(() => {});
+    await page.waitForLoadState("domcontentloaded");
+    await applyHiddenSelectors(page, activeHideSelectors);
+  }
+
+  await page.waitForLoadState("load");
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
 
   if (typeof scene.selector === "string" && scene.selector !== "") {
@@ -2174,9 +2470,14 @@ function printSummary(scenario, session, timeline, finish, failure) {
       scene.end === null ? "?" : (scene.end - scene.start).toFixed(3);
     const audioOffset =
       scene.audioOffset === null ? "-" : scene.audioOffset.toFixed(3);
+    const jcut = Number.isFinite(scene.jcut) ? scene.jcut.toFixed(2) : "-";
+    const minHold = Number.isFinite(scene.minHold)
+      ? scene.minHold.toFixed(2)
+      : "-";
     console.log(
       `[video]   ${scene.id}: ${scene.start.toFixed(3)}s – ${end}s ` +
-        `(${scene.action}, audioOffset ${audioOffset}, duration ${duration}s)`,
+        `(${scene.action}, audioOffset ${audioOffset}, duration ${duration}s, ` +
+        `jcut ${jcut}s, minHold ${minHold}s)`,
     );
   }
 
@@ -2201,7 +2502,9 @@ function printSummary(scenario, session, timeline, finish, failure) {
     );
   }
 
-  console.log("[video] Timeline: scripts/video/work/timeline.json");
+  console.log(
+    `[video] Timeline: ${path.relative(process.cwd(), timelinePath(scenario.id))}`,
+  );
   console.log(
     `[video] Request guard: ${
       finish ? finish.violations.length : session.violations.length
@@ -2225,12 +2528,24 @@ function printUsage() {
       "WP_BASE_URL defaults to http://localhost:11000.",
       "",
       "The raw take is written to scripts/video/work/raw/<id>.webm and timing",
-      "to scripts/video/work/timeline.json.",
+      "to scripts/video/work/timeline-<id>.json.",
     ].join("\n"),
   );
 }
 
-main().catch((error) => {
-  console.error(`[video] ${error.stack ?? error.message}`);
-  process.exitCode = 1;
-});
+export { validateScenario, validateScenes, warnUnknownKeys };
+
+const isEntryPoint =
+  process.argv[1] !== undefined &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isEntryPoint) {
+  main().catch((error) => {
+    console.error(
+      error?.isStaleAudio
+        ? `[video] ${error.message}`
+        : `[video] ${error.stack ?? error.message}`,
+    );
+    process.exitCode = 1;
+  });
+}

@@ -20,7 +20,7 @@
         "title": "Changing Basemaps",
         "subtitle": "Switching basemaps in the Map Editor"
       },
-      "hold": 3.0,
+      "hold": 2.0,
       "highlight": null,
       "cursor": null,
       "notes": "The opening is a real timeline scene rendered into the page, not an ffmpeg overlay. It is put on screen before t0 by the prepare hook."
@@ -30,7 +30,6 @@
       "action": "goto",
       "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
       "hold": 10.9,
-      "audioOffset": 1.4,
       "highlight": null,
       "cursor": {
         "to": "#waymark-map"
@@ -45,7 +44,7 @@
       "id": "settle",
       "action": "waitForMap",
       "zoom": 9,
-      "hold": 1.5,
+      "hold": 0.4,
       "caption": "The map zooms out to fit the whole route",
       "highlight": {
         "selector": "#waymark-map",
@@ -59,6 +58,7 @@
       "action": "hover",
       "selector": "#waymark-map .leaflet-control-layers",
       "hold": 9.4,
+      "jcut": 0.5,
       "highlight": {
         "selector": "#waymark-map .leaflet-control-layers",
         "pad": 8
@@ -72,6 +72,7 @@
       "id": "show-basemaps",
       "action": "pause",
       "hold": 11.7,
+      "jcut": 0.2,
       "highlight": {
         "selector": "#waymark-map .leaflet-control-layers",
         "pad": 8
@@ -83,14 +84,14 @@
         "selector": "#waymark-map .leaflet-control-layers-base label:visible",
         "minCount": 2
       },
-      "notes": "The :visible suffix makes the count reflect the expanded panel, not the hidden label markup.",
-      "pad": 0.8
+      "notes": "The :visible suffix makes the count reflect the expanded panel, not the hidden label markup."
     },
     {
       "id": "choose-topo",
       "action": "click",
       "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input",
       "hold": 8.9,
+      "jcut": 0.35,
       "highlight": {
         "selector": "#waymark-map .leaflet-control-layers",
         "pad": 8
@@ -102,13 +103,13 @@
         "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input",
         "checked": true
       },
-      "notes": "The basemap selector is scoped to the layers control because the map attribution also contains 'OpenStreetMap'. The radio's accessible name is the basemap name.",
-      "pad": 0.8
+      "notes": "The basemap selector is scoped to the layers control because the map attribution also contains 'OpenStreetMap'. The radio's accessible name is the basemap name."
     },
     {
       "id": "hold-topo",
       "action": "waitForMap",
       "hold": 7.6,
+      "jcut": 0.2,
       "poster": {
         "selector": "#waymark-map",
         "aspect": "16:9",
@@ -119,14 +120,14 @@
         "pad": 8
       },
       "cursor": null,
-      "notes": "waitForMap runs the Leaflet settle routine, so the topo tile pane is stable before the hero hold. The cursor is hidden so the poster frame stays clean; the real mouse stays over the radio, which keeps the panel open. The control stays outlined because this frame is the poster: without it the thumbnail has no focal point. The poster marker is taken at the end of the hold.",
-      "pad": 0.8
+      "notes": "waitForMap runs the Leaflet settle routine, so the topo tile pane is stable before the hero hold. The cursor is hidden so the poster frame stays clean; the real mouse stays over the radio, which keeps the panel open. The control stays outlined because this frame is the poster: without it the thumbnail has no focal point. The poster marker is taken at the end of the hold."
     },
     {
       "id": "restore",
       "action": "click",
       "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Street Map\") input",
       "hold": 5.6,
+      "jcut": 0.3,
       "highlight": {
         "selector": "#waymark-map .leaflet-control-layers",
         "pad": 8
@@ -138,8 +139,7 @@
         "selector": "#waymark-map .leaflet-control-layers-base label:has-text(\"Open Street Map\") input",
         "checked": true
       },
-      "notes": "Scoped like choose-topo so the attribution line cannot match.",
-      "pad": 0.8
+      "notes": "Scoped like choose-topo so the attribution line cannot match."
     },
     {
       "id": "shortcode",
@@ -147,6 +147,7 @@
       "selector": "#waymark_map_shortcode",
       "block": "start",
       "hold": 10.4,
+      "jcut": 0.4,
       "highlight": {
         "selector": "#waymark_map_shortcode .inside",
         "pad": 8
@@ -164,6 +165,7 @@
       "action": "goto",
       "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-tiles",
       "hold": 8.4,
+      "jcut": 1.0,
       "highlight": null,
       "cursor": null,
       "assert": {
@@ -178,6 +180,7 @@
       "selector": ".waymark-settings-section-layers .waymark-repeatable",
       "block": "center",
       "hold": 8.2,
+      "jcut": 0.3,
       "highlight": {
         "selector": ".waymark-settings-section-layers .waymark-repeatable",
         "pad": 8
@@ -195,7 +198,7 @@
       "action": "scrollTo",
       "selector": ".waymark-settings-section-layers > h2",
       "block": "start",
-      "hold": 1.2,
+      "hold": 0.4,
       "caption": "The page scrolls back to the Basemaps heading",
       "highlight": null,
       "cursor": null,
@@ -210,7 +213,7 @@
         "title": "Changing Basemaps",
         "subtitle": "The editor switch is a view change.\nThe Shortcode and Settings decide what visitors see."
       },
-      "hold": 4.0,
+      "hold": 2.8,
       "highlight": null,
       "cursor": null,
       "notes": "Replaces the silent outro with a typographic closing card in the timeline. The reset-view scrollTo beat is kept immediately before it."

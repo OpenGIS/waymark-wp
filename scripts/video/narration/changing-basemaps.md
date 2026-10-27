@@ -26,7 +26,7 @@ Select Open Topo Map, and the tiles redraw underneath your work. Your markers an
 
 ## hold-topo
 
-It's a change of view, not a change to the Map. Reload the Editor and you'll be back to its default.
+It's a change of view, not a change to the Map — reload the Editor and you'll be back to its default.
 
 ## restore
 

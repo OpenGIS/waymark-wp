@@ -2,11 +2,31 @@
 //
 // Sequence times are seconds measured from a single wall-clock origin, taken
 // immediately before the recording page is created. The timeline is the source
-// of truth for audio placement, captions and poster extraction.
+// of truth for audio placement, captions and poster extraction. Each scene
+// record keeps the derived `audioOffset` alongside the `jcut` and `minHold`
+// inputs that produced it, so a take can be audited without the scenario.
 "use strict";
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+export const TIMELINE_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "work",
+);
+
+/**
+ * The per-take timeline path. Keeping the id in the filename means recording
+ * one video cannot silently overwrite the timeline another video is built from.
+ *
+ * @param {string} id
+ * @returns {string}
+ */
+export function timelinePath(id) {
+  return path.join(TIMELINE_DIR, `timeline-${id}.json`);
+}
 
 /**
  * Round a duration to milliseconds.
@@ -57,6 +77,8 @@ export function createTimeline({ id, viewport, startedAt }) {
         audio: scene.audio ?? null,
         audioDuration: scene.audioDuration ?? null,
         audioOffset: 0,
+        jcut: scene.jcut ?? 0,
+        minHold: scene.minHold ?? 0,
         hold: scene.hold ?? null,
         actionEnd: null,
       };
@@ -92,6 +114,8 @@ export function createTimeline({ id, viewport, startedAt }) {
 
     /**
      * Record when the scene's narration starts, relative to the scene start.
+     * A negative offset is valid: a J-cut pulls the line into the previous
+     * scene's tail air.
      *
      * @param {string} sceneId
      * @param {number} offset
@@ -104,7 +128,7 @@ export function createTimeline({ id, viewport, startedAt }) {
         );
       }
 
-      record.audioOffset = roundSeconds(Math.max(0, offset));
+      record.audioOffset = roundSeconds(offset);
     },
 
     /**

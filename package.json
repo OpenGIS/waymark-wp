@@ -21,7 +21,10 @@
     "video:tts": "node scripts/video/tts.mjs",
     "video:record": "node scripts/video/record.mjs",
     "video:build": "node scripts/video/build.mjs",
-    "video:validate": "node scripts/video/validate.mjs"
+    "video:validate": "node scripts/video/validate.mjs",
+    "video:audit": "node scripts/video/audit.mjs",
+    "video:doctor": "node scripts/video/doctor.mjs",
+    "video:new": "node scripts/video/new.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

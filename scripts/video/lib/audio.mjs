@@ -121,7 +121,16 @@ export function assembleNarration({
     }
 
     const offset = Number.isFinite(scene.audioOffset) ? scene.audioOffset : 0;
-    const delayMs = Math.max(0, Math.round((scene.start + offset) * 1000));
+    const startMs = Math.round((scene.start + offset) * 1000);
+    const delayMs = Math.max(0, startMs);
+    // A J-cut can place the speech before the timeline origin. `adelay` cannot
+    // take a negative delay, so trim the part that falls before zero instead of
+    // delaying the whole line and shifting it later.
+    const trimMs = Math.max(0, -startMs);
+    const trimFilter =
+      trimMs > 0
+        ? `atrim=start=${(trimMs / 1000).toFixed(3)},asetpts=PTS-STARTPTS,`
+        : "";
     const label = `a${index + 1}`;
 
     inputs.push("-i", audioPath);
@@ -129,6 +138,7 @@ export function assembleNarration({
       `[${index + 1}:a]` +
         "aresample=48000:async=1:first_pts=0," +
         "aformat=sample_fmts=fltp:channel_layouts=mono," +
+        trimFilter +
         `adelay=${delayMs}:all=1,` +
         `atrim=0:${duration},asetpts=PTS-STARTPTS[${label}]`,
     );
