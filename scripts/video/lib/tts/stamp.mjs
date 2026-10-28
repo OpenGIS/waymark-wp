@@ -240,14 +240,10 @@ export function assertFreshStamp({
     );
   }
 
+  // The spoken-text hash is authoritative: it ignores silent scenes, so
+  // adding or removing a beat without words must not invalidate cached
+  // audio. The file hash is recorded for diagnostics only.
   const narrationFileHash = narrationPath ? hashFile(narrationPath) : null;
-
-  if ((stamp.narration?.fileHash ?? null) !== narrationFileHash) {
-    throw staleError(
-      scenarioId,
-      "the narration file changed since it was generated",
-    );
-  }
 
   let lexiconHash;
   try {
