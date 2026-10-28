@@ -71,6 +71,12 @@
       "ipa": "ˌaɪ ˈdiː",
       "spoken": "I D",
       "notes": "Bare identifier. Underscore forms are handled by their own entries."
+    },
+    {
+      "display": "hover",
+      "match": ["hover"],
+      "spoken": "huvver",
+      "notes": "Rhymes with 'cover'. Flux reads the plain word as HOH-ver; the respelling was chosen by ear from an audition, and no inline IPA is used because the IPA forms did not land."
     }
   ]
 }

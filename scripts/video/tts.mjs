@@ -1399,6 +1399,14 @@ function promoteStagedRun({
   ];
   const existed = new Set();
 
+  // Scene WAVs from a take whose scene list has since shrunk would otherwise
+  // linger and fail the build's unaccounted-WAV check.
+  const currentWavs = new Set(narrated.map((scene) => `${scene.id}.wav`));
+  const staleWavs = fs
+    .readdirSync(audioDir)
+    .filter((name) => name.endsWith(".wav"))
+    .filter((name) => name !== "performance.wav" && !currentWavs.has(name));
+
   fs.rmSync(backupDir, { recursive: true, force: true });
   fs.mkdirSync(backupDir, { recursive: true });
 
@@ -1409,6 +1417,13 @@ function promoteStagedRun({
       fs.copyFileSync(source, path.join(backupDir, name));
       existed.add(name);
     }
+  }
+
+  for (const name of staleWavs) {
+    fs.copyFileSync(
+      path.join(audioDir, name),
+      path.join(backupDir, `stale-${name}`),
+    );
   }
 
   try {
@@ -1424,6 +1439,10 @@ function promoteStagedRun({
       );
     }
 
+    for (const name of staleWavs) {
+      fs.rmSync(path.join(audioDir, name), { force: true });
+    }
+
     writeJsonAtomic(timingsPath, timings);
     writeJsonAtomic(stampPath, stamp);
   } catch (error) {
@@ -1435,6 +1454,13 @@ function promoteStagedRun({
       } else {
         fs.rmSync(target, { force: true });
       }
+    }
+
+    for (const name of staleWavs) {
+      fs.copyFileSync(
+        path.join(backupDir, `stale-${name}`),
+        path.join(audioDir, name),
+      );
     }
 
     throw error;

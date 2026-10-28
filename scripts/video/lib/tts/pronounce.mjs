@@ -131,6 +131,10 @@ function render(entry, matched, form) {
     return `[[inpt PHON]]${entry.say}[[inpt TEXT]]`;
   }
 
+  if (entry.spoken && matched[0] === matched[0].toUpperCase()) {
+    return entry.spoken[0].toUpperCase() + entry.spoken.slice(1);
+  }
+
   return entry.spoken ?? matched;
 }
 
