@@ -75,8 +75,9 @@
     {
       "display": "hover",
       "match": ["hover"],
-      "spoken": "huvver",
-      "notes": "Rhymes with 'cover'. Flux reads the plain word as HOH-ver; the respelling was chosen by ear from an audition, and no inline IPA is used because the IPA forms did not land."
+      "ipa": "ˈhɒvə",
+      "spoken": "hovva",
+      "notes": "British short-o, chosen by ear from an audition. The IPA form is the shipped one; the respelling is the fallback for providers without inline pronunciation support."
     },
     {
       "display": "Josef",

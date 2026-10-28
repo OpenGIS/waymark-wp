@@ -1,0 +1,194 @@
+{
+  "version": "1",
+  "id": "settings",
+  "title": "Settings",
+  "output": "docs/public/assets/video/settings.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "san-josef-bay",
+  "posterAt": "00:01:30",
+  "pad": 0.4,
+  "hideSelectors": ["#waymark-about .ogis-panel__meta"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Settings",
+        "subtitle": "Change it once, and every Map follows."
+      },
+      "hold": 2.2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay. The subtitle states the promise in one line. The card is put on screen before t0 over the pre-warmed Basemaps page, so the page revealed when the card ends is already painted."
+    },
+    {
+      "id": "settings-basemaps",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-tiles",
+      "selector": ".waymark-settings-section-layers .waymark-repeatable table.form-table",
+      "highlight": {
+        "selector": ".waymark-settings-section-layers > h2",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-section-layers table.form-table",
+        "minCount": 2
+      },
+      "notes": "Waymark > Settings, Basemaps tab. Live at 1280x720 and scrollY 0: the settings nav is a 1080x47 bar at 180,37; the tab order is Basemaps, Shortcodes, Elevation, Meta, Sleep, Clustering, Misc., Markers, Lines, Shapes, Properties, Submissions, Advanced. The Basemaps heading is 718x22.9 at 205,138 and its description ends at 274. The first row is 718x273.5 at 205,289.1; the second is 718x273.5 at 205,592.6, so only its caption and name are above 720. The two rows are Open Street Map and Open Topo Map. The assert proves two rows. The about panel at 980,104 holds the page title; its ogis-panel__meta line, which reads v1.7.2 | Debug: 0, is hidden by hideSelectors. The Save Changes control is below the fold and is never touched. The card pre-warm has already loaded this URL, so the goto is a same-URL no-op and the scene starts on a painted page."
+    },
+    {
+      "id": "basemaps-footer",
+      "action": "scrollTo",
+      "selector": ".waymark-settings-section-layers table.form-table:has(.waymark-input-layer_name[value='Open Topo Map'])",
+      "block": "start",
+      "highlight": {
+        "selector": ".waymark-settings-section-layers .waymark-settings-section-footer",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-section-layers .waymark-settings-section-footer",
+        "text": "first listed"
+      },
+      "notes": "The Open Topo Map row is selected by its layer_name value, not by DOM order, and scrolled to block start. The second row sits at 32..305.5, the Add Type button at 336..376 and the section footer at 396..452.6, all below the 32 px admin bar. The live footer reads: Pro Tip! If you have more than one Basemap, you can switch between them when viewing the Map. The first listed will be used as the default, unless specified in the shortcode. Drag to re-order, remove all to restore defaults. The assert checks the words first listed. The first row is above the viewport; the previous scene showed it. The delete controls are not hovered because the real pointer is parked, and Save Changes is never touched."
+    },
+    {
+      "id": "settings-markers",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers",
+      "selector": ".waymark-settings-tab-markers .waymark-marker_title",
+      "highlight": {
+        "selector": ".waymark-settings-tab-markers .waymark-settings-section-marker_types > h2",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-markers table.form-table",
+        "minCount": 6
+      },
+      "notes": "Waymark > Settings, Markers tab. The nav is at 180,37 with Markers active. The Marker Types heading is at 205,138; the first Beer row is 718x518.7 at 205,231.5, so its last field is clipped by about 30 px at 720. The tab holds six rows, in order Beer, Food, Photo, Alert, Information and Camp; the section is 3,464.8 px tall. The assert minCount 6 proves the list, while the frame shows the heading and the Beer row. Live row titles: Beer, Food, Photo, Alert, Information, Camp. The about panel debug line is hidden. Save Changes is never touched."
+    },
+    {
+      "id": "marker-row",
+      "action": "scrollIntoView",
+      "selector": ".waymark-settings-tab-markers table.form-table:has(.waymark-marker_icon[value='ion-camera'])",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-settings-tab-markers table.form-table:has(.waymark-marker_icon[value='ion-camera'])",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-markers table.form-table:has(.waymark-marker_icon[value='ion-camera']) .waymark-marker_title",
+        "value": "Photo"
+      },
+      "notes": "The Photo row is selected by the icon value, not by DOM order: table.form-table:has(.waymark-marker_icon[value='ion-camera']) matches 1. The row is 718x518.7 at 205,1328.9; centred at scroll 1212 it sits at 116.9..635.6, fully below the 32 px admin bar with its 8 px highlight. Live values: Marker Label Photo; Marker Shape marker; Marker Size large; Marker Background #fbfbfb; Marker Show Initially 1; Marker Submissions 1; Icon Type icon; Icon Name ion-camera; Icon Colour #475260. The icon preview is ion ion-camera. The assert reads the Marker Label value Photo. No field is changed."
+    },
+    {
+      "id": "front-page",
+      "action": "goto",
+      "url": "{{baseURL}}/map/san-josef-bay/",
+      "selector": ".waymark-map .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-marker",
+        "minCount": 2
+      },
+      "notes": "The public Map Details page for San Josef Bay, logged out. The title and featured image come first; the map is at document y 822.5, below the fold. The selector waits for a painted tile. Live: 2 markers with classes waymark-marker-photo and waymark-marker-camp; the layer switcher is at 904.5,832.5 when the map is in view; the map is at zoom 15. No admin bar. The assert minCount 2 proves the map data before narration. No link is clicked and no data is changed."
+    },
+    {
+      "id": "front-map",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map",
+      "block": "start",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-marker",
+        "minCount": 2
+      },
+      "notes": "Block start puts the 645x450 map at 317.5,0. The map bottom is 450 and the meta block begins at 483.2, so its first 237 px are in the same 720 px frame. The layer control is at 904.5,9.5, collapsed. The map is at zoom 15 and the loaded tiles are OSM z15: .../15/4707/11017.png, .../15/4707/11018.png and .../15/4706/11017.png; all three are in the pinned pack. No highlight, so the map top is not outlined. The next scene hovers the control. No admin bar."
+    },
+    {
+      "id": "front-hover",
+      "action": "hover",
+      "selector": ".waymark-map .leaflet-control-layers",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": false,
+      "assert": {
+        "selector": ".waymark-map .leaflet-control-layers-base label:visible",
+        "minCount": 2
+      },
+      "poster": {
+        "selector": ".waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      },
+      "notes": "The control is fully visible at 904.5,9.5, so the hover does not scroll. The expanded control is 180x219.5 at 772.5,9.5 and the panel is 160x203.5 at 780.5,17.5. Live labels, in order: Open Street Map, Open Topo Map, Lines, Green, Markers, Photo, Camp. The assert counts two visible basemap labels. The map stays at zoom 15 and no basemap is selected, so the OSM z15 tiles remain. The marker classes are photo and camp, and their inline colours match the Type rows. The meta block still begins at 483.2, so the Description is visible below the map in the same frame. The poster uses .waymark-map at 16:9 with no pad; the control highlight shifts the crop up so the full 160x203.5 panel is inside the 645x362.8 crop, and the crop is inside the viewport. parkMouse is false so the panel stays open; the fake cursor is hidden."
+    },
+    {
+      "id": "front-hold",
+      "action": "pause",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map .leaflet-control-layers",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": false,
+      "notes": "Narrated still after the poster. The real pointer stays over the layers control, so the panel remains expanded. The frame is unchanged from front-hover, which gives the poster marker a still scene after it rather than a scroll. No assert: the previous scene already proved the two basemap labels and the map tiles."
+    },
+    {
+      "id": "front-meta",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map-meta",
+      "block": "center",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map-meta",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map-meta .waymark-meta-group-about",
+        "visible": true
+      },
+      "notes": "Block centre frames the 645x625.3 meta block at 317.5,1306.2; it sits at about 47..672, fully inside 720 with its 8 px highlight. The pointer is parked, so the layers panel collapses before the scroll. Live: the ungrouped block starts at 1329.8 with Description (144.6 px), Collection (86.8) and Export (86.8); the About group is at 1663 and the Details group at 1844.8. About is open by default and shows Journal Entry; Details is closed and holds Date 2026-06-14 and Distance 9.2. The assert checks the About group. The four fields and two groups are defined on Settings > Meta, verified read-only: Description, Journal Entry, Date and Distance; About and Details. No group is opened, no link is clicked and no field is changed."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Settings",
+        "subtitle": "Basemaps, Types and Meta are defined once,\nand every Map inherits them."
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card over the public meta block. It lands the point in one sentence without summarising the scenes or claiming an edit."
+    }
+  ],
+  "audioAfterActionMax": 30
+}

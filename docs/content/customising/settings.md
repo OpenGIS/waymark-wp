@@ -3,7 +3,7 @@ title: Settings
 description: Configure Basemaps, Markers, Lines, Shapes, Meta, Submissions and other Waymark Map options.
 ---
 
-::video-figure{src="/assets/video/settings.mp4" poster="/assets/video/posters/settings.jpg" label="Waymark - Settings"}
+::video-figure{src="/assets/video/settings.mp4" poster="/assets/video/posters/settings.jpg" label="Waymark - Settings" captions="/assets/video/captions/settings.en.vtt"}
 ::
 
 <a id="tiles"></a>

@@ -1,0 +1,37 @@
+WEBVTT
+
+settings-basemaps
+00:00:02.671 --> 00:00:22.916
+Settings is where the site is configured once. A row of links at the top opens a settings tab for each area, from Basemaps and Types to Meta and Advanced. Basemaps is open: two are defined here, and every Map draws its layer switcher from this list. A Shortcode can name a single basemap instead.
+
+basemaps-footer
+00:00:24.220 --> 00:00:41.515
+Open Street Map and Open Topo Map each have a name, a tile URL, attribution and a maximum zoom. The footer is explicit: the first listed is the default for every Map, unless a Shortcode names another. Visitors can switch between them, and dragging the rows changes the order.
+
+settings-markers
+00:00:43.937 --> 00:00:57.702
+Marker Types are the next shared list. This site defines six: Beer, Food, Photo, Alert, Information and Camp. A Type is not a per-Map choice; it is a style every Marker of that Type can use.
+
+marker-row
+00:00:58.944 --> 00:01:15.459
+Each row sets the Marker Label, the Shape, the Size and the Background colour, then the Icon Type, the Icon Name and the Icon Colour. The Photo row uses a camera icon and a slate colour. Every Photo Marker on every Map takes that definition.
+
+front-page
+00:01:17.031 --> 00:01:28.781
+The same configuration on the public Map. This is a Map page as a visitor sees it: no admin bar, no editing tools. The title and featured image come first; the map sits below.
+
+front-map
+00:01:29.986 --> 00:01:35.656
+The map carries the Basemaps and Types from Settings. The layer switcher lists them.
+
+front-hover
+00:01:36.721 --> 00:01:49.766
+Hover the control and both Basemaps are listed, along with the Types on offer: Photo, Camp and Green. The marker icons and colours come from those rows. The open panel is the visitor's view of the same configuration.
+
+front-hold
+00:01:50.478 --> 00:01:54.318
+Change a Basemap or a Type once, and every Map follows.
+
+front-meta
+00:01:55.515 --> 00:02:11.950
+Meta is defined in Settings too. Four fields — Description, Journal Entry, Date and Distance — sit in two groups, About and Details. Every Map uses the same fields and groups. The labels and groups come from Settings, not from this Map.
