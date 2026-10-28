@@ -15,7 +15,7 @@ Guides, tutorials and examples for building maps with Waymark.
 ::video-grid
 :::video-figure{src="/assets/video/getting-started.mp4" poster="/assets/video/posters/getting-started.jpg" caption="Getting Started"}
 :::
-:::video-figure{src="/assets/video/using-the-editor.mp4" poster="/assets/video/posters/using-the-editor.jpg" caption="Using the Editor"}
+:::video-figure{src="/assets/video/using-the-editor.mp4" poster="/assets/video/posters/using-the-editor.jpg" caption="Using the Editor" captions="/assets/video/captions/using-the-editor.en.vtt"}
 :::
 :::video-figure{src="/assets/video/using-types.mp4" poster="/assets/video/posters/using-types.jpg" caption="Using Types" captions="/assets/video/captions/using-types.en.vtt"}
 :::

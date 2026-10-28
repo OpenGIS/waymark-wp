@@ -1,0 +1,194 @@
+{
+  "version": "1",
+  "id": "using-the-editor",
+  "title": "Using the Editor",
+  "output": "docs/public/assets/video/using-the-editor.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:02:20",
+  "pad": 0.4,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Using the Editor",
+        "subtitle": "Editing a Marker and saving it to the Map"
+      },
+      "hold": 2.2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay."
+    },
+    {
+      "id": "editor",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "selector": "#waymark-map .leaflet-tile-loaded",
+      "highlight": {
+        "selector": "#waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "The Map Editor loads at zoom 10 with the route and thirteen Markers: `.waymark-marker` 13, `.waymark-marker-photo` 6. The map is 752x464.4 at 195,231.6. The tool rail is `.waymark-edit-toolbar` at 205,396, 44x290. The OpenStreetMap pack covers z9, z10 and z15, so the editor's z10 is pinned. The opening card pre-warms this page, so its goto is a no-op."
+    },
+    {
+      "id": "tools",
+      "action": "pause",
+      "highlight": {
+        "selector": ".waymark-edit-toolbar",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-edit-toolbar .waymark-edit-button",
+        "minCount": 7
+      },
+      "notes": "The rail holds seven links, one each: `.waymark-edit-line` 'Draw a Line', `.waymark-edit-image` 'Upload an Image', `.waymark-edit-marker` 'Place a Marker', `.waymark-edit-rectangle` 'Draw a Rectangle', `.waymark-edit-polygon` 'Draw a Polygon', `.waymark-edit-circle` 'Draw a Circle' and `.waymark-edit-upload` 'Read Lines and Markers from file'. The five drawing tools are the ones described. No tool is clicked, so no feature is added and no data changes."
+    },
+    {
+      "id": "marker-popup",
+      "action": "openPopup",
+      "selector": "#waymark-map .waymark-marker-photo >> nth=1",
+      "highlight": {
+        "selector": "#waymark-map .leaflet-popup",
+        "pad": 4
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark-map .waymark-info-title input",
+        "value": "San Josep Bay"
+      },
+      "notes": "The second Photo Marker is San Josep Bay; the title assertion proves the target. The popup is 318x341 at 200,236.6, fully inside the map. A 4 px highlight keeps the outline inside the map edge. It is the editing form: Type preview, Marker Title input (placeholder 'Marker Title'), Image URL input (placeholder 'Image URL'), Upload Image, rich-text Marker Description, Lat,Lng 50.673944,-128.274522, Duplicate Marker and Delete Marker. There is no save control in the popup. The Type is photo, so the icon is a camera."
+    },
+    {
+      "id": "change-title",
+      "action": "fill",
+      "selector": "#waymark-map .waymark-info-title input",
+      "value": "San Josef Bay",
+      "highlight": {
+        "selector": "#waymark-map .waymark-info-title",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#waymark-map .waymark-info-title input"
+      },
+      "assert": {
+        "selector": "#waymark-map .waymark-info-title input",
+        "value": "San Josef Bay"
+      },
+      "notes": "The title input is 282,249.6, 215x40. The fill changes the input only; the change handler fires on blur, so `#waymark-data` still holds 'San Josep Bay' at the end of this scene. Both titles are 13 characters, so the data length stays 60032. Nothing is sent to WordPress."
+    },
+    {
+      "id": "update-map",
+      "action": "click",
+      "selector": "#publish",
+      "highlight": {
+        "selector": "#publish",
+        "pad": 8
+      },
+      "cursor": {
+        "to": "#publish"
+      },
+      "assert": {
+        "selector": ".notice.updated",
+        "text": "Post updated"
+      },
+      "notes": "`#publish` is a single input of type submit with the label 'Update'. Clicking it blurs the title, writes 'San Josef Bay' into `#waymark-data`, and submits the post form. After the reload the success notice is `.notice.updated` with the text 'Post updated.' The page load settles in about 2.5 s, so narration starts after the real action end rather than racing it. The post form also resubmits the Map description and journal fields; restore the Map's meta with the map data after a take."
+    },
+    {
+      "id": "front-map",
+      "action": "goto",
+      "url": "{{baseURL}}/map/cape-scott-trail/",
+      "selector": ".waymark-map .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "The public Map Details page, logged out. There is no admin bar. The map is below the fold at 317.5,822.5, 645x450, and settles at zoom 9. Thirteen Markers load, six of them Photo. The selector waits for a painted tile."
+    },
+    {
+      "id": "front-view",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "anonymous": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "Block center puts the 645x450 map at 317.5,134.5, fully inside the anonymous 720 px viewport. The zoom stays at 9; the OpenStreetMap pack holds z9, so no z11–14 tile is requested. The highlight wraps the map."
+    },
+    {
+      "id": "front-popup",
+      "action": "openPopup",
+      "selector": ".waymark-map .waymark-marker-photo >> nth=1",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map .leaflet-popup",
+        "pad": 4
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map .waymark-info-title",
+        "text": "San Josef Bay"
+      },
+      "poster": {
+        "selector": ".waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      },
+      "notes": "The same second Photo Marker opens the public popup at 371.5,139.1, 301x271.4, fully inside the map. The title reads 'San Josef Bay' and the Type reads 'Photo'. The popup has no inputs, selects or buttons; it is the visitor's card. The poster crops `.waymark-map` at 16:9 with pad 0. The 4 px popup highlight keeps the shifted 645x363 crop inside the 645x450 map, so the poster shows the corrected title and the map rather than page chrome."
+    },
+    {
+      "id": "front-popup-hold",
+      "action": "pause",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map .leaflet-popup",
+        "pad": 4
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "notes": "The public popup stays open for the closing line. No further action and no mutation. The poster marker is at the end of the previous scene, one scene before this hold, so the poster frame is not the last frame before the closing card."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Using the Editor",
+        "subtitle": "Edit the Marker.\nUpdate the Map.\nThe public Map follows."
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card over the public map, with the popup still open behind it."
+    }
+  ],
+  "audioAfterActionMax": 30
+}

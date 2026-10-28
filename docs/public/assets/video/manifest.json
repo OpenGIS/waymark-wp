@@ -113,5 +113,28 @@
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
     "generatedAt": "2026-10-28T02:07:18.170Z"
+  },
+  "using-the-editor": {
+    "id": "using-the-editor",
+    "title": "Using the Editor",
+    "scenarioVersion": "1",
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "file": "/assets/video/using-the-editor.mp4",
+    "duration": 151.851,
+    "width": 1280,
+    "height": 720,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "size": 8120470,
+    "sha256": "a78e6c6565620502b7380f83d4c03fdc9aaaa85e92ab389ea67ed75c505f9f8e",
+    "poster": "/assets/video/posters/using-the-editor.jpg",
+    "posterSource": "replay",
+    "captions": "/assets/video/captions/using-the-editor.en.vtt",
+    "transcript": "/assets/video/transcripts/using-the-editor.md",
+    "narrationProvider": "deepgram",
+    "narrationVoice": "flux-kit-en",
+    "narrationRate": 175,
+    "generatedAt": "2026-10-28T04:26:48.067Z"
   }
 }
