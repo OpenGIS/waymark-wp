@@ -13,7 +13,7 @@ Guides, tutorials and examples for building maps with Waymark.
 ## Getting Started
 
 ::video-grid
-:::video-figure{src="/assets/video/getting-started.mp4" poster="/assets/video/posters/getting-started.jpg" caption="Getting Started"}
+:::video-figure{src="/assets/video/getting-started.mp4" poster="/assets/video/posters/getting-started.jpg" caption="Getting Started" captions="/assets/video/captions/getting-started.en.vtt"}
 :::
 :::video-figure{src="/assets/video/using-the-editor.mp4" poster="/assets/video/posters/using-the-editor.jpg" caption="Using the Editor" captions="/assets/video/captions/using-the-editor.en.vtt"}
 :::

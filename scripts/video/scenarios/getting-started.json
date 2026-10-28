@@ -1,0 +1,181 @@
+{
+  "version": "1",
+  "id": "getting-started",
+  "title": "Getting Started",
+  "output": "docs/public/assets/video/getting-started.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:00:30",
+  "pad": 0.4,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Getting Started",
+        "subtitle": "Putting an interactive Map on your WordPress site"
+      },
+      "hold": 2.2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay. The subtitle states the plugin's purpose in one line so the viewer has the frame before any admin screen appears."
+    },
+    {
+      "id": "maps-list",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map",
+      "selector": "#the-list .row-title",
+      "highlight": {
+        "selector": "#the-list",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#the-list .row-title",
+        "minCount": 3
+      },
+      "notes": "The Maps list is the first screen under Waymark. The table body is 1076x168 at 183,214, so the highlight and its 8 px pad are fully inside the 720 px viewport. The three rows are Cape Scott Trail, San Josef Bay and North Coast Trail; the row titles match three times. Add New Map is visible above the table at 246,50 but is not clicked. The page has no map, so no tiles are requested. The line mentions the button without implying a creation."
+    },
+    {
+      "id": "editor",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "selector": "#waymark-map .leaflet-tile-loaded",
+      "highlight": {
+        "selector": "#waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "poster": {
+        "selector": "#waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      },
+      "notes": "The Map Editor for Cape Scott Trail loads with the Map Editor metabox at the top. The map is 752x464 at 195,232 and settles at zoom 10, which the OpenStreetMap pack pins. The map data holds 17 features: 13 Points, 2 LineStrings and 2 Polygons, so one Map carries Markers, Lines and Shapes together. The rendered map shows 13 markers and the route and shading; the toolbar is inside the map at 205,396, 44x290. No tool is clicked and nothing is saved. The poster crops the map at 16:9 with no extra pad. Because the scene highlight is the map plus its 8 px outline, the crop extends to 853x480 at 144,230 to contain the outline; it stays inside the viewport and carries a thin margin of page background. The build logs the extension rather than failing. There is no cursor or popup in the frame."
+    },
+    {
+      "id": "editor-hold",
+      "action": "pause",
+      "hold": 0.8,
+      "highlight": {
+        "selector": "#waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "notes": "Silent beat so the poster marker lands inside a still frame rather than on the scroll into the Shortcode scene."
+    },
+    {
+      "id": "shortcode",
+      "action": "scrollIntoView",
+      "selector": "#waymark_map_shortcode",
+      "block": "center",
+      "highlight": {
+        "selector": "#waymark_map_shortcode",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark_map_shortcode input[type=\"text\"]",
+        "visible": true
+      },
+      "notes": "The Shortcode metabox is in the right sidebar and already visible on load at 980,634, 280x97. Block centre scrolls 306 px so it sits at 328..424, fully inside the viewport. The input holds the live value [Waymark map_id=\"100\"]; the scene only reads it and never selects or copies. The Collections box remains visible above it, but the highlight stays on the Shortcode box so the beat carries one idea."
+    },
+    {
+      "id": "front-page",
+      "action": "goto",
+      "url": "{{baseURL}}/waymark-demo/",
+      "selector": ".waymark-map-id-100 .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "hold": 1.4,
+      "assert": {
+        "selector": ".waymark-map-id-100 .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "Silent establishing beat on the seeded Waymark Demo page. Anonymous: no admin bar. The page title is Waymark Demo and the first shortcode is the Cape Scott Trail Map. The map starts at 390..840, so its lower third sits below the 720 px fold; this beat shows the page before the next scene scrolls to the map. The selector waits for a painted tile, and 13 markers load. Holding 1.4 s gives the page time to paint without adding speech."
+    },
+    {
+      "id": "front-map",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map-id-100",
+      "block": "center",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map-id-100",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map-id-100 .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "The same page and the same Map, now framed. Block centre puts the 645x450 map at 135..585, fully inside the anonymous viewport, with the Cape Scott Trail heading above it. The map stays at zoom 9, which the OpenStreetMap pack pins, and loads eight z9 tiles. Thirteen markers are present. The attribution reads Waymark | Leaflet | \u00a9 OpenStreetMap contributors, and the zoom control is visible. There is no admin bar and no editing toolbar."
+    },
+    {
+      "id": "collections",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map",
+      "selector": "#the-list .row-title",
+      "highlight": {
+        "selector": ".wp-list-table",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#the-list .row-title",
+        "minCount": 3
+      },
+      "notes": "The Collections screen lists three terms: Vancouver Island (3 Maps), Backpacking (2) and Day Hikes (1). Backpacking and Day Hikes are nested under Vancouver Island, which the em dash in their row titles shows. Each row also has a Shortcode input: [Waymark collection_id=\"2\"] for Vancouver Island, and so on. The table is 695x243 at 565,182, so the whole list fits with the 8 px highlight. No term is edited, added or deleted."
+    },
+    {
+      "id": "docs",
+      "action": "hover",
+      "selector": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]",
+      "highlight": {
+        "selector": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]",
+        "pad": 0
+      },
+      "cursor": {
+        "to": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]"
+      },
+      "assert": {
+        "selector": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]",
+        "visible": true,
+        "text": "Docs"
+      },
+      "notes": "The Waymark submenu stays open because Collections is the current screen. The Docs item is visible at 0,288, 160x28 and links off-site to https://www.ogis.org/waymark-wp. It is hovered and highlighted only; it is never clicked, so the recorder's external-request guard is not triggered and the page URL stays on the Collections screen. The pad is 0 because the item starts at the viewport's left edge. No parkMouse, because the hover must remain active."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Getting Started",
+        "subtitle": "Start with the tutorial:\nCreating Your First Map"
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card over the Collections screen. It hands the viewer to the tutorial rather than summarising the scenes."
+    }
+  ],
+  "audioAfterActionMax": 30
+}
