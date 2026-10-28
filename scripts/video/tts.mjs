@@ -77,7 +77,10 @@ const DEFAULT_LEXICON_PATH = path.join(
 );
 const CONTINUOUS_LEAD_SECONDS = 0.03;
 const CONTINUOUS_TAIL_SECONDS = 0.12;
-const CONTINUOUS_REQUEST_TIMEOUT_MS = 120_000;
+// A continuous request can carry a whole chunk of the script. Flux synthesis
+// is not bounded to real time, so a 1,800-character chunk can take several
+// minutes; 120s was not enough and aborted the body mid-stream.
+const CONTINUOUS_REQUEST_TIMEOUT_MS = 300_000;
 const CONTINUOUS_SEAM_SILENCE_SECONDS = 0.09;
 
 async function main() {
@@ -581,7 +584,7 @@ async function synthesiseRun({
         pace,
         verbose: options.verbose,
         locked: pronunciation.locked,
-        expectedPronunciations: pronunciation.sceneCounts.get(scene.id) ?? 0,
+        expectedPronunciations: pronunciation.sceneIpaCounts.get(scene.id) ?? 0,
       });
     } catch (error) {
       // A provider can fail before it writes anything, notably a fatal HTTP
@@ -723,7 +726,7 @@ async function synthesiseContinuousRun({
         ...chunk,
         expectedPronunciations: chunk.scenes.reduce(
           (total, sceneId) =>
-            total + (pronunciation.sceneCounts.get(sceneId) ?? 0),
+            total + (pronunciation.sceneIpaCounts.get(sceneId) ?? 0),
           0,
         ),
       })),

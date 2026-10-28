@@ -77,6 +77,18 @@
       "match": ["hover"],
       "spoken": "huvver",
       "notes": "Rhymes with 'cover'. Flux reads the plain word as HOH-ver; the respelling was chosen by ear from an audition, and no inline IPA is used because the IPA forms did not land."
+    },
+    {
+      "display": "Josef",
+      "match": ["Josef"],
+      "spoken": "Joseph",
+      "notes": "Chosen by ear: Flux reads 'Josef' ambiguously, and the 'Joseph' respelling was the accepted form. Kept as a respelling rather than IPA so the caption and on-screen title stay 'Josef'."
+    },
+    {
+      "display": "Josep",
+      "match": ["Josep"],
+      "spoken": "Joseph",
+      "notes": "The seeded typo in the Marker title; spoken the same way as Josef so the sentence contrasts spelling, not sound."
     }
   ]
 }

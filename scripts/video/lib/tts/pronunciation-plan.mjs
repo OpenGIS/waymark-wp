@@ -24,6 +24,7 @@ export const PRONUNCIATION_VERSION = 1;
  *   words: string[],
  *   texts: Map<string, string>,
  *   sceneCounts: Map<string, number>,
+ *   sceneIpaCounts: Map<string, number>,
  *   lexiconHash: string,
  *   locked: boolean,
  *   clamped: boolean,
@@ -41,6 +42,7 @@ export function planPronunciations({
 }) {
   const texts = new Map();
   const sceneCounts = new Map();
+  const sceneIpaCounts = new Map();
   const words = [];
   const seen = new Set();
   let count = 0;
@@ -53,6 +55,11 @@ export function planPronunciations({
 
     texts.set(scene.id, result.synthesisText);
     sceneCounts.set(scene.id, result.replacements.length);
+    sceneIpaCounts.set(
+      scene.id,
+      result.replacements.filter((replacement) => replacement.form === "ipa")
+        .length,
+    );
     count += result.replacements.length;
 
     for (const replacement of result.replacements) {
@@ -81,6 +88,7 @@ export function planPronunciations({
     words,
     texts,
     sceneCounts,
+    sceneIpaCounts,
     lexiconHash,
     locked,
     clamped,
