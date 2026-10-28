@@ -1,0 +1,179 @@
+{
+  "version": "1",
+  "id": "using-types",
+  "title": "Using Types",
+  "output": "docs/public/assets/video/using-types.mp4",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "storageState": "scripts/video/work/auth/storage-state.json",
+  "mapSlug": "cape-scott-trail",
+  "posterAt": "00:02:00",
+  "pad": 0.4,
+  "hideSelectors": ["#edit-slug-box"],
+  "scenes": [
+    {
+      "id": "title",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Using Types",
+        "subtitle": "One definition for every Marker, Line and Shape of that Type"
+      },
+      "hold": 2.2,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay."
+    },
+    {
+      "id": "editor",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/post.php?post={{mapId}}&action=edit",
+      "selector": "#waymark-map .leaflet-tile-loaded",
+      "highlight": {
+        "selector": "#waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": "#waymark-map .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "The Map Editor for the seeded Cape Scott Trail. Live at 1280x720: the map is 752x464.4 at x 195, y 231.6, at zoom 10, centred on 50.719297,-127.951183. `.waymark-marker` 13: photo 6, beer 2, alert 2, food 1, camp 1, information 1. `.leaflet-overlay-pane path` 15: two green LineStrings (the 1,633-point Port Hardy to Cape Scott route and the 3-point North North Island line), one green polygon (Nahwitti Lake Recreation Site), one blue polygon used as a circle (Holberg Campground), and 11 white-stroked green direction arrows on the long route. The public map adds an elevation polyline; the Editor does not. The OSM tiles are z10 (`.../10/147/343.png`), covered by the pinned pack. The map is at its natural zoom; no zoom is pinned and no field is changed. The 13-marker assertion proves the map data is loaded before narration; the 15 overlay paths are checked live and recorded here, but the scene carries one assert. The map and its pad-8 highlight (223.6..703.6) sit fully below the 32 px admin bar and inside 720 px. No popup is opened."
+    },
+    {
+      "id": "settings-markers",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers",
+      "selector": ".waymark-settings-tab-markers .waymark-marker_title",
+      "highlight": {
+        "selector": ".waymark-settings-tab-markers .waymark-settings-section-marker_types > h2",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-markers table.form-table",
+        "minCount": 6
+      },
+      "notes": "Waymark > Settings > Markers. The tab holds one repeatable with six rows, live titles Beer, Food, Photo, Alert, Information and Camp. The first row (Beer) is 718x519 at y 232, so its last field (Icon Colour, y 687..749) is clipped by 29 px at 720. The highlight sits on the stable 'Marker Types' heading at y 138, which is fully visible and not clipped; the Beer row below shows Marker Label, Shape, Size, Background, Show Initially, Icon Type and Icon Name. Live Beer values: marker_colour #fbfbfb, icon_type icon, marker_icon ion-beer, icon_colour #754423. The two Beer Markers render in the Editor with background rgb(251,251,251) and icon rgb(117,68,35), matching the row. Save Changes is never touched."
+    },
+    {
+      "id": "settings-lines",
+      "action": "goto",
+      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-lines",
+      "selector": ".waymark-settings-tab-lines .waymark-line_title",
+      "highlight": {
+        "selector": ".waymark-settings-tab-lines table.form-table:has(.waymark-line_title[value='Red'])",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-settings-tab-lines table.form-table",
+        "minCount": 3
+      },
+      "notes": "Waymark > Settings > Lines. The tab holds three rows: Red, Green and Blue, each 718x335. At scrollY 0 the Red row is at y 232..567 and is fully visible; the highlight wraps it and the 'Line Types' heading stays visible above. Live values: Red #d84848, weight 3, opacity 0.7; Green #3cbc47, weight 3, opacity 0.7; Blue #487bd9, weight 3, opacity 0.7. The Map carries two Green LineStrings and no Red or Blue line, so the narration calls the visible Red row a definition only and names Green as the route. The route's computed stroke is rgb(60,188,71) = #3cbc47 at 3 px and 0.7, matching the Green row. No value is changed and Save Changes is never touched."
+    },
+    {
+      "id": "front-map",
+      "action": "goto",
+      "url": "{{baseURL}}/map/cape-scott-trail/",
+      "selector": ".waymark-map .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map",
+        "visible": true
+      },
+      "notes": "The public Cape Scott Trail permalink, logged out. Anonymous: no admin bar (0 matches). The page opens on the title and featured image; the map is below the fold at 645x450, document y 822.5. The selector waits for a painted OSM z9 tile. The map assertion is a visibility check, not a scroll. The map stays at zoom 9 in the next scene."
+    },
+    {
+      "id": "front-features",
+      "action": "scrollIntoView",
+      "selector": ".waymark-map",
+      "block": "center",
+      "highlight": {
+        "selector": ".waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "anonymous": true,
+      "assert": {
+        "selector": ".waymark-map .leaflet-overlay-pane path",
+        "minCount": 11
+      },
+      "notes": "Scrolls the 645x450 public map to the centre: x 317.5, y 134.5, so the pad-8 highlight (126.5..592.5) sits inside 720. Live counts: `.waymark-marker` 13; `.leaflet-overlay-pane path` 11 (two green LineStrings, one red elevation polyline at 5 px, one green polygon, one blue polygon, six direction arrows). The elevation polyline is added by the elevation profile and is not a Type feature: it is drawn over the green route and makes the route read red. The green route underneath is 3 px at 0.7; the green and blue polygons fill at 0.5. No zoom change; the map stays at z9, covered by the OSM z9 pack. The 11-path assertion proves the lines and shapes have rendered; the 13 markers are the same data checked in the Editor and one is used in the hover scene. Poster is not marked here."
+    },
+    {
+      "id": "front-route",
+      "action": "click",
+      "selector": ".waymark-elevation-close",
+      "highlight": {
+        "selector": ".waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "anonymous": true,
+      "assert": {
+        "selector": ".waymark-map .elevation-polyline",
+        "visible": false
+      },
+      "notes": "A read-only view toggle, not a save or an edit. The close handler in Waymark_Map_Viewer.js only calls elevation_control.clear(), removes the elevation layer and hides the container. Live before: 11 overlay paths, 1 red `.elevation-polyline`; after: 10 overlay paths, 0 red paths. The map stays at zoom 9 and does not move. The highlight is on `.waymark-map` because the close is hidden by its own click; a highlight or cursor aimed at the close would fail after the action. The assertion waits for the red elevation path to be hidden, proving the route underneath is the Type's green line. The click is not a Save/Update/Create/Delete control."
+    },
+    {
+      "id": "front-type-label",
+      "action": "hover",
+      "selector": ".waymark-map .waymark-marker-photo",
+      "highlight": {
+        "selector": ".waymark-map .leaflet-tooltip",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "anonymous": true,
+      "assert": {
+        "selector": ".waymark-map .leaflet-tooltip",
+        "text": "[Photo] The Shoe Tree"
+      },
+      "poster": {
+        "selector": ".waymark-map",
+        "aspect": "16:9",
+        "pad": 0
+      },
+      "notes": "The first `.waymark-marker-photo` is The Shoe Tree. The elevation profile is already closed, so the public map shows the green Type route underneath. Live with a real Playwright mouse at 1280x720, reduced motion and the deterministic `*{transition:none}` reset: the marker box is x 701.5, y 329.5, 32x32; `.waymark-type-label` reads '[Photo]' and `.leaflet-tooltip` reads '[Photo] The Shoe Tree', opacity 0.9, box x 581.5, y 353.5, 130.4x32. The tooltip is fully inside the map and viewport, and the injected cursor overlay is `pointer-events: none`, so it cannot block the hover. No popup is opened, so the map does not pan and the zoom stays 9. The hover tooltip is reliable; the scene asserts its exact text before narration. Poster is marked here: the map crop is a 645x362.8 16:9 frame centred on the 645x450 map (y 178.1..540.9), which includes the green route, the markers and shapes, and the tooltip highlight (x 573..720, y 345.5..393.5). The highlight is inside the crop and is not clipped. This scene is two scenes before the closing card; `types-shared` follows it."
+    },
+    {
+      "id": "types-shared",
+      "action": "pause",
+      "highlight": {
+        "selector": ".waymark-map",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "anonymous": true,
+      "notes": "Closing beat over the public map. `parkMouse` moves the real pointer to the neutral admin-bar point, clearing the hover tooltip; the admin bar is absent when anonymous, so the pointer rests over the site header outside the map. The map highlight replaces the tooltip highlight. The map is still at z9 and does not move. No poster here: the poster is on `front-type-label`, which is not the last scene before the closing card. No assert; the previous scene already proved the tooltip and the map."
+    },
+    {
+      "id": "end",
+      "action": "card",
+      "card": {
+        "eyebrow": "Open GIS",
+        "title": "Using Types",
+        "subtitle": "One Type, every Marker, Line and Shape.\nThe style lives in one place,\non the Editor and the public Map."
+      },
+      "hold": 2.8,
+      "highlight": null,
+      "cursor": null,
+      "notes": "Closing card over the public map. It lands the point without claiming an edit: the Type is the shared definition."
+    }
+  ],
+  "audioAfterActionMax": 30
+}
