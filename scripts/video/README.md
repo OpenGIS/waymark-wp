@@ -2,7 +2,103 @@
 
 ## What this is
 
-The video pipeline produces scenario-driven screen recordings for the documentation. Playwright drives a seeded, disposable WordPress instance; narration is synthesised as one continuous performance when the provider supports word timestamps, then cut per scene, or per line for providers that do not; ffmpeg assembles the delivery MP4. Scenarios and narration files are versioned inputs, so changes can be reviewed like code. The MP4, poster and captions are build artefacts.
+The video pipeline produces scenario-driven screen recordings for the documentation. Playwright drives a seeded, disposable WordPress instance; narration is synthesised as one continuous performance when the provider supports word timestamps, then cut per scene, or per line for providers that do not; ffmpeg assembles the delivery MP4. All eight documentation videos are built this way. Scenarios and narration files are versioned inputs, so changes can be reviewed like code. The MP4, poster, captions, transcript and manifest are build artefacts.
+
+## Contents
+
+| Area      | Sections                                                                                                                                                                                                            |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview  | [What this is](#what-this-is) · [Delivery inventory](#delivery-inventory) · [Per-video catalogue](#per-video-catalogue) · [Prerequisites](#prerequisites) · [Directory layout](#directory-layout)                   |
+| Authoring | [Scenario fields](#scenario-fields) · [Selector guidance](#selector-guidance)                                                                                                                                       |
+| Running   | [Ports](#ports) · [Bringing up the instance](#bringing-up-the-instance) · [Commands](#commands)                                                                                                                     |
+| Narration | [Narration providers](#narration-providers) · [Audio and holds](#audio-and-holds)                                                                                                                                   |
+| Delivery  | [Recording behaviour](#recording-behaviour) · [Delivery layout and playback](#delivery-layout-and-playback) · [Constraints](#constraints) · [Determinism](#determinism) · [What not to commit](#what-not-to-commit) |
+
+## Delivery inventory
+
+All eight documentation videos are rebuilt from a scenario and narration pair. Every entry is 1280×720 H.264 High at 30 fps with AAC 128 kbps stereo audio, one English caption track and a transcript.
+
+| Video               |                  Duration |                       Size |   Cues | Teaches                                                                          |
+| ------------------- | ------------------------: | -------------------------: | -----: | -------------------------------------------------------------------------------- |
+| `getting-started`   |        116.736 s (1:56.7) |       5,233,807 B (5.0 MB) |      7 | Maps list, Editor, Shortcode and the public Map; where Collections and Docs fit. |
+| `using-the-editor`  |        151.851 s (2:31.9) |       8,120,470 B (7.7 MB) |      9 | Tool rail and Marker popup; correcting a title and updating the Map.             |
+| `using-types`       |        128.500 s (2:08.5) |       5,367,783 B (5.1 MB) |      8 | Shared Marker, Line and Shape Types across the Editor and the public Map.        |
+| `changing-basemaps` |         88.533 s (1:28.5) |       4,986,473 B (4.8 MB) |     11 | Layers control, basemap switching and the Settings list behind it.               |
+| `using-collections` |        131.691 s (2:11.7) |       5,160,531 B (4.9 MB) |      9 | Grouping Maps, assigning Collections and embedding a Collection.                 |
+| `adding-map-meta`   |        142.976 s (2:23.0) |       5,301,443 B (5.1 MB) |      9 | Map Meta fields and groups, and how they render on the public page.              |
+| `markers`           |        138.733 s (2:18.7) |       6,317,365 B (6.0 MB) |      8 | Placing Markers, reading their popups and how Marker Types style them.           |
+| `settings`          |        135.168 s (2:15.2) |       4,517,193 B (4.3 MB) |      9 | The site-wide Basemaps, Marker Types and Meta settings behind every Map.         |
+| **Total**           | **1,034.188 s (17:14.2)** | **45,005,065 B (42.9 MB)** | **70** | **Eight rebuilt videos**                                                         |
+
+Cues counts the WebVTT cues in each file; every video has one English caption track. Sizes are exact bytes with mebibytes labelled MB.
+
+## Per-video catalogue
+
+Runtimes are the manifest duration; scene counts are the number of objects in each scenario `scenes` array; poster timestamps are the timeline marker at the end of the poster scene. Every video opens and closes on a card, and those card scenes carry no caption cue.
+
+### getting-started
+
+`1:56.7` (116.736 s) · 10 scenes · poster `00:49.776` (`editor`)
+
+- Tours the Maps list, the Cape Scott Trail Editor and its Markers, Lines and Shapes, the Shortcode box, and the same Map embedded in the Waymark Demo page.
+- Points to Collections and the Docs submenu as the next places to go; no Collection is created and the Docs item is only hovered.
+- Summarises Settings rather than touring it: the Types are described as coming from Settings, but no Settings tab is opened.
+
+### using-the-editor
+
+`2:31.9` (151.851 s) · 11 scenes · poster `02:15.852` (`front-popup`)
+
+- Shows the seven-tool rail and opens the San Josep Bay Photo Marker popup with its Type, title, image, rich-text description and coordinates.
+- Corrects the title to San Josef Bay, presses Update, and shows the corrected title in the public popup after a fresh page load.
+- The only mutating take: it updates Map 100, which is restored from the seed data after the take. No drawing tool is clicked, so the take adds no features.
+
+### using-types
+
+`2:08.5` (128.500 s) · 10 scenes · poster `01:51.549` (`front-type-label`)
+
+- Shows six Marker Types, two LineStrings and two Shapes on the Cape Scott Trail Editor, then the Marker Types and Lines settings read-only.
+- On the public Map, closes the elevation profile to reveal the green Line Type underneath and hovers The Shoe Tree to show the `[Photo]` Type label.
+- No Type is edited and Save Changes is never touched; the Red line row is shown as a definition, not as the route's Type.
+
+### changing-basemaps
+
+`1:28.5` (88.533 s) · 13 scenes · poster `00:51.921` (`hold-topo`)
+
+- Opens the Leaflet layers control, switches to Open Topo Map and returns to Open Street Map; Markers and Lines stay in place while the tiles redraw.
+- Shows the Shortcode `basemap` attribute and the Basemaps settings list, including the rule that the first row is the default.
+- Describes reordering rather than dragging a row, because dragging would mutate the seeded settings; no setting is saved.
+
+### using-collections
+
+`2:11.7` (131.691 s) · 12 scenes · poster `02:07.641` (`page-collection`)
+
+- Shows the Collections hierarchy, Count and Shortcode columns, then the create form and Parent select without submitting.
+- Shows a Map's Collections box, the public Collection archive, and a page that embeds both a Map and a Collection Shortcode.
+- No Collection is created or newly assigned: the form is filled and the Parent selected only for legibility, and Create Collection is never clicked. The Map's existing membership is shown, not changed.
+
+### adding-map-meta
+
+`2:23.0` (142.976 s) · 11 scenes · poster `02:06.922` (`front-meta`)
+
+- Shows Description, the About group and the Details group in the Editor, then the Meta fields and groups in Settings read-only.
+- On the public Map Details page, scrolls to the rendered meta and opens Details to reveal Date and Distance.
+- No field is changed and Save Changes is never clicked; groups are opened for reading, not edited.
+
+### markers
+
+`2:18.7` (138.733 s) · 10 scenes · poster `02:06.822` (`front-popup`)
+
+- Shows 13 Markers across six Types in the Editor, then opens The Scarlet Ibis (Beer) editing popup with its title, image and description.
+- Shows the Marker Types list and the Photo row in Settings, then the same 13 Markers and The Scarlet Ibis popup on the public Map.
+- Never edits a Marker Type: no field is changed, Save Changes is untouched, and the Editor popup is never submitted.
+
+### settings
+
+`2:15.2` (135.168 s) · 11 scenes · poster `01:50.167` (`front-hover`)
+
+- Tours Settings > Basemaps and Markers, including the two Basemaps, the default rule and the six Marker Types.
+- Shows the public Map's layer switcher listing the Basemaps and Types, then the Meta fields and groups on the Map Details page.
+- No setting is changed: Save Changes is never clicked, rows are not dragged, and the Photo row is opened read-only. Uses San Josef Bay (Map 101) rather than Cape Scott Trail.
 
 ## Prerequisites
 
@@ -18,7 +114,7 @@ The video pipeline produces scenario-driven screen recordings for the documentat
 
 ```text
 scripts/video/
-  README.md                 # setup, commands, prerequisites
+  README.md                 # setup, commands, prerequisites, delivery inventory
   record.mjs                # Playwright launcher and scene runner
   tts.mjs                   # narration -> continuous performance or per-line audio and timings
   build.mjs                 # narration bed, MP4, poster, captions, transcript, manifest
@@ -28,9 +124,11 @@ scripts/video/
   new.mjs                   # scenario and narration scaffolder
   wp-env.video.json         # dedicated instance on port 11000
   scenarios/
-    changing-basemaps.json
+    <id>.json               # one per video: getting-started, using-the-editor,
+                            # using-types, changing-basemaps, using-collections,
+                            # adding-map-meta, markers, settings
   narration/
-    changing-basemaps.md
+    <id>.md                 # matching narration for every scenario
     pronunciations.json     # shared pronunciation lexicon
   lib/
     browser.mjs             # context, storage state, video lifecycle
@@ -56,14 +154,14 @@ scripts/video/
     manifest.mjs            # ffprobe metadata, SHA-256 and manifest merge
   work/                     # gitignored
     auth/storage-state.json
-    audio/
-    build/
-    poster/
-    raw/
-    timeline-<id>.json
+    audio/<id>/             # provider takes, normalised WAVs, timings.json, stamp.json
+    build/<id>/             # assembled narration bed
+    poster/<id>.png         # 2x replay capture for the delivery poster
+    raw/<id>.webm
+    timeline-<id>.json      # one take, one id; never shared between videos
 ```
 
-`changing-basemaps` is the pilot. It is the only scenario and narration pair committed; the remaining scenarios are outstanding.
+All eight videos have a scenario and narration pair committed under `scenarios/` and `narration/`. The delivered MP4s, posters, captions, transcripts and manifest are build artefacts produced from those inputs.
 
 Each take writes its own `work/timeline-<id>.json`. The id is part of the filename, so recording video B and then building video A cannot silently consume B's take. The build refuses a timeline whose `id` does not match the scenario id and names both ids in the error.
 
@@ -95,11 +193,35 @@ A scenario is a JSON object with these top-level fields:
 
 A scene may also carry an optional `caption`. Silent scenes with a caption get a WebVTT cue and a transcript entry; the text is wrapped in square brackets so it reads as a visual description rather than speech. A silent scene without a caption emits no cue.
 
-The `card` action renders a self-contained 1280x720 title or end card and treats it as a real timeline scene. Its payload is a `card` object with a required `title` and optional `eyebrow` and `subtitle` strings. Every value is escaped, and the card is injected as a full-viewport Shadow DOM overlay over the already-loaded page rather than replacing the document, so it makes no network requests and `page.url()` keeps pointing at the real page. The page underneath is navigated, settled and painted before the overlay appears; removing the overlay reveals it without a reload. An opening or mid-take card is removed at the end of its scene, while a closing card stays over the current page until the take ends. A newline in a subtitle is rendered as a `<br>`; each segment is escaped separately and a space follows the break so the extracted text still reads continuously. Unknown keys inside `card` are rejected. A card scene should set `highlight: null` and `cursor: null`; see the action vocabulary in `VIDEOS.md` for the full list.
+The `card` action renders a self-contained 1280x720 title or end card and treats it as a real timeline scene. Its payload is a `card` object with a required `title` and optional `eyebrow` and `subtitle` strings. Every value is escaped, and the card is injected as a full-viewport Shadow DOM overlay over the already-loaded page rather than replacing the document, so it makes no network requests and `page.url()` keeps pointing at the real page. The page underneath is navigated, settled and painted before the overlay appears; removing the overlay reveals it without a reload. An opening or mid-take card is removed at the end of its scene, while a closing card stays over the current page until the take ends. A newline in a subtitle is rendered as a `<br>`; each segment is escaped separately and a space follows the break so the extracted text still reads continuously. Unknown keys inside `card` are rejected. A card scene should set `highlight: null` and `cursor: null`; see [Action vocabulary](#action-vocabulary) for the full list.
 
 Cards use the Open GIS dark brand palette: `#000b00` background, `#e8f5ea` heading and eyebrow, `#eeeeee` subtitle, `#9bb0a3` muted footer and `#0dd70d` accent rule. The eyebrow pairs the inline Open GIS mark with the name in title case, never uppercased. All type uses the brand monospace stack, and a quiet `Waymark` wordmark sits at the bottom-left. The mark is read from `assets/img/ogis-logo-white.svg` at render time and inlined in white at 40x40 px with `shape-rendering: geometricPrecision`, `role="img"` and a `<title>Open GIS</title>` accessible name, so the card stays offline and self-contained.
 
-Scene fields shared by all actions include `hold`, `pad`, `jcut`, `minHold`, `audioAfterAction`, `audioAfterActionMax`, `audioOffset`, `highlight`, `cursor`, `assert`, `poster`, `parkMouse`, `anonymous`, `block` and `allowPartial`. `poster` marks the poster beat and may be `true` (defaults) or an object with `selector` (default `#waymark-map`), `aspect` (default `"16:9"`) and `pad` (default `0` CSS pixels). Unknown keys inside the object are rejected. After the take has stopped recording, the recorder replays the scenario up to that scene in a second, unrecorded 2x context, crops the configured element and writes a PNG under `work/poster/`. Keeping the replay outside the recording context means it adds wall-clock time to the run but never freezes a frame into the video. `audioAfterAction` and `audioAfterActionMax` override the scenario defaults for one scene. A scene's `jcut` pulls its narration earlier by that many seconds and may produce a negative `audioOffset`; `minHold` sets the shortest post-action beat and defaults to `0.15` seconds. `audioOffset` (number, seconds) overrides the computed narration start for one scene, which is useful when the scene is already rendered at its start; an explicit `audioOffset` is not adjusted by `jcut`. `parkMouse: true` moves the real pointer to a neutral point in the blank centre of the WordPress admin bar at the start of the scene, clearing any hover-only affordance (for example the delete control revealed by hovering a repeatable row). It is opt-in and defaults to false because some scenes depend on hover remaining active, such as the Leaflet layers control, which collapses when the pointer leaves it. Every framing path measures the sticky admin bar and verifies that the target is fully inside the visible band after scrolling, so sticky admin chrome cannot clip the top of the target. A target that is already fully visible is not scrolled, so a control that is already in view never moves under the pointer. `scrollIntoView` brings the target into the inset viewport (centred by default) and waits for layout to settle; `scrollTo` scrolls to the document top or bottom, or aligns a selector with the chosen `block`. `hover`, `click`, `fill`, `select`, `press` and `cursor: { "to": ... }` all use the same framing. Set `block` to `start`, `center` (the default) or `end` to choose the alignment. Set `allowPartial: true` when a target is deliberately taller than the viewport; the take logs a warning instead of failing. `cursor: null` hides the synthetic pointer overlay but does not move the real mouse; pair it with `parkMouse: true` when the final frame must also be free of hover state.
+Scene fields shared by all actions include `hold`, `pad`, `jcut`, `minHold`, `audioAfterAction`, `audioAfterActionMax`, `audioOffset`, `highlight`, `cursor`, `assert`, `poster`, `parkMouse`, `anonymous`, `block`, `allowPartial`, `zoom` and `notes`. `poster` marks the poster beat and may be `true` (defaults) or an object with `selector` (default `#waymark-map`), `aspect` (default `"16:9"`) and `pad` (default `0` CSS pixels). Unknown keys inside the object are rejected. After the take has stopped recording, the recorder replays the scenario up to that scene in a second, unrecorded 2x context, crops the configured element and writes a PNG under `work/poster/`. Keeping the replay outside the recording context means it adds wall-clock time to the run but never freezes a frame into the video. When the poster scene draws a highlight, the replay must reproduce it: the still waits for the outline to be fully opaque and fails the run when it is missing or still transparent, rather than shipping a poster without the highlight the video shows. The timeline's `poster.overlays` records `expected`, `highlightOpacity` and `highlightRect`. `audioAfterAction` and `audioAfterActionMax` override the scenario defaults for one scene. A scene's `jcut` pulls its narration earlier by that many seconds and may produce a negative `audioOffset`; `minHold` sets the shortest post-action beat and defaults to `0.15` seconds. `audioOffset` (number, seconds) overrides the computed narration start for one scene, which is useful when the scene is already rendered at its start; an explicit `audioOffset` is not adjusted by `jcut`. `parkMouse: true` moves the real pointer to a neutral point in the blank centre of the WordPress admin bar at the start of the scene, clearing any hover-only affordance (for example the delete control revealed by hovering a repeatable row). It is opt-in and defaults to false because some scenes depend on hover remaining active, such as the Leaflet layers control, which collapses when the pointer leaves it. Every framing path measures the sticky admin bar and verifies that the target is fully inside the visible band after scrolling, so sticky admin chrome cannot clip the top of the target. A target that is already fully visible is not scrolled, so a control that is already in view never moves under the pointer. `scrollIntoView` brings the target into the inset viewport (centred by default) and waits for layout to settle; `scrollTo` scrolls to the document top or bottom, or aligns a selector with the chosen `block`. `hover`, `click`, `fill`, `select`, `press` and `cursor: { "to": ... }` all use the same framing. Set `block` to `start`, `center` (the default) or `end` to choose the alignment. Set `allowPartial: true` when a target is deliberately taller than the viewport; the take logs a warning instead of failing. `cursor: null` hides the synthetic pointer overlay but does not move the real mouse; pair it with `parkMouse: true` when the final frame must also be free of hover state. `zoom` is applied by `waitForMap` before the tile batch settles; `notes` is reviewer direction and is ignored by the recorder.
+
+### Action vocabulary
+
+| Action           | Payload                            | Behaviour                                                                                                                             |
+| ---------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `goto`           | `url`, optional `selector`         | Navigate, wait for load and fonts, then wait for the selector. It is a no-op when the page already matches the URL.                   |
+| `card`           | `card`                             | Render a title or end card as a full-viewport Shadow DOM overlay over the loaded page; see the card notes above.                      |
+| `click`          | `selector`                         | Move the fake pointer, click, and wait for actionability. If hovering hides the target, click the recorded coordinates instead.       |
+| `fill`           | `selector`, `value`                | Move to the field, click, fill it and show a fake caret at the text end.                                                              |
+| `select`         | `selector`, `value`                | Choose an option by value, falling back to a visible label.                                                                           |
+| `press`          | `selector`, `key`                  | Focus the target and press a key.                                                                                                     |
+| `hover`          | `selector`                         | Move the pointer over the target without clicking. The target is centred first only when it is not fully visible.                     |
+| `scrollIntoView` | `selector`                         | Bring the target into the inset viewport (centred by default) and wait for layout to settle.                                          |
+| `scrollTo`       | `to` or `selector`                 | Scroll to the document `top` or `bottom`, or align a selector with `block` using the same admin-bar inset logic.                      |
+| `waitFor`        | `selector`, optional `state`       | Wait for the target to be visible, or `attached` when `state` is `"attached"`.                                                        |
+| `waitForMap`     | optional `zoom`                    | Wait for `window.Waymark.map`, run the Leaflet settle routine, then pin and settle the zoom when supplied.                            |
+| `dragMap`        | `selector`, `delta` or `from`/`to` | Pan the map by a pixel offset or between two map-relative points, then settle the tiles.                                              |
+| `clickMapPoint`  | `selector`, `latlng` or `point`    | Click a map coordinate, preferring `latlng` over screen pixels.                                                                       |
+| `openPopup`      | `selector`, or `latlng`/`point`    | Open a marker popup and wait for `.leaflet-popup`.                                                                                    |
+| `pause`          | none                               | An intentional beat with no UI action.                                                                                                |
+| `poster`         | none                               | Mark a candidate poster frame at the end of the hold; no UI action. The replay capture uses the scene's `poster` object when present. |
+| `assertText`     | `selector`, `value`                | Assert visible text and hold on the result.                                                                                           |
+
+`assert` runs after the action and its overlays, and does not create a separate timing beat. It supports `visible`, `text`, `url`, `minCount`, `checked` and `value`; `minCount`, `checked` and `value` require a `selector`. `text` searches the selector's contents, or the body when no selector is given. `url` matches a substring of the current URL. A failed assertion stops the take.
 
 ### Anonymous scenes
 
@@ -109,9 +231,23 @@ Scene fields shared by all actions include `hold`, `pad`, `jcut`, `minHold`, `au
 
 The poster replay for an anonymous scene is anonymous too. A failed cookie restore stops the take rather than recording a logged-out admin scene, and pre-warm stays authenticated unless the first scene is anonymous.
 
+A cookie switch always forces a real navigation, even when the target URL is the current one. When the target differs from the current URL only by its fragment, `page.goto()` would perform a same-document navigation — no request and no repaint — so the old cookie state would survive. The recorder instead loads the URL without its fragment and then restores the fragment in the page, so the anchor still applies without a second request. A public scene must not rely on a hash-only change to reload: without a cookie switch, a `goto` that differs only by fragment is a same-document navigation.
+
+After an anonymous `goto` to a same-origin URL outside `/wp-admin`, the recorder asserts that `#wpadminbar` is absent and fails the take with a scene-named error if it is present, which catches a page that is still authenticated.
+
+## Selector guidance
+
+- Prefer stable, scoped selectors. Scope a basemap radio to `.leaflet-control-layers-base`, because the map attribution also contains `OpenStreetMap`.
+- Confirm labels against the seeded instance. It exposes `Open Street Map` and `Open Topo Map`; an example such as `text=Satellite` is not valid here.
+- Use `:visible` when a count should reflect the expanded panel rather than hidden markup.
+- Highlight targets resolve through a Playwright locator, so Playwright-only selectors such as `:has-text(...)` and `:visible` work in a scene's `highlight.selector`; `document.querySelector` is not used. An unsupported selector, a target that never becomes visible or a target with no measurable size fails the take.
+- Avoid `nth-child`, generated class names and selectors tied to DOM order. Prefer stable plugin containers such as `#waymark-map` when no accessible role exists.
+- Pin the site language for recording; translatable strings are not stable selectors across locales.
+- Keep assertions user-visible. Assert text or values a person can see, not implementation details such as a map-pane class.
+
 ## Ports
 
-The video instance runs on **11000**. Ports **8888** and **8889** are the project's development and tests instances respectively. They must never be used for recording or seeding.
+The video instance runs on **11000**. Ports **8888** and **8889** are the project's development and tests instances respectively. They must never be used for recording or seeding. `record.mjs` and `doctor.mjs` refuse a `WP_BASE_URL` on either port; the Playwright config and the demo seeder also guard 8888. The 8889 tests instance is off-limits by policy, not just by code.
 
 > [!WARNING]
 > Never start, seed or record against 8888 or 8889. Recording mutates seed data and authentication state, and the demo seeder rewrites a fixture used by the test suite. Always pass `--config=scripts/video/wp-env.video.json`, which pins the video instance to port 11000.
@@ -140,9 +276,33 @@ npx wp-env --config=scripts/video/wp-env.video.json run cli \
 > [!WARNING]
 > The demo seeder writes `tests/fixtures/demo/seed-output.json` with URLs built from the target instance's home URL. Running it against the video instance overwrites the fixture used by the tests instance. Restore the file from version control or reseed the tests instance afterwards.
 
+### Seeded content
+
+The demo seeder provides:
+
+| Item        | Value                                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Maps        | Cape Scott Trail (#100), San Josef Bay (#101), North Coast Trail (#102)                                                   |
+| Page        | Waymark Demo (#110, slug `waymark-demo`)                                                                                  |
+| Collections | Vancouver Island (parent), with Day Hikes and Backpacking beneath it                                                      |
+| Settings    | Marker Types tab at `/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers` |
+
+Every video uses `cape-scott-trail` except `settings`, which uses `san-josef-bay`. `{{baseURL}}` and `{{mapId}}` are resolved at run time; do not hard-code a host or a map id. The seed fixture's permalinks may point at the tests instance, so build URLs against the video base URL rather than reusing `.permalink`.
+
+### Admin setup
+
+- Use one admin colour scheme for the recording user and keep it consistent across the set.
+- Dismiss the welcome guide and any plugin notices that are not part of the demonstration.
+- Hide Screen Options and other non-demonstration chrome. Use `hideSelectors` for developer-only UI: most scenarios hide `#edit-slug-box`, and `settings` hides the about-panel debug line.
+- Confirm permalinks are set to `/%postname%/`; the seeder does this.
+- For editor scenes, use `post.php?post=<id>&action=edit` and wait for the Map Editor before the first action.
+- Do not show the login screen or credentials. The local defaults are for setup only.
+
+Recording can mutate the seed: `using-the-editor` updates Map 100, so restore that Map from the seed data after the take. The other delivered scenarios do not write to WordPress.
+
 ## Commands
 
-Recording commands are run from the repository root. The scenario defaults to the pilot, `changing-basemaps`, when omitted. Only `record.mjs` reads `WP_BASE_URL`, which defaults to `http://localhost:11000`; `tts.mjs` and `build.mjs` do not use it. The build is offline and needs neither WordPress nor a browser.
+Recording commands are run from the repository root. The scenario defaults to `changing-basemaps` when omitted. `record.mjs` and `doctor.mjs` read `WP_BASE_URL`, which defaults to `http://localhost:11000`; `tts.mjs` and `build.mjs` do not use it. The build is offline and needs neither WordPress nor a browser. `tests/e2e/fixtures.js` reads `WP_BASE_URL` at import time, so set it in the environment before starting either command.
 
 The npm scripts mirror the CLIs and forward a scenario after `--`:
 
@@ -192,7 +352,7 @@ node scripts/video/doctor.mjs [<id>]
 node scripts/video/new.mjs <id>
 ```
 
-All seven scripts are implemented. `audit.mjs`, `doctor.mjs` and `new.mjs` do not touch WordPress.
+All seven top-level scripts are implemented: `record.mjs`, `tts.mjs`, `build.mjs`, `validate.mjs`, `audit.mjs`, `doctor.mjs` and `new.mjs`. `audit.mjs`, `doctor.mjs` and `new.mjs` do not touch WordPress.
 
 ### Scaffolding a new video
 
@@ -271,7 +431,7 @@ The runbook is deliberately ordered. Do not record before the scenario and narra
 7. **Build** with `npm run video:build -- <id>`. This reads `work/timeline-<id>.json` and `work/audio/<id>/timings.json`, and writes the MP4, poster, captions, transcript and manifest entry.
 8. **Audit** with `npm run video:audit -- <id>`, then with `--strict`. Investigate every warning: fix the narration or scenario and rebuild, or record a deliberate threshold override and say why in review.
 9. **Validate** with `npm run video:validate`. It checks the committed assets against the manifest and every docs asset reference. Both must pass before the video is called rebuilt.
-10. **Wire the docs.** Add `captions="/assets/video/captions/<id>.en.vtt"` to the matching `::video-figure` in `docs/content/`, and keep its `src` and `poster` paths on the same `/assets/video/...` convention. Update the inventory and status in `VIDEOS.md`, then run `npm run video:doctor -- <id>` once more to confirm the docs wiring is complete.
+10. **Wire the docs.** Add `captions="/assets/video/captions/<id>.en.vtt"` to the matching `::video-figure` in `docs/content/`, and keep its `src` and `poster` paths on the same `/assets/video/...` convention. Update the inventory table in this file, then run `npm run video:doctor -- <id>` once more to confirm the docs wiring is complete.
 
 ### Validation and warnings
 
@@ -286,12 +446,12 @@ When recording stops, the raw take is checked against the timeline end. After su
 `build.mjs` reads the scenario, `work/timeline-<id>.json` and `work/audio/<id>/timings.json`. It fails loudly when a narrated scene has no WAV, when a WAV is not listed in the timing file, when scene order differs, or when the narration text disagrees between the timeline and the timings.
 
 - The narration bed is assembled at 48 kHz mono 16-bit PCM in `work/build/<id>/`. Each scene WAV is delayed to its timeline `start + audioOffset` and mixed over silence; it is not concatenated. A negative `audioOffset` is trimmed at the timeline origin rather than delaying the whole line. The bed is padded or trimmed to the timeline total.
-- The MP4 is encoded once: H.264 High, `yuv420p`, CRF 21, `slow`, lanczos scale to 1280x720, 30 fps, AAC 128 kbps 48 kHz stereo, `+faststart`, metadata stripped with a neutral title. The raw take is trimmed at the recorded pre-warm offset before encoding, so the delivered video starts at the timeline origin.
-- The poster prefers the replay PNG at `work/poster/<id>.png`, captured at twice the device scale after the take has stopped recording, then cropped to the poster element. The build downscales it with lanczos to a 1280×720 JPEG. When the PNG is absent it falls back to a frame from the final MP4, so older takes of the same scenario still build. The build reports which source it used, checks the replay against the video frame at the poster timestamp and warns when they diverge. The manifest records `posterSource` as `"replay"` or `"video"`.
+- The MP4 is encoded once: H.264 High, `yuv420p`, CRF 21, `slow`, lanczos scale to 1280x720, 30 fps, AAC 128 kbps 48 kHz stereo, `+faststart`, metadata stripped with a neutral title. The raw take is trimmed at the recorded pre-warm offset before encoding, so the delivered video starts at the timeline origin. AAC uses macOS AudioToolbox `aac_at` in CBR mode where available, falling back to native `aac` with `-aac_coder twoloop`. If the raw take is shorter than the timeline, the last frame is cloned for the difference and `-t` bounds the output to the timeline duration.
+- The poster prefers the replay PNG at `work/poster/<id>.png`, captured at twice the device scale after the take has stopped recording, then cropped to the poster element. The build downscales it with lanczos to a 1280×720 JPEG. When the PNG is absent it falls back to a frame from the final MP4, so older takes of the same scenario still build. The timestamp precedence is `--poster-at`, then the timeline marker, then the scenario `posterAt`. The build reports which source it used, checks the replay against the video frame at the poster timestamp and warns when the mean absolute difference per channel exceeds 10. The manifest records `posterSource` as `"replay"` or `"video"`.
 - Captions are one cue per scene that has text. A narrated scene's cue runs from `start + audioOffset` to `start + audioOffset + audioDuration`, with the narration verbatim, so it spans the spoken audio and never appears before its sentence. A silent scene with an explicit `caption` gets a cue spanning the whole scene, from `start` to `end`, with the caption wrapped in square brackets. Timestamps are `HH:MM:SS.mmm`.
-- The build refuses to emit overlapping cues: a cue that starts before the previous cue ends fails the build.
+- The build refuses to emit overlapping cues: a cue that starts before the previous cue ends fails the build. It also rejects an encoded MP4 whose duration differs from the timeline by more than 0.2 seconds.
 - The transcript is generated from the same cues, so it cannot drift from the captions.
-- The manifest is keyed by video id and merged, so other videos are preserved.
+- The manifest is keyed by video id and merged, so other videos are preserved. It records the title, scenario version, media facts (duration, dimensions, codecs, size, SHA-256), poster and poster source, captions and transcript paths, narration provider/voice/rate, the Playwright and Chromium versions, and `generatedAt`. A malformed manifest is a hard error rather than something to overwrite.
 
 Flags:
 
@@ -299,6 +459,23 @@ Flags:
 | -------------------- | ------------------------------------------------------------------------------ |
 | `--no-encode`        | Reuse the existing MP4; rebuild the poster, captions, transcript and manifest. |
 | `--poster-at <time>` | Override the poster marker in seconds or `HH:MM:SS`.                           |
+
+### Committed-asset validation
+
+`node scripts/video/validate.mjs` is read-only and offline. It checks every manifest entry:
+
+- The MP4 exists, is non-empty and its size matches the manifest.
+- `ffprobe` duration is within 0.2 seconds of the manifest, and width, height, video codec and audio codec match.
+- The SHA-256 digest matches.
+- The poster is a non-empty 1280×720 JPEG.
+- The captions are non-empty WebVTT containing at least one cue, with valid, ordered timestamps.
+- The transcript is non-empty.
+
+It also scans `docs/content/` for `src`, `poster` and `captions` attributes pointing at `/assets/video/...` and confirms each target exists under `docs/public/`.
+
+The `Video` job in `.github/workflows/tests.yml` runs the validator on Ubuntu with Node 24 and ffmpeg. CI validates only; it never records, synthesises or encodes.
+
+After changing the docs site, run `cd docs && npm run generate` and smoke-check that every poster loads, every video plays with native controls, captions are selectable and timed, paths resolve under both `/` and `/waymark-wp/`, and there are no console errors or missing assets.
 
 ## Narration providers
 
@@ -427,7 +604,7 @@ The run ends with the overall pace, the number of takes, any scene outside the b
 
 When no whole take lands inside 155–175 wpm, the closest take is kept and the summary reports the result; the run does not fail and does not fall back to per-line synthesis.
 
-The delivered pilot is an example of the out-of-band outcome: four whole takes measured 204, 113, 139 and 151 wpm, so the closest take at 151 wpm was kept. Deepgram's `speed` grid advances in 0.05 steps, which puts the requested rates around the 165 wpm target at 158 and 166; 165 itself is not requestable. Repeated calls at the same setting also vary, so an in-band result is not guaranteed.
+`changing-basemaps` shows how repeated takes vary. Pronunciation overrides lock its requests to speed 1.0, so all three whole takes used 175 wpm; they measured 151, 145 and 155 wpm, and the 155 wpm take landed on the lower bound and was kept. An earlier pilot take is an example of the out-of-band outcome: four whole takes measured 204, 113, 139 and 151 wpm, so the closest take at 151 wpm was kept. Deepgram's `speed` grid advances in 0.05 steps, which puts the requested rates around the 165 wpm target at 158 and 166; 165 itself is not requestable. Repeated calls at the same setting also vary, so an in-band result is not guaranteed.
 
 ### Deepgram
 
@@ -482,6 +659,44 @@ Flux rejects pronunciation overrides combined with a speed other than 1.0 (`CONT
 
 The continuous and per-line pace ladders still make up to four takes, but every take uses the locked rate and the closest to the target is kept. An explicit non-1.0 `--rate` with overrides is clamped to the speed-1.0 rate with a warning rather than sent. `say` receives the plain-text respellings because the Daniel voice reads phoneme blocks literally. Alignment still uses the authored display words, so the IPA object changes the pronunciation without changing what STT is expected to hear. The lexicon content hash is part of the cache key, so editing an IPA string regenerates the affected takes, and `timings.json` records a small `pronunciations` block with the total count and distinct words.
 
+Terms that are not in the lexicon are passed through verbatim; add them rather than misspelling them in the narration. The following editorial guidance is not automated:
+
+| Term            | Suggested treatment                            |
+| --------------- | ---------------------------------------------- |
+| Waymark         | "WAY-mark"                                     |
+| OGIS / Open GIS | "oh-gee-eye-ess" on first use, then "Open GIS" |
+| GeoJSON         | "JEE-oh-JAY-son"                               |
+| Leaflet         | "LEF-lit"                                      |
+| WordPress       | "WORD-press"                                   |
+| wp-admin        | "double-you-pee-admin"                         |
+| shortcode       | "SHORT-code"                                   |
+| lat/lng         | "latitude and longitude"                       |
+| GPX / KML       | "G-P-X" / "K-M-L"                              |
+
+TTS engines frequently mispronounce product names, abbreviations and place names. If a term needs a specific reading, add it to the shared lexicon and review the track by ear; the narration keeps its natural spelling.
+
+### Adding a provider
+
+A provider is one module under `lib/tts/providers/`, one import and one registry line in `lib/tts/index.mjs`. There is no class hierarchy or plugin loader. The contract is:
+
+```js
+export default {
+  id: "deepgram",
+  label: "Deepgram",
+  defaultVoice: "flux-kit-en",
+  supportsContinuous: true,
+  isAvailable(env) {},
+  synthesise({ text, voice, rate, outPath, env, sceneId, timeoutMs }) {},
+  transcribeWav({ wavPath, env }) {},
+};
+```
+
+`supportsContinuous` is true only when a provider can synthesise one whole-script performance and return word timestamps for it; such a provider must implement `transcribeWav`. A provider without it keeps the per-line path and logs one warning that cadence may vary between lines.
+
+### Disclosure and consent
+
+Disclose synthetic narration where the publishing context or the voice provider's terms require it. Obtain consent before cloning or imitating a real person's voice, and do not use a voice that implies endorsement by a real individual. The manifest records the provider, voice and rate for each delivered video.
+
 ## Audio and holds
 
 Narration defines timing. `tts.mjs` writes `work/audio/<id>/timings.json` with each narrated scene's text, WAV path, measured duration, speech duration, word count, measured pace, attempt count and the rates requested for each attempt, plus the guard settings, a SHA-256 cache hash and the provider metadata. The `say` provider keeps a raw `.aiff` beside the normalised 48 kHz mono 16-bit PCM WAV; the Deepgram response is written to a temporary WAV and removed after normalisation.
@@ -512,7 +727,24 @@ Audio is cached by a SHA-256 over the text, provider id, resolved voice, rate, a
 
 Before recording starts, `record.mjs` performs an unrecorded warm-up for a first `goto` or `card` scene, including the scenario's `waitForMap` settle. This removes cold start-up cost. It then puts the first scene on screen on the recorded page before the timeline origin: a `goto` navigates to its URL and performs its wait, while a `card` first navigates to the first non-card `goto` scene's URL, waits for its selector and the map, applies `hideSelectors`, and only then injects the card overlay. The take therefore opens on the fully rendered first scene rather than the blank page, and the page revealed when the card ends is already painted. The pre-warm is recorded but skipped by the build using the timeline's `video.offset`. Neither warm-up runs between scenes, and a scenario whose first action is neither `goto` nor `card` is not pre-warmed.
 
-## Delivery paths
+If a TTS take runs long, shorten the script rather than speeding it up beyond about 1.1×; faster speech becomes harder to follow and sounds unnatural. The pad is part of the computed hold, not a hand-added gap.
+
+## Recording behaviour
+
+`record.mjs` is a separate Playwright launcher, not a spec run by `playwright test`. A failed assertion or request-guard violation stops the take rather than triggering a retry that produces a second partial video.
+
+- Playwright records one context at 1280×720 with a device scale factor of 1. The output is fixed at 30 fps. It records page content only; browser chrome and the OS are not captured.
+- The recorder injects a fixed-position pointer overlay and hides the real cursor. Click rings pulse on `mousedown` and `mouseup`. `cursor: null` hides the overlay without moving the real mouse; `parkMouse: true` moves the real pointer to a neutral point in the blank centre of the admin bar before the scene's action.
+- Highlights persist across scene boundaries. Re-applying the same selector repositions the existing outline, so consecutive scenes do not blink; changing the selector replaces and fades in the new target.
+- The request guard, asset stubs, cursor init script, deterministic reset, `hideSelectors` and pinned tile routes are installed before the first navigation. A violation is checked after every action and hold and fails the take. See [Determinism](#determinism) for the pinning and reset policy.
+- `ensureStorageState` creates `work/auth/storage-state.json` on demand in a separate, unrecorded context. `assertAuthenticated` checks for the admin bar before the recording context exists, so an expired session fails immediately. Delete the file and rerun if it expires.
+- Run `settleMap` after navigation and after any action that changes the map view. Pin the zoom when the pinned pack lacks the map's natural zoom: `changing-basemaps` pins zoom 9 because the editor's `fitBounds` lands on 10 and the OpenTopoMap pack has no zoom 10 tiles.
+- The manifest records the Playwright and Chromium versions. Check it after an upgrade: a browser change can alter rendering and encoding even when the scenario is unchanged.
+
+> [!WARNING]
+> `tests/e2e/fixtures.js` resolves its allowed origin from `WP_BASE_URL` at import time. The recorder sets `WP_BASE_URL` before requiring the fixture; set it in the environment before starting the launcher. Changing it after the import will not update the request guard.
+
+## Delivery layout and playback
 
 ```text
 docs/public/assets/video/<id>.mp4
@@ -522,9 +754,63 @@ docs/public/assets/video/transcripts/<id>.md
 docs/public/assets/video/manifest.json
 ```
 
-Posters are JPEG, 1280x720. The high-resolution source PNG is an intermediate under `scripts/video/work/poster/` and is not delivered. Captions use the `.en.vtt` language suffix and live in `captions/`; transcripts live in `transcripts/` as Markdown. The manifest is a single object keyed by video id, so adding a video merges its entry without touching the others.
+Posters are 1280×720 JPEG. The high-resolution source PNG is an intermediate under `scripts/video/work/poster/` and is not delivered. Captions use the `.en.vtt` language suffix and live in `captions/`; transcripts live in `transcripts/` as Markdown. Delivery is 720p only; no separate 1080p master is archived. Do not hand-edit a delivered poster unless the edit is recorded in the manifest.
 
-Keep the `/assets/video/...` path convention: the docs resolve these paths through `withAssetBase`, so moving or renaming them breaks base-path handling.
+### Docs wiring
+
+The docs render individual videos with `docs/app/components/content/VideoFigure.vue`; the six-video Getting Started grid is wrapped by `docs/app/components/content/VideoGrid.vue`. All eight videos are wired with a `captions=` attribute:
+
+- `docs/content/index.md` — the six-video grid: Getting Started, Using the Editor, Using Types, Changing Basemaps, Using Collections, Adding Map Meta.
+- `docs/content/customising/markers.md` — Markers.
+- `docs/content/customising/settings.md` — Settings.
+
+`VideoFigure.vue` renders a native `<video controls playsinline preload="metadata">` with the supplied poster. Its optional `captions` prop accepts a path string or an array of `{ src, srclang, label, default }` objects. A string becomes one English track marked default; an array becomes one `<track kind="captions">` per entry. Both forms are resolved through `withAssetBase`:
+
+```md
+::video-figure{src="/assets/video/<id>.mp4" poster="/assets/video/posters/<id>.jpg" captions="/assets/video/captions/<id>.en.vtt"}
+```
+
+```ts
+captions: [
+  {
+    src: "/assets/video/captions/<id>.en.vtt",
+    srclang: "en",
+    label: "English",
+    default: true,
+  },
+];
+```
+
+`withAssetBase` is defined in `docs/app/utils/assets.ts`. Keep the `/assets/video/...` path convention: it resolves correctly whether the docs are served from `/` or `/waymark-wp/`. Moving or renaming these paths breaks base-path handling. English is the only caption language delivered.
+
+### Accessibility
+
+- Keep the native `<video controls>` element; do not replace it with a custom player without a clear need. Preserve `playsinline` and `preload="metadata"`.
+- Every delivered video has a caption track and a transcript. Prefer soft WebVTT over burned-in captions: soft captions are searchable, translatable, styleable and available to assistive technology.
+- Describe visual-only actions in the narration or caption. Do not use colour alone to convey meaning; pair highlights with shape, outline or text.
+- Keep sufficient contrast for highlights, captions and on-screen text, and avoid rapid flashing or unnecessary motion. The recorder disables decorative animation.
+- Do not autoplay with sound.
+
+### Replacing a video
+
+Replace the MP4, poster, captions and transcript at the same paths so existing docs references keep working. Merge the manifest entry, keep the matching `captions=` attribute on the `::video-figure`, and update the inventory table in this file. No translated caption tracks are delivered.
+
+## Constraints
+
+The delivered set should be:
+
+- **Deterministic.** The same scenario, narration, seed data and browser version produce the same frames and timings. Map tiles, fonts and third-party assets are pinned or stubbed.
+- **Repeatable.** A short command sequence rebuilds a video from its scenario and narration without manual editing.
+- **Reviewable.** Scenarios and narration are versioned text, so changes can be reviewed like code. The MP4 and sidecars are build artefacts.
+- **Accessible.** Every video has captions, a transcript, native controls and sufficient contrast. Visual actions are described, not only spoken.
+- **Compatible with the docs.** Delivery stays at the five paths above and the manifest, so `VideoFigure` and base-path resolution keep working.
+
+Operational constraints:
+
+- **Use port 11000.** Recording and seeding run against the dedicated wp-env instance in `scripts/video/wp-env.video.json`. Never use 8888 or 8889; see [Ports](#ports).
+- **Generate locally.** Recording needs a disposable WordPress instance, a pinned browser, a narration provider and ffmpeg. CI validates committed metadata and assets only; it never records, synthesises or encodes.
+- **Keep intermediates out of version control.** Raw WebM, TTS audio, timelines and ffmpeg intermediates belong in `scripts/video/work/`, which is gitignored. Nothing there is a deliverable.
+- **Commit the delivery files.** The MP4s live in the repository rather than on external hosting.
 
 ## Determinism
 
@@ -535,7 +821,7 @@ A recording must reproduce the same frames and timings from the same scenario, n
 - Emulate reduced motion.
 - Use the deterministic page reset from `tests/e2e/fixtures.js`.
 
-The tile record/replay policy is documented in `tests/e2e/README.md`. Record missing tiles deliberately and respect the upstream tile usage policies; never let a production recording depend on live tiles.
+The tile record/replay policy is documented in `tests/e2e/README.md`. Record missing tiles deliberately with `WAYMARK_RECORD_TILES=1`, and respect the upstream tile usage policies; never let a production recording depend on live tiles.
 
 ## What not to commit
 

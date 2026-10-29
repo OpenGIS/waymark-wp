@@ -165,7 +165,7 @@
       "parkMouse": true,
       "anonymous": true,
       "pad": 0.4,
-      "notes": "Closing line over the open public popup. The poster marker sits here. The active `.leaflet-popup` highlight shifts the 16:9 crop of `.waymark-map` up so the whole popup is inside the 645\u00d7363 crop; the crop starts inside the map rather than cutting the title. The poster replay is anonymous too. No cursor. The popup stays open behind the closing card."
+      "notes": "Closing line over the open public popup. The poster is marked on the previous scene, so the marker timestamp and the poster image agree. The active `.leaflet-popup` highlight shifts the 16:9 crop of `.waymark-map` up so the whole popup is inside the 645\u00d7363 crop; the crop starts inside the map rather than cutting the title. The poster replay is anonymous too. No cursor. The popup stays open behind the closing card."
     },
     {
       "id": "end",

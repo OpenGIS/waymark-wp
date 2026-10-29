@@ -16,10 +16,10 @@ Plan for separating the **public user help site** from **codebase documentation*
   components), deployed to GitHub Pages by `.github/workflows/deploy-docs.yml`
   and served publicly under `/waymark-wp/`.
 - The same folder also carries the committed delivery assets
-  (`docs/public/assets/video/`, 90 MB) and the brand assets
+  (`docs/public/assets/video/`, 48 MB) and the brand assets
   (`docs/public/assets/img/`, 50 MB).
 - There is **no developer documentation folder**. Pipeline documentation lives at
-  the repository root in `VIDEOS.md` and `scripts/video/README.md`.
+  `scripts/video/README.md`.
 
 ## Target layout
 
@@ -35,7 +35,7 @@ docs/                     # developer documentation (docs skill)
   README.md               # index and reading order
   1.start.md              # setup, dev loop, tests
   2.architecture.md       # plugin structure, data flow
-  3.video-pipeline.md     # moved from VIDEOS.md
+  3.video-pipeline.md     # distilled from scripts/video/README.md
   4.testing.md            # PHPUnit, Vitest, Playwright
   5.build-and-release.md  # grunt, dist, WordPress.org, docs deploy
   assets/                 # diagrams
@@ -90,8 +90,8 @@ docs/                     # developer documentation (docs skill)
 ### Prose references to update
 
 - `AGENTS.md:7,11-13,47,60,63-64,85` — points at `docs/content`, `cd docs`.
-- `VIDEOS.md` — 20+ references to `docs/public`, `docs/content`, `docs/app`.
-- `scripts/video/README.md:25,83,180,224,227,273-274,518-522,527`.
+- `scripts/video/README.md` — delivery paths, docs wiring and validator roots
+  under `docs/`.
 - `readme.md`/`readme.txt` development section.
 - Pre-existing staleness worth fixing while here:
   `tests/fixtures/demo/README.md:68` (`docs/assets/img/` does not exist);
@@ -113,11 +113,11 @@ docs/                     # developer documentation (docs skill)
 `.nuxt`, `.output`, `.data`; move `docs/.gitignore` with the app. Update the
 workflow, `.distignore`, `scripts/dist.sh`, the five video tooling constants, the
 two scenario output paths, the sync-assets log string, and every prose path in
-`AGENTS.md`, `VIDEOS.md`, `scripts/video/README.md`, `readme.md`/`readme.txt`.
+`AGENTS.md`, `scripts/video/README.md`, `readme.md`/`readme.txt`.
 Introduce `scripts/video/lib/paths.mjs` exporting `PUBLIC_DIR`, `CONTENT_DIR` and
 `DELIVERY_DIR` so the next move is one line instead of six.
 
-**Verifies:** `cd help && npm ci && npm run sync-assets && NUXT_APP_BASE_URL=/waymark-wp/ npm run generate` succeeds and `help/.output/public/index.html` exists; `npm run video:validate` passes (2 manifest entries, 18 docs references); `npm run dist` produces a zip with no `help/` or `docs/`; `grep -rn '"docs", "public"\|docs/public\|docs/content' scripts/` returns nothing.
+**Verifies:** `cd help && npm ci && npm run sync-assets && NUXT_APP_BASE_URL=/waymark-wp/ npm run generate` succeeds and `help/.output/public/index.html` exists; `npm run video:validate` passes (8 manifest entries, 24 docs references); `npm run dist` produces a zip with no `help/` or `docs/`; `grep -rn '"docs", "public"\|docs/public\|docs/content' scripts/` returns nothing.
 
 ### 2. Rebrand the surface to Help
 
@@ -136,10 +136,9 @@ concept).
 
 Create `docs/README.md` plus numbered pages with `git_hash`/`modified`
 frontmatter: `1.start.md`, `2.architecture.md`, `3.video-pipeline.md`,
-`4.testing.md`, `5.build-and-release.md`. Move `VIDEOS.md` into `3.video-pipeline.md`
-(adjusting its internal paths) and leave a short pointer in its place only if
-anything still links to it. `scripts/video/README.md` stays the operational
-runbook and is linked, not duplicated.
+`4.testing.md`, `5.build-and-release.md`. Distil `scripts/video/README.md` into
+`3.video-pipeline.md` (adjusting its internal paths). The README stays the
+operational runbook and is linked, not copied.
 
 **Verifies:** every `docs/*.md` has valid frontmatter; every internal link
 resolves; `docs/README.md` indexes every page; `grep` shows no duplicated
@@ -166,9 +165,10 @@ plugin-only change skips the site build.
    and `Read the Docs »` → something else. Options: rebrand all of it; rebrand the
    menu label but keep the familiar “Read the Docs” link; or rebrand only the
    site and leave plugin copy alone.
-2. **Move `VIDEOS.md` into `docs/3.video-pipeline.md` as part of this work**, or
-   leave it at the root until the remaining videos are done? Moving it now is
-   cleaner; deferring avoids churn while the pipeline is still being edited.
+2. **Distil `scripts/video/README.md` into `docs/3.video-pipeline.md` as part of
+   this work**, or leave the README as the single source until later? Absorbing
+   it now is cleaner; deferring avoids churn while the pipeline is still being
+   edited.
 3. **Add the deploy path filter now?** It is a small, separate win (stops every
    push rebuilding the site) but touches CI in the same change as the move.
 
