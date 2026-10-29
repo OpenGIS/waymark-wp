@@ -1,5 +1,5 @@
 {
-  "version": "1",
+  "version": "2",
   "id": "getting-started",
   "title": "Getting Started",
   "output": "docs/public/assets/video/getting-started.mp4",
@@ -9,39 +9,156 @@
   },
   "storageState": "scripts/video/work/auth/storage-state.json",
   "mapSlug": "cape-scott-trail",
-  "posterAt": "00:00:30",
-  "pad": 0.4,
-  "hideSelectors": ["#edit-slug-box"],
+  "posterAt": "00:00:44",
+  "pad": 0.5,
+  "hideSelectors": [
+    "#edit-slug-box",
+    ".notice-warning.update-nag",
+    "#wp-admin-bar-updates",
+    "#screen-options-link-wrap"
+  ],
   "scenes": [
     {
       "id": "title",
       "action": "card",
       "card": {
         "eyebrow": "Open GIS",
-        "title": "Getting Started",
-        "subtitle": "Putting an interactive Map on your WordPress site"
+        "title": "Maps for WordPress",
+        "subtitle": "Routes, places and stories, on your own site."
       },
       "hold": 2.2,
       "highlight": null,
       "cursor": null,
-      "notes": "Opening card. It is a real timeline scene rendered into the page, not an ffmpeg overlay. The subtitle states the plugin's purpose in one line so the viewer has the frame before any admin screen appears."
+      "notes": "Opening card. It is a real timeline scene rendered over the pre-warmed page, not an ffmpeg overlay. The card gives the viewer the promise before any public map appears."
     },
     {
-      "id": "maps-list",
+      "id": "hero",
       "action": "goto",
-      "url": "{{baseURL}}/wp-admin/edit.php?post_type=waymark_map",
-      "selector": "#the-list .row-title",
+      "url": "{{baseURL}}/map/cape-scott-trail/#waymark-shortcode-810d6e",
+      "selector": ".waymark-map-id-100 .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-map-id-100 .waymark-marker",
+        "minCount": 13
+      },
+      "notes": "The canonical public Map page for Map 100, scrolled to the map by the #waymark-shortcode-810d6e anchor. The anchor is the shortcode wrapper, which is visible before the map JavaScript runs, so the scroll is reliable; the map element itself is display:none at load and an anchor to it can miss. At the settled scrollY 822 the 645x450 map sits at 318,1, the 8-photo strip overlays its bottom at 371..451, and the elevation profile is at 451..687. The page is anonymous, so there is no admin bar. The map is at zoom 9. The 13 markers and the route are present. The poster is marked on the popup scene, not here, so the thumbnail carries the feature photograph as well as the map."
+    },
+    {
+      "id": "popup",
+      "action": "openPopup",
+      "selector": ".waymark-map-id-100 .waymark-marker-beer[style*=\"translate3d(301px, 262px\"]",
+      "anonymous": true,
       "highlight": {
-        "selector": "#the-list",
+        "selector": ".waymark-map-id-100 .leaflet-popup",
+        "pad": 4
+      },
+      "cursor": null,
+      "assert": {
+        "selector": ".waymark-marker-info-title",
+        "text": "The Scarlet Ibis"
+      },
+      "notes": "The Scarlet Ibis, a Beer marker at map-relative point 301,262 (screen 619,263). The marker type population is 6 Photo, 2 Beer, 2 Alert, 1 Food, 1 Camp and 1 Information, 13 in total. The selector is exact to the marker style transform because the markers carry no per-feature id or title attribute, and the Beer pin is the top layer over an unnamed Photo at the same point (z-index 262 over 261). The click opens a 301x295 popup at 468,5 containing the title, the Beer Type label, an image link with the scarlet-ibis photograph and the description 'Good food and drink, especially after a long ride!'. It is fully inside the 720 px viewport. No save or edit. The poster is marked here: the 16:9 crop of .waymark-map-id-100 includes the popup, and the cursor is hidden for a clean 2x replay. The next scene is the popup close on the same page, a click with no navigation or scroll, so the poster marker stays on this frame.",
+      "poster": {
+        "selector": ".waymark-map-id-100",
+        "aspect": "16:9",
+        "pad": 0
+      }
+    },
+    {
+      "id": "popup-hold",
+      "action": "pause",
+      "hold": 0.8,
+      "anonymous": true,
+      "highlight": null,
+      "cursor": null,
+      "parkMouse": true,
+      "notes": "Silent beat so the poster marker at the end of the popup lands inside a still frame rather than on the popup-close click. The popup, its photograph, Type label and description remain on screen; nothing is changed."
+    },
+    {
+      "id": "popup-close",
+      "action": "click",
+      "selector": ".leaflet-popup-close-button",
+      "anonymous": true,
+      "hold": 0.8,
+      "highlight": null,
+      "cursor": {
+        "to": ".leaflet-popup-close-button"
+      },
+      "notes": "Silent beat that closes the popup so the layer control, route arrows and both shaded areas are unobstructed for the Types scene. It is a UI close only; nothing is saved or edited. The close button is inside the open popup and fully inside the viewport."
+    },
+    {
+      "id": "types",
+      "action": "hover",
+      "selector": ".waymark-map-id-100 .leaflet-control-layers",
+      "anonymous": true,
+      "highlight": {
+        "selector": ".waymark-map-id-100 .leaflet-control-layers-base",
+        "pad": 8
+      },
+      "cursor": {
+        "to": ".waymark-map-id-100 .leaflet-control-layers"
+      },
+      "assert": {
+        "selector": ".waymark-map-id-100 .leaflet-control-layers-base label:visible",
+        "minCount": 2
+      },
+      "notes": "Hover expands the Leaflet layers control at 772..952, 10..326, fully inside the viewport. The expanded panel lists Open Street Map and Open Topo Map, then Markers, Beer, Food, Alert, Camp, Photo and Information, then Lines/Green, then Shapes/Green and Shapes/Blue. The map underneath shows the route with six white-edged green direction arrows; a green rectangle (Nahwitti Lake Recreation Site) and a blue eight-vertex circle (Holberg Campground) are also rendered. The map remains at zoom 9 and no tile requests are made by the hover. The pointer stays on the control, so parkMouse is deliberately not set."
+    },
+    {
+      "id": "basemap",
+      "action": "click",
+      "selector": ".waymark-map-id-100 .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input",
+      "anonymous": true,
+      "hold": 2.8,
+      "highlight": {
+        "selector": ".waymark-map-id-100 .leaflet-control-layers-base label:has-text(\"Open Topo Map\")",
+        "pad": 6
+      },
+      "cursor": null,
+      "assert": {
+        "selector": ".waymark-map-id-100 .leaflet-control-layers-base label:has-text(\"Open Topo Map\") input",
+        "checked": true
+      },
+      "notes": "Silent beat that switches the basemap while the Types narration is still fresh. The public map is at zoom 9: the OpenTopoMap pack pins z9 only (12 tiles), and OpenStreetMap pins z9, z10 and z15. A switch at z9 therefore requests only pinned z9 OpenTopo tiles; the live check recorded zero missing-tile violations and the map stayed at zoom 9. The Markers, Lines and Shapes stay in place while the terrain redraws. The radio is inside the expanded panel and fully inside the viewport. The synthetic pointer is hidden so the selected radio is unobstructed. The real pointer stays on the control, which keeps the panel expanded; parking it would collapse the panel and hide the radio."
+    },
+    {
+      "id": "depth",
+      "action": "scrollIntoView",
+      "selector": ".waymark-meta-export_data",
+      "block": "end",
+      "anonymous": true,
+      "highlight": {
+        "selector": "#waymark-map-export-100",
         "pad": 8
       },
       "cursor": null,
       "parkMouse": true,
       "assert": {
-        "selector": "#the-list .row-title",
+        "selector": "#waymark-map-export-100 select[name=\"export_format\"]",
+        "value": "gpx"
+      },
+      "notes": "The elevation chart and the Export block share one frame. The shortcode uses show_elevation=\"1\", so the chart is present at page load; the Export block sits below it and is genuinely off screen at the settled scrollY 822. Targeting .waymark-meta-export_data with block end scrolls to scrollY 1,261, which puts the elevation chart at y 11..247 and the Export block at y 633..720, both fully inside the 720 px viewport. The Export select offers exactly GPX, KML and GeoJSON, and its current value is gpx; the narration claims only GPX, which is true. The export form itself is highlighted because that is the second half of the sentence; the wider Export block would put its outline on the frame edge. The pointer is parked and the cursor hidden so the scroll leaves no stray pointer on the select."
+    },
+    {
+      "id": "collection",
+      "action": "goto",
+      "url": "{{baseURL}}/collection/vancouver-island/#waymark-shortcode-810d6e",
+      "selector": "#waymark-map-810d6e .leaflet-tile-loaded",
+      "anonymous": true,
+      "highlight": {
+        "selector": "#waymark-map-810d6e",
+        "pad": 8
+      },
+      "cursor": null,
+      "parkMouse": true,
+      "assert": {
+        "selector": ".waymark-shortcode",
         "minCount": 3
       },
-      "notes": "The Maps list is the first screen under Waymark. The table body is 1076x168 at 183,214, so the highlight and its 8 px pad are fully inside the 720 px viewport. The three rows are Cape Scott Trail, San Josef Bay and North Coast Trail; the row titles match three times. Add New Map is visible above the table at 246,50 but is not clicked. The page has no map, so no tiles are requested. The line mentions the button without implying a creation."
+      "notes": "The Vancouver Island Collection archive. The block template leads with each Map's featured photograph (the first is 283..713) before its map card, so the anchor targets the first map card wrapper at 787..1521 rather than the page top. At the settled scrollY 787 the card header is at 0, the 645x450 map at 47..497, and the photo strip below it; the hero photograph is above the frame. The archive holds three Maps: Cape Scott Trail, San Josef Bay and North Coast Trail, each in its own .wp-block-post and .waymark-shortcode; the first map has 13 markers. The other two cards sit below this frame. The page is anonymous. The map is at zoom 9, which OpenStreetMap pins."
     },
     {
       "id": "editor",
@@ -58,24 +175,7 @@
         "selector": "#waymark-map .waymark-marker",
         "minCount": 13
       },
-      "poster": {
-        "selector": "#waymark-map",
-        "aspect": "16:9",
-        "pad": 0
-      },
-      "notes": "The Map Editor for Cape Scott Trail loads with the Map Editor metabox at the top. The map is 752x464 at 195,232 and settles at zoom 10, which the OpenStreetMap pack pins. The map data holds 17 features: 13 Points, 2 LineStrings and 2 Polygons, so one Map carries Markers, Lines and Shapes together. The rendered map shows 13 markers and the route and shading; the toolbar is inside the map at 205,396, 44x290. No tool is clicked and nothing is saved. The poster crops the map at 16:9 with no extra pad. Because the scene highlight is the map plus its 8 px outline, the crop extends to 853x480 at 144,230 to contain the outline; it stays inside the viewport and carries a thin margin of page background. The build logs the extension rather than failing. There is no cursor or popup in the frame."
-    },
-    {
-      "id": "editor-hold",
-      "action": "pause",
-      "hold": 0.8,
-      "highlight": {
-        "selector": "#waymark-map",
-        "pad": 8
-      },
-      "cursor": null,
-      "parkMouse": true,
-      "notes": "Silent beat so the poster marker lands inside a still frame rather than on the scroll into the Shortcode scene."
+      "notes": "The only admin page load in the video. The Map Editor shows the route, 13 Markers and the seven-button tool rail at 205,398..688. The map is 752x400 at 195,298; with the 8 px highlight pad it is 187,290..955,706, fully inside the 720 px viewport below the 32 px admin bar. The map settles at zoom 10, which OpenStreetMap pins. The selector is a painted tile, not the bare #waymark-map container, so the action does not settle until the canvas has painted; the 13-marker assert follows it. The recorded take's actionEnd for this scene was 5.552 s; a cold authenticated check reached the first tile at 14.2 s, which is why the scenario relies on audioAfterActionMax 30 rather than a fixed audioOffset. The narration therefore starts after the real paint. Read-only: the Marker popup is an editing form with a title input, an image URL input and a description field (#waymark-info-description), and #publish has the value Update; neither is clicked and nothing is saved. #edit-slug-box, the WordPress update notice, the admin-bar update count and Screen Options are hidden by the scenario hideSelectors; the map geometry is unchanged by hiding them."
     },
     {
       "id": "shortcode",
@@ -90,91 +190,22 @@
       "parkMouse": true,
       "assert": {
         "selector": "#waymark_map_shortcode input[type=\"text\"]",
-        "visible": true
+        "value": "[Waymark map_id=\"100\"]"
       },
-      "notes": "The Shortcode metabox is in the right sidebar and already visible on load at 980,634, 280x97. Block centre scrolls 306 px so it sits at 328..424, fully inside the viewport. The input holds the live value [Waymark map_id=\"100\"]; the scene only reads it and never selects or copies. The Collections box remains visible above it, but the highlight stays on the Shortcode box so the beat carries one idea."
-    },
-    {
-      "id": "front-page",
-      "action": "goto",
-      "url": "{{baseURL}}/waymark-demo/",
-      "selector": ".waymark-map-id-100 .leaflet-tile-loaded",
-      "anonymous": true,
-      "highlight": null,
-      "cursor": null,
-      "parkMouse": true,
-      "hold": 1.4,
-      "assert": {
-        "selector": ".waymark-map-id-100 .waymark-marker",
-        "minCount": 13
-      },
-      "notes": "Silent establishing beat on the seeded Waymark Demo page. Anonymous: no admin bar. The page title is Waymark Demo and the first shortcode is the Cape Scott Trail Map. The map starts at 390..840, so its lower third sits below the 720 px fold; this beat shows the page before the next scene scrolls to the map. The selector waits for a painted tile, and 13 markers load. Holding 1.4 s gives the page time to paint without adding speech."
-    },
-    {
-      "id": "front-map",
-      "action": "scrollIntoView",
-      "selector": ".waymark-map-id-100",
-      "block": "center",
-      "anonymous": true,
-      "highlight": {
-        "selector": ".waymark-map-id-100",
-        "pad": 8
-      },
-      "cursor": null,
-      "parkMouse": true,
-      "assert": {
-        "selector": ".waymark-map-id-100 .waymark-marker",
-        "minCount": 13
-      },
-      "notes": "The same page and the same Map, now framed. Block centre puts the 645x450 map at 135..585, fully inside the anonymous viewport, with the Cape Scott Trail heading above it. The map stays at zoom 9, which the OpenStreetMap pack pins, and loads eight z9 tiles. Thirteen markers are present. The attribution reads Waymark | Leaflet | \u00a9 OpenStreetMap contributors, and the zoom control is visible. There is no admin bar and no editing toolbar."
-    },
-    {
-      "id": "collections",
-      "action": "goto",
-      "url": "{{baseURL}}/wp-admin/edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map",
-      "selector": "#the-list .row-title",
-      "highlight": {
-        "selector": ".wp-list-table",
-        "pad": 8
-      },
-      "cursor": null,
-      "parkMouse": true,
-      "assert": {
-        "selector": "#the-list .row-title",
-        "minCount": 3
-      },
-      "notes": "The Collections screen lists three terms: Vancouver Island (3 Maps), Backpacking (2) and Day Hikes (1). Backpacking and Day Hikes are nested under Vancouver Island, which the em dash in their row titles shows. Each row also has a Shortcode input: [Waymark collection_id=\"2\"] for Vancouver Island, and so on. The table is 695x243 at 565,182, so the whole list fits with the 8 px highlight. No term is edited, added or deleted."
-    },
-    {
-      "id": "docs",
-      "action": "hover",
-      "selector": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]",
-      "highlight": {
-        "selector": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]",
-        "pad": 0
-      },
-      "cursor": {
-        "to": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]"
-      },
-      "assert": {
-        "selector": "#toplevel_page_edit-post_type-waymark_map .wp-submenu a[href=\"https://www.ogis.org/waymark-wp\"]",
-        "visible": true,
-        "text": "Docs"
-      },
-      "notes": "The Waymark submenu stays open because Collections is the current screen. The Docs item is visible at 0,288, 160x28 and links off-site to https://www.ogis.org/waymark-wp. It is hovered and highlighted only; it is never clicked, so the recorder's external-request guard is not triggered and the page URL stays on the Collections screen. The pad is 0 because the item starts at the viewport's left edge. No parkMouse, because the hover must remain active."
+      "notes": "The Shortcode panel is in the right sidebar at 980,700, 280x97 and is clipped by the fold on load. Block centre scrolls it fully into the viewport. The input holds the live value [Waymark map_id=\"100\"]; the scene only reads it and never selects or copies. The Collections box remains above it, but the highlight stays on the Shortcode panel so the beat carries one idea."
     },
     {
       "id": "end",
       "action": "card",
       "card": {
         "eyebrow": "Open GIS",
-        "title": "Getting Started",
-        "subtitle": "Start with the tutorial:\nCreating Your First Map"
+        "title": "Start with your first Map",
+        "subtitle": "The Creating Your First Map tutorial walks you through it."
       },
       "hold": 2.8,
       "highlight": null,
       "cursor": null,
-      "notes": "Closing card over the Collections screen. It hands the viewer to the tutorial rather than summarising the scenes."
+      "notes": "Closing card over the Shortcode panel. It hands the viewer to the tutorial rather than summarising the scenes."
     }
   ],
   "audioAfterActionMax": 30

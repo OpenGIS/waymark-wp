@@ -140,17 +140,17 @@
   "getting-started": {
     "id": "getting-started",
     "title": "Getting Started",
-    "scenarioVersion": "1",
+    "scenarioVersion": "2",
     "playwright": "1.63.0",
     "chromium": "153.0.8010.12",
     "file": "/assets/video/getting-started.mp4",
-    "duration": 116.736,
+    "duration": 148.885,
     "width": 1280,
     "height": 720,
     "videoCodec": "h264",
     "audioCodec": "aac",
-    "size": 5233807,
-    "sha256": "f75ed6c6795353202b3b7a66b3e25ec9ceb0c5f759f6d8cc6ff757a9465ab7c9",
+    "size": 7224144,
+    "sha256": "aa979d7137480b364f844a9b1e171bef4975485cae077b3195ef8315f9a65b99",
     "poster": "/assets/video/posters/getting-started.jpg",
     "posterSource": "replay",
     "captions": "/assets/video/captions/getting-started.en.vtt",
@@ -158,7 +158,7 @@
     "narrationProvider": "deepgram",
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
-    "generatedAt": "2026-10-28T16:23:22.499Z"
+    "generatedAt": "2026-10-29T01:22:38.411Z"
   },
   "settings": {
     "id": "settings",
