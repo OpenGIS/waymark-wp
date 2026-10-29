@@ -229,6 +229,15 @@ async function main() {
       (scene) => scene.action === "waitForMap",
     );
 
+    // A card is an overlay over the page it reveals, so that page must be
+    // warmed in the cookie state the take will show it in. Warming the page
+    // authenticated and then reloading it for an anonymous scene leaves the
+    // old admin-bar document on screen until the new one paints.
+    const prewarmAnonymous =
+      prewarmScene?.action === "card"
+        ? cardPageScene?.anonymous === true
+        : prewarmScene?.anonymous === true;
+
     if (prewarmScene) {
       const warmTarget =
         prewarmScene.action === "goto"
@@ -241,7 +250,7 @@ async function main() {
         hideSelectors: scenario.hideSelectors ?? [],
         waitForMap: Boolean(mapScene && warmTarget),
         zoom: mapScene?.zoom,
-        anonymous: prewarmScene.anonymous === true,
+        anonymous: prewarmAnonymous,
       });
       console.log(
         `[video] Warm-up ${prewarmScene.action === "card" ? "card" : "navigation"} complete.`,
@@ -263,7 +272,7 @@ async function main() {
               applyHiddenSelectors: browserLib.applyHiddenSelectors,
             })
         : undefined,
-      anonymous: prewarmScene?.anonymous === true,
+      anonymous: prewarmAnonymous,
     });
     const timeline = createTimeline({
       id: scenario.id,
@@ -1369,15 +1378,27 @@ async function capturePosterReplay({
 
     // A fill scene would otherwise leave its fake caret in the still.
     await libs.cursor.clearCaret(replay.page);
+    const expectedHighlight = Boolean(posterScene?.highlight);
+
+    // The outline fades in through a transition, so the still has to wait until
+    // it is fully opaque. When the scene expects an outline, a missing element
+    // is a failure rather than something to wait out: otherwise the screenshot
+    // would silently drop the highlight the scene asked for.
     await replay.page
       .waitForFunction(
-        () => {
-          const element = document.getElementById("waymark-video-highlight");
+        ({ elementId, expected }) => {
+          const element = document.getElementById(elementId);
+          if (!element) {
+            return !expected;
+          }
+          const bounds = element.getBoundingClientRect();
           return (
-            !element || Number(window.getComputedStyle(element).opacity) >= 0.99
+            Number(window.getComputedStyle(element).opacity) >= 0.99 &&
+            bounds.width > 0 &&
+            bounds.height > 0
           );
         },
-        null,
+        { elementId: "waymark-video-highlight", expected: expectedHighlight },
         { timeout: 2000 },
       )
       .catch(() => {});
@@ -1388,25 +1409,59 @@ async function capturePosterReplay({
         }),
     );
 
-    const overlays = await replay.page.evaluate(() => {
-      const highlight = document.getElementById("waymark-video-highlight");
-      const bounds = highlight?.getBoundingClientRect();
+    const overlays = await replay.page.evaluate(
+      ({ expected }) => {
+        const highlight = document.getElementById("waymark-video-highlight");
+        const bounds = highlight?.getBoundingClientRect();
+        const style = highlight ? window.getComputedStyle(highlight) : null;
 
-      return {
-        cursor: Boolean(document.getElementById("waymark-video-cursor")),
-        caret: Boolean(document.getElementById("waymark-video-caret")),
-        highlight: Boolean(highlight),
-        highlightRect:
-          highlight && bounds
-            ? {
-                x: bounds.x,
-                y: bounds.y,
-                width: bounds.width,
-                height: bounds.height,
-              }
-            : null,
-      };
-    });
+        return {
+          expected,
+          cursor: Boolean(document.getElementById("waymark-video-cursor")),
+          caret: Boolean(document.getElementById("waymark-video-caret")),
+          highlight: Boolean(highlight),
+          highlightOpacity: style ? Number(style.opacity) : null,
+          highlightRect:
+            highlight && bounds
+              ? {
+                  x: bounds.x,
+                  y: bounds.y,
+                  width: bounds.width,
+                  height: bounds.height,
+                }
+              : null,
+        };
+      },
+      { expected: expectedHighlight },
+    );
+
+    if (
+      expectedHighlight &&
+      (!overlays.highlight ||
+        overlays.highlightOpacity < 0.99 ||
+        !overlays.highlightRect ||
+        !overlays.highlightRect.width ||
+        !overlays.highlightRect.height)
+    ) {
+      throw new Error(
+        `Scene "${sceneId}": the poster highlight was expected but ` +
+          `${
+            overlays.highlight
+              ? `is not visible (opacity ${overlays.highlightOpacity}, rect ` +
+                `${JSON.stringify(overlays.highlightRect)})`
+              : "the element is missing"
+          }.`,
+      );
+    }
+
+    if (expectedHighlight) {
+      console.log(
+        `[video] Poster highlight ${overlays.highlightRect.width}x` +
+          `${overlays.highlightRect.height} at ` +
+          `${overlays.highlightRect.x},${overlays.highlightRect.y} ` +
+          `(opacity ${overlays.highlightOpacity}).`,
+      );
+    }
 
     const rect = await replay.page
       .locator(config.selector)
@@ -1621,13 +1676,33 @@ async function runAction({
   switch (scene.action) {
     case "goto": {
       const url = requireString(scene, sceneId, "url");
+      const currentURL = page.url();
 
       // The URL survives an overlay card, so a goto to the page already loaded
       // for the card is a no-op and does not discard the warmed document. A
       // cookie-state switch must reload even when the URL is unchanged, or the
       // page could keep the old admin bar (or lose the new one) for the scene.
-      if (reload || !sameURL(page.url(), url)) {
-        await navigateTo(page, url, scene);
+      if (reload || !sameURL(currentURL, url)) {
+        if (reload && sameURLIgnoringFragment(currentURL, url)) {
+          // A goto that differs only by its fragment is a same-document
+          // navigation: no request is made and the old document survives, so
+          // a cookie switch would not take effect. Load the bare URL for a
+          // real navigation, then restore the fragment in-page so the anchor
+          // still applies without a second request.
+          const fragment = fragmentOf(url);
+          if (fragment) {
+            await navigateTo(page, stripFragment(url), scene);
+            await restoreFragment(page, fragment);
+          } else {
+            await navigateTo(page, url, scene);
+          }
+        } else {
+          await navigateTo(page, url, scene);
+        }
+      }
+
+      if (scene.anonymous === true) {
+        await assertNoAdminBarOnPublicPage(page, url, sceneId);
       }
 
       return {};
@@ -1995,6 +2070,98 @@ function sameURL(current, target) {
     current === target ||
     stripTrailingSlash(current) === stripTrailingSlash(target)
   );
+}
+
+/**
+ * Remove the fragment from a URL.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function stripFragment(value) {
+  const index = value.indexOf("#");
+  return index === -1 ? value : value.slice(0, index);
+}
+
+/**
+ * Return the fragment of a URL, including the leading `#`, or an empty string.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
+function fragmentOf(value) {
+  const index = value.indexOf("#");
+  return index === -1 ? "" : value.slice(index);
+}
+
+/**
+ * Compare two URLs, ignoring the fragment and a trailing-slash difference.
+ *
+ * @param {string} current
+ * @param {string} target
+ * @returns {boolean}
+ */
+function sameURLIgnoringFragment(current, target) {
+  return sameURL(stripFragment(current), stripFragment(target));
+}
+
+/**
+ * Restore a fragment in the current document without issuing a request.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {string} fragment
+ */
+async function restoreFragment(page, fragment) {
+  await page.evaluate(async (hash) => {
+    if (window.location.hash !== hash) {
+      window.location.hash = hash;
+    }
+
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
+  }, fragment);
+}
+
+/**
+ * Fail when an anonymous public page still carries the WordPress admin bar.
+ * The admin bar is rendered from the authenticated cookies, so its presence
+ * means the cookie switch or the navigation did not replace the document.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @param {string} url
+ * @param {string} sceneId
+ */
+async function assertNoAdminBarOnPublicPage(page, url, sceneId) {
+  let target;
+  let current;
+
+  try {
+    target = new URL(url);
+    current = new URL(page.url());
+  } catch {
+    return;
+  }
+
+  if (target.origin !== current.origin) {
+    return;
+  }
+
+  if (target.pathname.startsWith("/wp-admin")) {
+    return;
+  }
+
+  const present = await page.evaluate(
+    () => document.getElementById("wpadminbar") !== null,
+  );
+
+  if (present) {
+    throw new Error(
+      `Scene "${sceneId}": an anonymous scene still shows the WordPress admin ` +
+        `bar; the aggregate page is authenticated. Check the cookie switch and ` +
+        `any fragment-only navigation.`,
+    );
+  }
 }
 
 /**

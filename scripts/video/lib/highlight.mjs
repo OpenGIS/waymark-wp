@@ -145,86 +145,112 @@ export async function trackHighlight(page, highlight, options = {}) {
   const quietMs = options.quietMs ?? 160;
   const timeoutMs = options.timeoutMs ?? 2000;
 
-  return page.evaluate(
-    ({
-      selector: target,
-      pad: padding,
-      quietMs: quiet,
-      timeoutMs: timeout,
-      elementId,
-    }) =>
-      new Promise((resolve) => {
-        const element = document.getElementById(elementId);
+  // Resolve the target through Playwright so the full selector grammar,
+  // including text engines such as :has-text(), is supported here as well as
+  // in showHighlight. Passing the element handle into the page also avoids
+  // handing a non-CSS selector to document.querySelector.
+  try {
+    return await page
+      .locator(selector)
+      .first()
+      .evaluate(
+        (
+          targetElement,
+          { pad: padding, quietMs: quiet, timeoutMs: timeout, elementId },
+        ) =>
+          new Promise((resolve) => {
+            const element = document.getElementById(elementId);
 
-        if (!element) {
-          resolve({ tracked: false, stable: false, elapsed: 0, rect: null });
-          return;
-        }
+            if (!element) {
+              resolve({
+                tracked: false,
+                stable: false,
+                elapsed: 0,
+                rect: null,
+              });
+              return;
+            }
 
-        const startedAt = performance.now();
-        let lastKey = null;
-        let lastChangeAt = startedAt;
-        let latest = null;
+            const startedAt = performance.now();
+            let lastKey = null;
+            let lastChangeAt = startedAt;
+            let latest = null;
+            let settled = false;
 
-        function step() {
-          const now = performance.now();
-          const targetElement = document.querySelector(target);
+            function finish(stable) {
+              if (settled) {
+                return;
+              }
+              settled = true;
+              clearTimeout(guard);
+              resolve({
+                tracked: Boolean(latest),
+                stable,
+                elapsed: performance.now() - startedAt,
+                rect: latest,
+              });
+            }
 
-          if (targetElement) {
-            const bounds = targetElement.getBoundingClientRect();
+            // The animation loop is the normal path, but a page that stops
+            // painting must not leave the recorder waiting forever.
+            const guard = setTimeout(() => finish(false), timeout + 250);
 
-            if (bounds.width || bounds.height) {
-              const key = [
-                Math.round(bounds.x),
-                Math.round(bounds.y),
-                Math.round(bounds.width),
-                Math.round(bounds.height),
-              ].join(",");
-
-              if (key !== lastKey) {
-                lastKey = key;
-                lastChangeAt = now;
+            function step() {
+              if (settled) {
+                return;
               }
 
-              latest = {
-                x: bounds.x,
-                y: bounds.y,
-                width: bounds.width,
-                height: bounds.height,
-              };
+              const now = performance.now();
+              const bounds = targetElement
+                ? targetElement.getBoundingClientRect()
+                : null;
 
-              element.style.left = `${bounds.x - padding}px`;
-              element.style.top = `${bounds.y - padding}px`;
-              element.style.width = `${bounds.width + padding * 2}px`;
-              element.style.height = `${bounds.height + padding * 2}px`;
+              if (bounds && (bounds.width || bounds.height)) {
+                const key = [
+                  Math.round(bounds.x),
+                  Math.round(bounds.y),
+                  Math.round(bounds.width),
+                  Math.round(bounds.height),
+                ].join(",");
+
+                if (key !== lastKey) {
+                  lastKey = key;
+                  lastChangeAt = now;
+                }
+
+                latest = {
+                  x: bounds.x,
+                  y: bounds.y,
+                  width: bounds.width,
+                  height: bounds.height,
+                };
+
+                element.style.left = `${bounds.x - padding}px`;
+                element.style.top = `${bounds.y - padding}px`;
+                element.style.width = `${bounds.width + padding * 2}px`;
+                element.style.height = `${bounds.height + padding * 2}px`;
+              }
+
+              if (now - lastChangeAt >= quiet) {
+                finish(true);
+                return;
+              }
+
+              if (now - startedAt >= timeout) {
+                finish(false);
+                return;
+              }
+
+              requestAnimationFrame(step);
             }
-          }
 
-          const stable = now - lastChangeAt >= quiet;
-
-          if (stable || now - startedAt >= timeout) {
-            resolve({
-              tracked: Boolean(latest),
-              stable,
-              elapsed: now - startedAt,
-              rect: latest,
-            });
-            return;
-          }
-
-          requestAnimationFrame(step);
-        }
-
-        requestAnimationFrame(step);
-      }),
-    {
-      selector,
-      pad: Number(pad),
-      quietMs,
-      timeoutMs,
-      elementId: HIGHLIGHT_ID,
-    },
-  );
+            requestAnimationFrame(step);
+          }),
+        { pad: Number(pad), quietMs, timeoutMs, elementId: HIGHLIGHT_ID },
+      );
+  } catch {
+    return { tracked: false, stable: false, elapsed: 0, rect: null };
+  }
 }
 
 /**
