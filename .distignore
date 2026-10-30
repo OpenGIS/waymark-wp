@@ -5,6 +5,9 @@
 .gitignore
 .gitmodules
 .DS_Store
+.agents
+.env.example
+skills-lock.json
 .opencode
 .wp-env.json
 node_modules

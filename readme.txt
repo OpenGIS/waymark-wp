@@ -213,6 +213,13 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 
 == Changelog ==
 
+= 1.8.0 =
+* Feature: Waymark is now fully translatable, with locale-aware number, coordinate and place formatting and right-to-left layout support.
+* Fix: Settings labels and controls are compact and consistently aligned; help icons sit beside their fields.
+* Fix: Marker icon helper links no longer overlap the Icon Name input.
+* Developer: add an i18n key/value parity check and stable type, meta and group keys with legacy aliases.
+* Translators: many translation keys changed; existing translations should be reviewed.
+
 = 1.7.2 =
 * Fix "Array to string conversion" warnings when repeatable Settings values are incomplete.
 * Fix Settings rows losing a value when a repeatable column has fewer entries than the other columns.
