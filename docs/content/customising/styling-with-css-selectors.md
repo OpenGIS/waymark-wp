@@ -133,7 +133,7 @@ Waymark map_id="4028" map_hash="pink_me"
 
 ## Markers
 
-Every Marker Type has a unique key (derived from it’s Title). Each time it is displayed on the Map, this key is added to the HTML for the Marker like this:
+Every Marker Type has a stable internal key, created when the Type is added. The key is used in CSS classes and Shortcodes, and it does not change when the display label is translated or edited. Each time the Marker is displayed on the Map, this key is added to the HTML for the Marker like this:
 
 ```html
 <!-- Not just beer... waymark-marker-[your_type_key] -->

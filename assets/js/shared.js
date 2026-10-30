@@ -179,6 +179,7 @@ function waymark_setup_parameter_tooltips() {
 	jQuery("a.waymark-tooltip").on({
 		mouseenter: function (e) {
 			var title = jQuery(this).data("title");
+			jQuery("#waymark-tooltip-active").remove();
 			jQuery('<p id="waymark-tooltip-active"></p>')
 				.text(title)
 				.appendTo("body")

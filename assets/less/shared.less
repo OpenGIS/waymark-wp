@@ -4,19 +4,29 @@
  * ====================================
  */
 .waymark-self-clear:after {
-	content: "";
-	display: table;
-	clear: both;
+  content: "";
+  display: table;
+  clear: both;
 }
 
 .waymark-code {
-	display: inline-block;
-	margin: 0 3px;
-	padding: 3px;
-	font-size: 90%;
-	color: #999;
-	border: 1px solid #ddd;
-	background: #f7f7f7;
+  display: inline-block;
+  margin: 0 3px;
+  padding: 3px;
+  font-size: 90%;
+  color: #999;
+  border: 1px solid #ddd;
+  background: #f7f7f7;
+}
+
+/* Decorative link arrow. The span is aria-hidden, so it is never announced.
+   U+00BB is a bidi-mirrored character, so the browser renders it as a
+   left-pointing glyph whenever the direction is RTL. No RTL override is
+   needed; overriding it with U+00AB would mirror a second time. */
+.waymark-arrow::after {
+  content: "\00BB";
+  display: inline-block;
+  margin-inline-start: 0.25em;
 }
 
 /**
@@ -26,33 +36,35 @@
  */
 
 a.waymark-tooltip {
-	display: inline-block;
-	padding: 1px 5px;
-	float: right;
-	font-size: 13px !important;
-	line-height: 16px;
-	margin-top: 5px;
-	margin-right: 0.5%;
-	text-decoration: none !important;
-	cursor: help !important;
-	background: #f9f9f9;
-	color: #444 !important;
-	border: 1px solid #dddddd;
-	border-radius: 50%;
-	&.waymark-link {
-		cursor: pointer !important;
-	}
+  display: inline-block;
+  padding: 1px 5px;
+  float: right;
+  float: inline-end;
+  font-size: 13px !important;
+  line-height: 16px;
+  margin-top: 5px;
+  margin-right: 0.5%;
+  margin-inline-end: 0.5%;
+  text-decoration: none !important;
+  cursor: help !important;
+  background: #f9f9f9;
+  color: #444 !important;
+  border: 1px solid #dddddd;
+  border-radius: 50%;
+  &.waymark-link {
+    cursor: pointer !important;
+  }
 }
 p#waymark-tooltip-active {
-	position: absolute;
-	z-index: +10000000000;
-	width: 200px;
-	background: rgba(255, 255, 255, 0.7);
-	border-radius: 5px;
-	padding: 10px;
-	color: #333;
-	font-size: 13px;
-	border: 1px solid #999;
+  position: absolute;
+  z-index: +10000000000;
+  width: 200px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  padding: 10px;
+  color: #333;
+  font-size: 13px;
+  border: 1px solid #999;
 }
 
 /**
@@ -61,59 +73,60 @@ p#waymark-tooltip-active {
  * ====================================
  */
 div.waymark-accordion-container {
-	padding-top: 2%;
-	padding-bottom: 2%;
-	// 	max-width: 494px;
-	// 	.waymark-parameters-tabs {
-	// 		padding-left: 10px;
-	// 		border-bottom: 1px solid #DDDDDD;
-	// 		.waymark-parameters-tab {
-	// 			margin-right: 10px;
-	// 			padding: 10px 15px;
-	// 			display: inline-block;
-	// 			font-weight: bold;
-	// 			font-size: 1.2em;
-	// 			border: 1px solid #DDDDDD;
-	// 			background: #f1f1f1;
-	// 			border-bottom: none;
-	// 			border-top-left-radius: 5px;
-	// 			border-top-right-radius: 5px;
-	// 			opacity: 0.7;
-	// 			cursor: pointer;
-	// 			&.waymark-active {
-	// 				margin-bottom: -1px;
-	// 				background: #fff;
-	// 				opacity: 1;
-	// 				border-bottom: 1px solid #fff;
-	// 			}
-	// 		}
-	// 	}
-	.waymark-accordion-group {
-		width: 100%;
-		margin: 0 0 10px 0 !important;
+  padding-top: 2%;
+  padding-bottom: 2%;
+  // 	max-width: 494px;
+  // 	.waymark-parameters-tabs {
+  // 		padding-left: 10px;
+  // 		border-bottom: 1px solid #DDDDDD;
+  // 		.waymark-parameters-tab {
+  // 			margin-right: 10px;
+  // 			padding: 10px 15px;
+  // 			display: inline-block;
+  // 			font-weight: bold;
+  // 			font-size: 1.2em;
+  // 			border: 1px solid #DDDDDD;
+  // 			background: #f1f1f1;
+  // 			border-bottom: none;
+  // 			border-top-left-radius: 5px;
+  // 			border-top-right-radius: 5px;
+  // 			opacity: 0.7;
+  // 			cursor: pointer;
+  // 			&.waymark-active {
+  // 				margin-bottom: -1px;
+  // 				background: #fff;
+  // 				opacity: 1;
+  // 				border-bottom: 1px solid #fff;
+  // 			}
+  // 		}
+  // 	}
+  .waymark-accordion-group {
+    width: 100%;
+    margin: 0 0 10px 0 !important;
 
-		legend {
-			display: block;
-			padding: 10px;
-			width: -webkit-fill-available;
-			font-weight: bold;
-			font-size: 1.2em;
-			border: 1px solid #dddddd;
-			background: #f1f1f1;
-			border-radius: 5px;
-			cursor: pointer;
-			span {
-				float: right;
-				opacity: 0.7;
-			}
-		}
-		.waymark-accordion-group-content {
-			padding: 0 10px;
-			//min-height: 300px;
-		}
-		.waymark-parameter-group-description {
-			margin: 5px 0 15px 0;
-			font-size: 1.15em;
-		}
-	}
+    legend {
+      display: block;
+      padding: 10px;
+      width: -webkit-fill-available;
+      font-weight: bold;
+      font-size: 1.2em;
+      border: 1px solid #dddddd;
+      background: #f1f1f1;
+      border-radius: 5px;
+      cursor: pointer;
+      span {
+        float: right;
+        float: inline-end;
+        opacity: 0.7;
+      }
+    }
+    .waymark-accordion-group-content {
+      padding: 0 10px;
+      //min-height: 300px;
+    }
+    .waymark-parameter-group-description {
+      margin: 5px 0 15px 0;
+      font-size: 1.15em;
+    }
+  }
 }

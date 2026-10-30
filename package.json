@@ -8,6 +8,7 @@
     "dev": "wp-env start && printf '\\n────────────────────────────────────\\n MySQL  127.0.0.1  root / password\\n Admin  http://localhost:8888/wp-admin  admin / password\\n────────────────────────────────────\\n' && npm run grunt:watch",
     "grunt": "grunt build",
     "grunt:watch": "grunt watch",
+    "i18n:check": "node scripts/i18n-check.mjs",
     "dist": "bash scripts/dist.sh",
     "test": "npm run test:js && npm run test:php && npm run test:e2e",
     "test:js": "vitest run",

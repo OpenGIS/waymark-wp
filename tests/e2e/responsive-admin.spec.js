@@ -81,7 +81,8 @@ test("stacks the settings sidebar and keeps help icons inline at 500px", async (
   await expect(links).toBeVisible();
   const anchors = links.locator("a");
   await expect(anchors).toHaveCount(1);
-  await expect(anchors).toHaveText("Read the Docs »");
+  await expect(anchors).toHaveText("Read the Docs");
+  await expect(anchors.locator(".waymark-arrow")).toHaveCount(1);
   expect(
     await anchors.evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute("href")),

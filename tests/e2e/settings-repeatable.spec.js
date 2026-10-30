@@ -310,39 +310,150 @@ test("labels each repeatable add button for its section", async ({
   page,
   waymark,
 }) => {
+  // Seven tab navigations plus the login round trip.
+  test.setTimeout(60_000);
+
   await waymark.login(page);
 
-  // The Groups section sits under the Meta tab, whose repeatable control used
-  // to say "Add Type" like every other section.
+  const sections = [
+    {
+      tab: "waymark-settings-tab-tiles",
+      selector: ".waymark-settings-section-layers",
+      label: "Add Basemap",
+      newLabel: "New Basemap",
+    },
+    {
+      tab: "waymark-settings-tab-markers",
+      selector: ".waymark-settings-section-marker_types",
+      label: "Add Marker Type",
+      newLabel: "New Marker Type",
+    },
+    {
+      tab: "waymark-settings-tab-lines",
+      selector: ".waymark-settings-section-line_types",
+      label: "Add Line Type",
+      newLabel: "New Line Type",
+    },
+    {
+      tab: "waymark-settings-tab-shapes",
+      selector: ".waymark-settings-section-shape_types",
+      label: "Add Shape Type",
+      newLabel: "New Shape Type",
+    },
+    {
+      tab: "waymark-settings-tab-meta",
+      selector: ".waymark-settings-section-inputs",
+      label: "Add Meta Field",
+      newLabel: "New Meta Field",
+    },
+    {
+      tab: "waymark-settings-tab-meta",
+      selector: ".waymark-settings-section-groups",
+      label: "Add Group",
+      newLabel: "New Group",
+    },
+    {
+      tab: "waymark-settings-tab-properties",
+      selector: ".waymark-settings-section-props",
+      label: "Add Property",
+      newLabel: "New Property",
+    },
+  ];
+
+  for (const section of sections) {
+    await page.goto(
+      waymark.adminUrl(
+        `/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=${section.tab}`,
+      ),
+    );
+
+    const repeatable = page.locator(`${section.selector} .waymark-repeatable`);
+    await expect(repeatable).toHaveAttribute(
+      "data-new-label",
+      section.newLabel,
+    );
+
+    const add = repeatable.locator(".waymark-add");
+    await expect(add, section.label).toBeVisible();
+    await expect(add.locator(".waymark-add-label")).toHaveText(section.label);
+    await expect(add).toHaveAttribute("aria-label", section.label);
+    await expect(add).not.toContainText("Add Type");
+  }
+});
+
+test("captions a newly added row with the section's new label", async ({
+  page,
+  waymark,
+}) => {
+  test.setTimeout(60_000);
+
+  await waymark.login(page);
+
+  const sections = [
+    {
+      tab: "waymark-settings-tab-tiles",
+      selector: ".waymark-settings-section-layers",
+      caption: "New Basemap",
+    },
+    {
+      tab: "waymark-settings-tab-meta",
+      selector: ".waymark-settings-section-inputs",
+      caption: "New Meta Field",
+    },
+    {
+      tab: "waymark-settings-tab-meta",
+      selector: ".waymark-settings-section-groups",
+      caption: "New Group",
+    },
+  ];
+
+  for (const section of sections) {
+    await page.goto(
+      waymark.adminUrl(
+        `/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=${section.tab}`,
+      ),
+    );
+
+    const repeatable = page.locator(`${section.selector} .waymark-repeatable`);
+    await expect(repeatable).not.toHaveAttribute("hidden");
+
+    await repeatable.locator(".waymark-add").click();
+
+    const caption = repeatable
+      .locator("table.form-table caption.waymark-group-title")
+      .last();
+    await expect(caption, section.caption).toHaveText(section.caption);
+  }
+});
+
+test("falls back to the generic new-type label without a section label", async ({
+  page,
+  waymark,
+}) => {
+  test.setTimeout(60_000);
+
+  await waymark.login(page);
   await page.goto(
     waymark.adminUrl(
-      "/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-meta",
+      "/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-tiles",
     ),
   );
 
-  const groupsAdd = page.locator(
-    ".waymark-settings-section-groups .waymark-repeatable .waymark-add",
+  const repeatable = page.locator(
+    ".waymark-settings-section-layers .waymark-repeatable",
   );
-  await expect(groupsAdd).toBeVisible();
-  await expect(groupsAdd.locator(".waymark-add-label")).toHaveText(
-    "Create Group",
-  );
-  await expect(groupsAdd).toHaveAttribute("aria-label", "Create Group");
-  await expect(groupsAdd).not.toContainText("Add Type");
+  await expect(repeatable).not.toHaveAttribute("hidden");
 
-  // A section that genuinely adds Types keeps its label.
-  await page.goto(
-    waymark.adminUrl(
-      "/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers",
-    ),
+  // Simulate a renderer that has no per-section caption. The JS must fall
+  // back to the generic waymark_php_lang.new_type string.
+  await repeatable.evaluate((element) =>
+    element.removeAttribute("data-new-label"),
   );
 
-  const markerTypesAdd = page.locator(
-    ".waymark-settings-section-marker_types .waymark-repeatable .waymark-add",
-  );
-  await expect(markerTypesAdd).toBeVisible();
-  await expect(markerTypesAdd.locator(".waymark-add-label")).toHaveText(
-    "Add Type",
-  );
-  await expect(markerTypesAdd).toHaveAttribute("aria-label", "Add Type");
+  await repeatable.locator(".waymark-add").click();
+
+  const caption = repeatable
+    .locator("table.form-table caption.waymark-group-title")
+    .last();
+  await expect(caption).toHaveText("New Type");
 });

@@ -17,17 +17,17 @@ class Waymark_Menu {
 		add_menu_page(Waymark_Config::get_name(true), Waymark_Config::get_name(true), 'edit_posts', $this->menu_slug, '', 'none', 21);
 
 		//Maps
-		add_submenu_page($this->menu_slug, esc_html__('Maps', 'waymark'), esc_html__('Maps', 'waymark'), 'edit_posts', 'edit.php?post_type=waymark_map');
-		add_submenu_page($this->menu_slug, esc_html__('New Map', 'waymark'), esc_html__('New Map', 'waymark'), 'edit_posts', 'post-new.php?post_type=waymark_map');
+		add_submenu_page($this->menu_slug, __('Maps', 'waymark'), __('Maps', 'waymark'), 'edit_posts', 'edit.php?post_type=waymark_map');
+		add_submenu_page($this->menu_slug, __('New Map', 'waymark'), __('New Map', 'waymark'), 'edit_posts', 'post-new.php?post_type=waymark_map');
 
 		//Collections
-		add_submenu_page($this->menu_slug, esc_html__('Collections', 'waymark'), esc_html__('Collections', 'waymark'), 'manage_categories', 'edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map');
+		add_submenu_page($this->menu_slug, __('Collections', 'waymark'), __('Collections', 'waymark'), 'manage_categories', 'edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map');
 
 		//Help
-		add_submenu_page($this->menu_slug, esc_html__('Documentation', 'waymark'), esc_html__('Docs', 'waymark') . ' <i style="font-size:12px" class="fa fa-external-link"></i>', 'edit_posts', Waymark_Helper::site_url());
+		add_submenu_page($this->menu_slug, __('Documentation', 'waymark'), __('Documentation', 'waymark') . ' <i style="font-size:12px" class="fa fa-external-link"></i>', 'edit_posts', Waymark_Helper::site_url());
 
 		//Settings
-		add_submenu_page($this->menu_slug, esc_html__('Settings', 'waymark'), esc_html__('Settings', 'waymark'), 'manage_options', 'waymark-settings', [new Waymark_Settings, 'content_admin_page']);
+		add_submenu_page($this->menu_slug, __('Settings', 'waymark'), __('Settings', 'waymark'), 'manage_options', 'waymark-settings', [new Waymark_Settings, 'content_admin_page']);
 
 		add_action('admin_menu', [$this, 'modify_menu'], 1000);
 
@@ -59,16 +59,16 @@ class Waymark_Menu {
 		//Waymark sub menu
 		if (array_key_exists($this->menu_slug, $submenu)) {
 			foreach ($submenu[$this->menu_slug] as &$sub_menu) {
-				//Hide New Type links
-				if (in_array($sub_menu[0], [esc_html__('New Map', 'waymark')])) {
+				//Hide the New Map link; match on the slug so translated labels are not load-bearing.
+				if ($sub_menu[2] === 'post-new.php?post_type=waymark_map') {
 					$sub_menu[4] = 'hidden';
 				}
 
-				//Make "Object" link active when adding new
+				//Make the parent link active when adding a new Map or Collection.
 				if (
-					$sub_menu[0] == esc_html__('Maps', 'waymark') && $this->admin_url_request == 'post-new.php?post_type=waymark_map'
+					$sub_menu[2] === 'edit.php?post_type=waymark_map' && $this->admin_url_request === 'post-new.php?post_type=waymark_map'
 					||
-					$sub_menu[0] == esc_html__('Collections', 'waymark') && (strpos($this->admin_url_request, 'edit-tags.php?taxonomy=waymark_collection') !== false)
+					$sub_menu[2] === 'edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map' && (strpos($this->admin_url_request, 'edit-tags.php?taxonomy=waymark_collection') !== false)
 				) {
 					$sub_menu[4] = 'current';
 				}

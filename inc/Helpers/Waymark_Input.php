@@ -67,12 +67,6 @@ class Waymark_Input {
 
 		//Tip
 		if (array_key_exists('tip', $field)) {
-			//Add missing periods
-			$last_char = $field['tip'][strlen($field['tip']) - 1];
-			if (! in_array($last_char, ['.', '?', '!'])) {
-				$field['tip'] .= '.';
-			}
-
 			$out .= ' <a data-title="' . esc_attr($field['tip']) . '';
 			if (array_key_exists('tip_link', $field)) {
 				$out .= ' ' . esc_attr__('Click here for more details.', 'waymark') . '" href="' . esc_url($field['tip_link']) . '" target="_blank" class="waymark-tooltip waymark-link"';
@@ -294,6 +288,21 @@ class Waymark_Input {
 					$fields_reorder[$group_id] = $fields[$group_id];
 				}
 			}
+
+			//Keep fields whose group is unknown or has been deleted: append
+			//them to the ungrouped bucket rather than dropping them from the form
+			foreach ($fields as $group_id => $group_fields) {
+				if ($group_id === '' || array_key_exists($group_id, $groups)) {
+					continue;
+				}
+
+				if (! isset($fields_reorder[''])) {
+					$fields_reorder[''] = [];
+				}
+
+				$fields_reorder[''] = array_merge($fields_reorder[''], $group_fields);
+			}
+
 			$fields = $fields_reorder;
 		}
 
@@ -315,7 +324,7 @@ class Waymark_Input {
 				}
 				$out .= '<!-- START Parameter Group -->' . "\n";
 				$out .= '	<div class="waymark-parameter-group waymark-accordion-group waymark-parameter-group-' . esc_attr($group_id) . '" id="waymark-parameter-group-' . esc_attr($group_id) . '">' . "\n";
-				$out .= '		<legend title="Click to expand">' . esc_html($group['group_title']) . '</legend>' . "\n";
+				$out .= '		<legend title="' . esc_attr__('Click to expand', 'waymark') . '">' . esc_html($group['group_title']) . '</legend>' . "\n";
 				$out .= '		<div class="waymark-accordion-group-content">' . "\n";
 				if (array_key_exists('group_description', $group)) {
 					$out .= '			<p class="waymark-parameter-group-description">' . esc_html($group['group_description']) . '</p>' . "\n";

@@ -23,9 +23,11 @@
 }
 .waymark-right {
   float: right;
+  float: inline-end;
 }
 .waymark-left {
   float: left;
+  float: inline-start;
 }
 
 /*
@@ -113,7 +115,10 @@ div.waymark-control-group {
     display: block;
     padding-top: 12px;
     float: left;
-    width: 160px;
+    float: inline-start;
+    width: auto;
+    min-width: 160px;
+    max-width: 100%;
     font-weight: bold;
     font-size: 1.1em;
   }
@@ -129,12 +134,14 @@ div.waymark-control-group {
     }
     select {
       width: 200px;
+      max-width: 100%;
       border: 1px solid #ddd;
     }
     input[type="file"],
     input[type="text"] {
       padding: 2px 8px;
       width: 200px;
+      max-width: 100%;
       border: 1px solid #ddd;
     }
     input[type="file"] {
@@ -181,15 +188,20 @@ div.waymark-control-group {
   &.waymark-inline {
     padding: 1% 0;
     float: left;
+    float: inline-start;
     background: transparent;
 
     /* First Column */
     &:nth-child(even) {
       padding-left: 1%;
+      padding-inline-start: 1%;
       padding-right: 0;
+      padding-inline-end: 0;
       width: 49%;
       label.waymark-control-label {
-        width: 120px;
+        width: auto;
+        min-width: 120px;
+        max-width: 100%;
       }
       /*
       select.waymark-input {
@@ -202,11 +214,14 @@ div.waymark-control-group {
     &:nth-child(odd) {
       width: 49%;
       padding-right: 1%;
+      padding-inline-end: 1%;
       float: left;
+      float: inline-start;
       clear: none;
       .waymark-control-label {
         width: auto;
         margin-right: 10px;
+        margin-inline-end: 10px;
       }
     }
 
@@ -300,27 +315,17 @@ div.widget-content {
 //stay symmetrical at every width.
 body.waymark_page_waymark-settings #wpcontent {
   padding-right: 20px;
+  padding-inline-end: 20px;
 }
 
 @media only screen and (max-width: 782px) {
   body.waymark_page_waymark-settings #wpcontent {
     padding-right: 10px;
+    padding-inline-end: 10px;
   }
 }
 
 body.waymark_page_waymark-settings {
-  .waymark-invisible {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
   .wp-picker-container .wp-color-result:not(:focus) {
     border: 1px solid #c3c4c7;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
@@ -329,6 +334,7 @@ body.waymark_page_waymark-settings {
   .wp-picker-container .wp-color-result-text {
     background: #fbfbfb;
     border-left: 1px solid #dcdcde;
+    border-inline-start: 1px solid #dcdcde;
     color: #50575e;
     text-shadow: none;
     opacity: 1;
@@ -382,8 +388,11 @@ body.waymark_page_waymark-settings {
 
       & + .waymark-settings-nav__group {
         margin-left: 6px;
+        margin-inline-start: 6px;
         padding-left: 6px;
+        padding-inline-start: 6px;
         border-left: 1px solid #dcdcde;
+        border-inline-start: 1px solid #dcdcde;
       }
 
       a {
@@ -425,6 +434,7 @@ body.waymark_page_waymark-settings {
       padding: 0 12px;
       box-sizing: border-box;
       margin-left: auto;
+      margin-inline-start: auto;
       flex: 0 0 auto;
       align-self: flex-start;
       font-size: 13px;
@@ -452,8 +462,11 @@ body.waymark_page_waymark-settings {
 
         & + .waymark-settings-nav__group {
           margin-left: 0;
+          margin-inline-start: 0;
           padding-left: 0;
+          padding-inline-start: 0;
           border-left: 0;
+          border-inline-start: 0;
         }
       }
 
@@ -461,6 +474,7 @@ body.waymark_page_waymark-settings {
         + .waymark-settings-nav__group
         > li:first-child {
         margin-left: 6px;
+        margin-inline-start: 6px;
       }
     }
   }
@@ -543,7 +557,9 @@ body.waymark_page_waymark-settings {
       .waymark-group-title {
         caption-side: top;
         padding: 0 0 8px 10px;
+        padding-inline-start: 10px;
         border-left: 3px solid @waymark-green;
+        border-inline-start: 3px solid @waymark-green;
         color: @waymark-green-dark;
         font-size: 14px;
         font-weight: 600;
@@ -561,6 +577,7 @@ body.waymark_page_waymark-settings {
       }
       .waymark-add-label {
         margin-left: 6px;
+        margin-inline-start: 6px;
         font-size: 13px;
         font-weight: 600;
       }
@@ -602,6 +619,7 @@ body.waymark_page_waymark-settings {
           position: relative;
           input {
             width: 175px;
+            max-width: 100%;
           }
           i {
             height: 100%;
@@ -614,6 +632,7 @@ body.waymark_page_waymark-settings {
           position: absolute;
           margin-top: -3px;
           margin-left: 5px;
+          margin-inline-start: 5px;
           width: 88px;
           a {
             display: inline-block;
@@ -644,12 +663,14 @@ body.waymark_page_waymark-settings {
     div.waymark-settings-section-description {
       margin-bottom: 15px;
       padding-left: 13px;
+      padding-inline-start: 13px;
       font-size: 1.1em;
       ul {
         margin: 20px 0 40px 0;
         li {
           margin: 15px 0;
           padding-left: 20px;
+          padding-inline-start: 20px;
         }
       }
     }
@@ -702,7 +723,9 @@ body.waymark_page_waymark-settings
   .waymark-settings-section
   h2 {
   padding-left: 10px;
+  padding-inline-start: 10px;
   border-left: 3px solid @waymark-green;
+  border-inline-start: 3px solid @waymark-green;
   font-size: 17px;
   font-weight: 600;
   line-height: 1.35;
@@ -1046,7 +1069,8 @@ div#waymark-admin-container {
         }
         th {
           padding: 10px 20px;
-          width: 160px;
+          width: auto;
+          min-width: 160px;
           vertical-align: middle;
         }
         td {
@@ -1058,6 +1082,7 @@ div#waymark-admin-container {
     input[type="file"],
     input[type="text"] {
       width: 200px;
+      max-width: 100%;
       border-style: solid;
       border-width: 1px;
       border-color: #dddddd;
@@ -1114,6 +1139,7 @@ div#waymark-admin-container {
       margin: 0 0 16px;
       padding-bottom: 12px;
       padding-right: 64px;
+      padding-inline-end: 64px;
       border-bottom: 1px solid #1b3a22;
     }
 
@@ -1121,6 +1147,7 @@ div#waymark-admin-container {
       position: absolute;
       top: 18px;
       right: 18px;
+      inset-inline-end: 18px;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -1174,14 +1201,17 @@ div#waymark-notice-container {
     position: relative;
     margin: 5px 20px 15px 0;
     padding: 16px 160px 16px 80px;
+    padding-inline: 80px 160px;
     background: var(--ogis-panel-bg) !important;
     border: 1px solid var(--ogis-panel-border);
     border-left: 3px solid var(--ogis-panel-accent);
+    border-inline-start: 3px solid var(--ogis-panel-accent);
 
     .ogis-panel__logo {
       position: absolute;
       top: 16px;
       left: 16px;
+      inset-inline-start: 16px;
       margin: 0;
 
       img {
@@ -1197,6 +1227,7 @@ div#waymark-notice-container {
     .ogis-panel__meta {
       position: absolute;
       right: 18px;
+      inset-inline-end: 18px;
       bottom: 16px;
       margin: 0;
       color: #c7d8cc;
@@ -1210,6 +1241,7 @@ div#waymark-notice-container {
     h1 {
       padding-bottom: 9px;
       padding-left: 34px;
+      padding-inline-start: 34px;
       background-image: url("../img/waymark-icon-primary.png");
       background-size: 30px 30px;
       background-position: left center;
@@ -1272,6 +1304,7 @@ body.wp-admin {
     position: absolute;
     top: 6px;
     right: 0;
+    inset-inline-end: 0;
   }
   p.lead {
     margin: 15px 0 0 0;
@@ -1374,6 +1407,7 @@ body.wp-admin.post-type-waymark_map {
       .waymark-docs-link.button {
         align-self: flex-start;
         margin-left: 0;
+        margin-inline-start: 0;
       }
     }
 
@@ -1395,6 +1429,7 @@ body.wp-admin.post-type-waymark_map {
 
   #waymark-notice-container.plugin-callout {
     padding-right: 18px;
+    padding-inline-end: 18px;
 
     .ogis-panel__meta {
       display: none;
@@ -1412,7 +1447,7 @@ body.wp-admin.post-type-waymark_map {
           width: auto;
           padding-left: 0;
           padding-right: 0;
-          text-align: left;
+          text-align: start;
         }
 
         th {
@@ -1473,7 +1508,7 @@ body.wp-admin.post-type-waymark_map {
           width: auto;
           padding-left: 0;
           padding-right: 0;
-          text-align: left;
+          text-align: start;
         }
 
         th {
@@ -1640,5 +1675,88 @@ body.wp-admin.post-type-waymark_map {
     code {
       font-size: 10px;
     }
+  }
+}
+
+/**
+ * ====================================
+ * ================ RTL ===============
+ * ====================================
+ */
+
+/* Fallbacks for the remaining physical floats and positions. Modern browsers
+   already flip the logical properties above; these keep older engines aligned
+   when the interface direction is right-to-left. */
+[dir="rtl"] {
+  .waymark-right {
+    float: left;
+    float: inline-end;
+  }
+
+  .waymark-left {
+    float: right;
+    float: inline-start;
+  }
+
+  .waymark-control-label {
+    float: right;
+    float: inline-start;
+  }
+
+  .waymark-tooltip {
+    float: left;
+    float: inline-end;
+    margin-right: 0;
+    margin-inline-start: 0.5%;
+    margin-inline-end: 0;
+  }
+
+  .waymark-meta-info,
+  .waymark-meta-map_thumbnail {
+    float: left;
+    float: inline-start;
+  }
+
+  #waymark-about.ogis-panel {
+    .ogis-panel__brand {
+      right: auto;
+      left: 18px;
+      inset-inline-end: auto;
+      inset-inline-start: 18px;
+    }
+
+    .waymark-settings-sidebar__title {
+      padding-right: 0;
+      padding-inline-end: 0;
+      padding-left: 64px;
+      padding-inline-start: 64px;
+    }
+  }
+
+  div#waymark-notice-container.plugin-callout {
+    padding-right: 80px;
+    padding-left: 160px;
+
+    .ogis-panel__logo {
+      left: auto;
+      right: 16px;
+      inset-inline-start: auto;
+      inset-inline-end: 16px;
+    }
+
+    .ogis-panel__meta {
+      right: auto;
+      left: 18px;
+      inset-inline-end: auto;
+      inset-inline-start: 18px;
+    }
+  }
+
+  #waymark-notice-container .card h1 {
+    background-position: right center;
+  }
+
+  table.form-table th {
+    text-align: right;
   }
 }

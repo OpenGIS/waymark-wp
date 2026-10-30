@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "wordpress-i18n-helper": {
+      "source": "tobifjellner/wordpress-i18n-helper-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "3de6e812ab9c58ca7cde8ed01cefdcf3dd8a27fa1d56e7e6a7051c45e423e8cf"
+    }
+  }
+}

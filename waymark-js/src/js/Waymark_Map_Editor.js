@@ -152,8 +152,8 @@ function Waymark_Map_Editor() {
 
       //Update feature with new coordinates
       feature.geometry.coordinates = [
-        layer._latlng.lng.toFixed(6),
-        layer._latlng.lat.toFixed(6),
+        Number(layer._latlng.lng.toFixed(6)),
+        Number(layer._latlng.lat.toFixed(6)),
       ];
 
       //Update content to reflect change in position
@@ -200,11 +200,20 @@ function Waymark_Map_Editor() {
     Waymark = this;
 
     //Geocoder
-    var geocoder = Waymark_L.Control.geocoder({
+    var geocoder_options = {
       position: "bottomright",
       defaultMarkGeocode: false,
       placeholder: Waymark.config.language.action_search_placeholder,
-    });
+      errorMessage: Waymark.escape_html(Waymark.config.language.error_geocoder),
+    };
+
+    if (Waymark.config.locale) {
+      geocoder_options.geocodingQueryParams = {
+        "accept-language": Waymark.config.locale,
+      };
+    }
+
+    var geocoder = Waymark_L.Control.geocoder(geocoder_options);
     geocoder.on("markgeocode", function (e) {
       Waymark.map.fitBounds(e.geocode.bbox);
     });
@@ -474,14 +483,7 @@ function Waymark_Map_Editor() {
       var ele = jQuery("<button />")
         .html('<i class="ion-edit"></i>')
         .addClass("button")
-        .attr(
-          "title",
-          Waymark.config.language.action_edit +
-            " " +
-            Waymark.title_case(
-              Waymark.config.language["object_label_" + layer_type],
-            ),
-        )
+        .attr("title", Waymark.config.language["action_edit_" + layer_type])
         .on("click", function (e) {
           e.preventDefault();
 
@@ -497,11 +499,7 @@ function Waymark_Map_Editor() {
             //Change title
             button.attr(
               "title",
-              Waymark.config.language.action_edit +
-                " " +
-                Waymark.title_case(
-                  Waymark.config.language["object_label_" + layer_type],
-                ),
+              Waymark.config.language["action_edit_" + layer_type],
             );
 
             //Change icon
@@ -538,14 +536,7 @@ function Waymark_Map_Editor() {
     var ele = jQuery("<button />")
       .html('<i class="ion-ios-copy"></i>')
       .addClass("button")
-      .attr(
-        "title",
-        Waymark.config.language.action_duplicate +
-          " " +
-          Waymark.title_case(
-            Waymark.config.language["object_label_" + layer_type],
-          ),
-      )
+      .attr("title", Waymark.config.language["action_duplicate_" + layer_type])
       .on("click", function (e) {
         e.preventDefault();
 
@@ -570,14 +561,7 @@ function Waymark_Map_Editor() {
     var ele = jQuery("<button />")
       .html('<i class="ion-trash-a"></i>')
       .addClass("button")
-      .attr(
-        "title",
-        Waymark.config.language.action_delete +
-          " " +
-          Waymark.title_case(
-            Waymark.config.language["object_label_" + layer_type],
-          ),
-      )
+      .attr("title", Waymark.config.language["action_delete_" + layer_type])
       .on("click", function (e) {
         e.preventDefault();
 
@@ -585,12 +569,7 @@ function Waymark_Map_Editor() {
         if (Waymark.config.editor_options.confirm_delete == "1") {
           if (
             !confirm(
-              Waymark.config.language.action_delete_confirm +
-                " " +
-                Waymark.title_case(
-                  Waymark.config.language["object_label_" + layer_type],
-                ) +
-                "?",
+              Waymark.config.language["action_delete_confirm_" + layer_type],
             )
           ) {
             return false;
@@ -629,15 +608,13 @@ function Waymark_Map_Editor() {
 
       //Options
       jq_line_direction_select.append(
-        jQuery("<option />")
-          .val("")
-          .text(Waymark.title_case(Waymark.config.language.no_direction)),
+        jQuery("<option />").val("").text(Waymark.config.language.no_direction),
         jQuery("<option />")
           .val("default")
-          .text(Waymark.title_case(Waymark.config.language.show_direction)),
+          .text(Waymark.config.language.show_direction),
         jQuery("<option />")
           .val("reverse")
-          .text(Waymark.title_case(Waymark.config.language.reverse_direction)),
+          .text(Waymark.config.language.reverse_direction),
       );
 
       //On change
@@ -687,20 +664,15 @@ function Waymark_Map_Editor() {
         .attr({
           disabled: "disabled",
         })
-        .text(
-          Waymark.title_case(
-            Waymark.config.language["object_label_" + layer_type],
-          ) +
-            " " +
-            Waymark.config.language.object_type_label +
-            ":",
-        ),
+        .text(Waymark.config.language["object_type_label_" + layer_type]),
     );
 
     //Pre-defined config_types
     for (var i in config_types) {
       //Get Key
-      var type_key = Waymark.make_key(config_types[i][layer_type + "_title"]);
+      var type_key =
+        config_types[i].type_key ||
+        Waymark.make_key(config_types[i][layer_type + "_title"]);
 
       //Add option
       jq_layer_type_select.append(
@@ -758,9 +730,14 @@ function Waymark_Map_Editor() {
     );
 
     //Set selected
+    var resolved_feature_type = Waymark.resolve_type_key(
+      layer_type,
+      feature.properties.type,
+    );
+
     jQuery("option", jq_layer_type_select)
       .filter(function () {
-        return jQuery(this).val() == Waymark.make_key(feature.properties.type);
+        return jQuery(this).val() == resolved_feature_type;
       })
       .attr("selected", "selected");
 
@@ -776,7 +753,7 @@ function Waymark_Map_Editor() {
       var type_title = config_types[i][layer_type + "_title"];
 
       //Get Key
-      var type_key = Waymark.make_key(type_title);
+      var type_key = config_types[i].type_key || Waymark.make_key(type_title);
       var type = Waymark.get_type(layer_type, type_key);
 
       // Markers, Lines & Shapes...
@@ -872,7 +849,7 @@ function Waymark_Map_Editor() {
       });
 
       //Current?
-      if (type_key == Waymark.make_key(feature.properties.type)) {
+      if (type_key == resolved_feature_type) {
         overlay_preview_wrap.addClass("waymark-active");
 
         //Prepend
@@ -899,11 +876,9 @@ function Waymark_Map_Editor() {
               type: "text",
               value: feature.properties.title,
               placeholder:
-                Waymark.title_case(
-                  Waymark.config.language["object_label_" + layer_type],
-                ) +
-                " " +
-                Waymark.config.language.object_title_placeholder,
+                Waymark.config.language[
+                  "object_title_placeholder_" + layer_type
+                ],
             })
             .on("change", function () {
               //Update properties
@@ -921,11 +896,9 @@ function Waymark_Map_Editor() {
               id: ele_id,
               class: "wp-editor",
               placeholder:
-                Waymark.title_case(
-                  Waymark.config.language["object_label_" + layer_type],
-                ) +
-                " " +
-                Waymark.config.language.object_description_placeholder,
+                Waymark.config.language[
+                  "object_description_placeholder_" + layer_type
+                ],
             })
             .val(feature.properties.description)
             .on("change", function () {
@@ -1010,16 +983,14 @@ function Waymark_Map_Editor() {
       var latlng = layer.feature.geometry.coordinates;
       var lat = layer.feature.geometry.coordinates[1];
       var lng = layer.feature.geometry.coordinates[0];
-      //Round if numeric
-      if (typeof lat == "number") {
-        lng = lng.toFixed(6);
-        lat = lat.toFixed(6);
-      }
+      //Format for display only; stored coordinates stay dot-decimal
+      lng = Waymark.format_coordinate(lng, 6);
+      lat = Waymark.format_coordinate(lat, 6);
 
       //Output
       ele = jQuery("<small>").html(
         "<b>" +
-          Waymark.config.language.marker_latlng_label +
+          Waymark.escape_html(Waymark.config.language.marker_latlng_label) +
           "</b>: " +
           lat +
           "," +
@@ -1044,10 +1015,6 @@ function Waymark_Map_Editor() {
     Waymark = this;
 
     //Build content
-    var title = Waymark.title_case(
-      Waymark.config.language.action_edit + " " + layer_type,
-    );
-
     var content = Waymark.build_content(layer_type, feature, layer);
     var content_html = content.get(0);
 

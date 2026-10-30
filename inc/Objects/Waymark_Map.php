@@ -16,9 +16,9 @@ class Waymark_Map extends Waymark_Object {
 			'name' => 'map_data',
 			'id' => 'map_data',
 			'type' => 'textarea',
-			'tip' => 'You are seeing the Map Data (in GeoJSON format) because you have the Waymark Debug Mode enabled. The amount of text shown here can get VERY large, so your browser might struggle to scroll through it. You can disable Debug Mode in Settings &gt; Misc. &gt; Advanced.',
+			'tip' => __('You are seeing the Map Data (in GeoJSON format) because you have the Waymark Debug Mode enabled. The amount of text shown here can get VERY large, so your browser might struggle to scroll through it. You can disable Debug Mode in Settings &gt; Misc. &gt; Advanced.', 'waymark'),
 			'group' => '',
-			'title' => 'Map Data',
+			'title' => __('Map Data', 'waymark'),
 			'class' => 'waymark-hidden',
 		];
 
@@ -32,7 +32,7 @@ class Waymark_Map extends Waymark_Object {
 		if ($map_meta && sizeof($map_meta)) {
 
 			foreach ($map_meta as $meta) {
-				$meta_key = Waymark_Helper::make_key($meta['meta_title'], 'map');
+				$meta_key = 'map_' . Waymark_Helper::get_meta_key($meta);
 
 				//Submissions
 				if (($post_id === null) && (! is_admin()) && class_exists('Waymark_Submission')) {
@@ -96,7 +96,7 @@ class Waymark_Map extends Waymark_Object {
 
 				//Group?
 				if (isset($meta['meta_group'])) {
-					$this->parameters[$meta_key]['group'] = $meta['meta_group'];
+					$this->parameters[$meta_key]['group'] = Waymark_Helper::resolve_group_key($meta['meta_group']);
 				}
 			}
 		} else {

@@ -240,7 +240,7 @@ class Waymark_Shortcode {
 			if (sizeof($shortcode_meta)) {
 				$out .= '	<div class="waymark-meta">' . "\n";
 				$out .= Waymark_Helper::map_meta_html($shortcode_meta, false);
-				$out .= '		<a class="waymark-link" href="' . esc_url($shortcode_header['link']) . '">' . esc_html__('More Details', 'waymark') . ' <i class="ion ion-android-open"></i></a>' . "\n";
+				$out .= '		<a class="waymark-link" href="' . esc_url($shortcode_header['link']) . '">' . esc_html__('Details', 'waymark') . ' <i class="ion ion-android-open"></i></a>' . "\n";
 				$out .= '	</div>' . "\n";
 			}
 
@@ -383,9 +383,14 @@ class Waymark_Shortcode {
 				$overlay_type_explode = explode(',', $shortcode_data[$show_hide_type]);
 
 				foreach ($overlay_type_explode as $overlay_type) {
+					//Resolve legacy keys to the configured key
+					if ($overlay_type !== '*') {
+						$overlay_type = Waymark_Helper::resolve_type_key($overlay_kind, $overlay_type);
+					}
+
 					$out .= '	for(i in waymark_config.map_options.' . esc_js($overlay_kind) . '_types) {' . "\n";
 
-					$out .= '		var this_key = waymark_viewer.make_key(waymark_config.map_options.' . esc_js($overlay_kind) . '_types[i]["' . esc_js($overlay_kind) . '_title"]);' . "\n";
+					$out .= '		var this_key = waymark_config.map_options.' . esc_js($overlay_kind) . '_types[i].type_key;' . "\n";
 
 					$out .= '		if("' . esc_js($overlay_type) . '" == "*" || this_key == "' . esc_js($overlay_type) . '") {' . "\n";
 
@@ -507,7 +512,7 @@ class Waymark_Shortcode {
 
 						switch ($key) {
 						case 'marker_type':
-							$marker_data['type'] = $value;
+							$marker_data['type'] = Waymark_Helper::resolve_type_key('marker', $value);
 
 							break;
 						case 'marker_title':

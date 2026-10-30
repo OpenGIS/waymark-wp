@@ -51,9 +51,9 @@ class Waymark_Config {
 			],
 			'meta' => [
 				'inputs' => [
-					'meta_title' => esc_html__('Description', 'waymark'),
+					'meta_title' => __('Description', 'waymark'),
 					'meta_default' => '',
-					'meta_tip' => esc_html__('The Description you enter here will be displayed on the Map Details page.', 'waymark'),
+					'meta_tip' => __('The Description you enter here will be displayed on the Map Details page.', 'waymark'),
 					'meta_type' => 'textarea_rich',
 					'meta_group' => '',
 					'meta_options' => '',
@@ -95,7 +95,7 @@ class Waymark_Config {
 				'interaction_options' => [
 					'delay_seconds' => '2',
 					'do_message' => '0',
-					'wake_message' => esc_attr__('Click or Hover to Wake', 'waymark'),
+					'wake_message' => __('Click or Hover to Wake', 'waymark'),
 				],
 				'cluster_options' => [
 					'show_cluster' => '0',
@@ -137,7 +137,8 @@ class Waymark_Config {
 			],
 			'markers' => [
 				'marker_types' => [
-					'marker_title' => esc_html__('Photo', 'waymark') . $multi_value_seperator . esc_html__('Information', 'waymark') . $multi_value_seperator . esc_html__('Alert', 'waymark') . $multi_value_seperator . esc_html__('Trail Access', 'waymark') . $multi_value_seperator . esc_html__('Food', 'waymark') . $multi_value_seperator . esc_html__('Water', 'waymark') . $multi_value_seperator . esc_html__('Shelter', 'waymark') . $multi_value_seperator . esc_html__('Beer', 'waymark') . $multi_value_seperator . esc_html__('Start', 'waymark') . $multi_value_seperator . esc_html__('Finish', 'waymark'),
+					/* translators: The default Marker type label for photo markers. */
+					'marker_title' => __('Photo', 'waymark') . $multi_value_seperator . __('Information', 'waymark') . $multi_value_seperator . __('Alert', 'waymark') . $multi_value_seperator . __('Trail Access', 'waymark') . $multi_value_seperator . __('Food', 'waymark') . $multi_value_seperator . __('Water', 'waymark') . $multi_value_seperator . __('Shelter', 'waymark') . $multi_value_seperator . __('Beer', 'waymark') . $multi_value_seperator . __('Start', 'waymark') . $multi_value_seperator . __('Finish', 'waymark'),
 					'marker_shape' => 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker' . $multi_value_seperator . 'marker',
 					'marker_size' => 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large' . $multi_value_seperator . 'large',
 					'icon_type' => 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon' . $multi_value_seperator . 'icon',
@@ -150,7 +151,7 @@ class Waymark_Config {
 			],
 			'lines' => [
 				'line_types' => [
-					'line_title' => esc_html__('Red', 'waymark') . $multi_value_seperator . esc_html__('Green', 'waymark') . $multi_value_seperator . esc_html__('Blue', 'waymark'),
+					'line_title' => __('Red', 'waymark') . $multi_value_seperator . __('Green', 'waymark') . $multi_value_seperator . __('Blue', 'waymark'),
 					'line_colour' => '#d84848' . $multi_value_seperator . '#3cbc47' . $multi_value_seperator . '#487bd9',
 					'line_weight' => '3' . $multi_value_seperator . '3' . $multi_value_seperator . '3',
 					'line_opacity' => '0.7' . $multi_value_seperator . '0.7' . $multi_value_seperator . '0.7',
@@ -160,7 +161,7 @@ class Waymark_Config {
 			],
 			'shapes' => [
 				'shape_types' => [
-					'shape_title' => esc_html__('Red', 'waymark') . $multi_value_seperator . esc_html__('Green', 'waymark') . $multi_value_seperator . esc_html__('Blue', 'waymark'),
+					'shape_title' => __('Red', 'waymark') . $multi_value_seperator . __('Green', 'waymark') . $multi_value_seperator . __('Blue', 'waymark'),
 					'shape_colour' => '#d84848' . $multi_value_seperator . '#3cbc47' . $multi_value_seperator . '#487bd9',
 					'fill_opacity' => '0.5' . $multi_value_seperator . '0.5' . $multi_value_seperator . '0.5',
 					'shape_display' => '1' . $multi_value_seperator . '1' . $multi_value_seperator . '1',
@@ -217,6 +218,7 @@ class Waymark_Config {
 							}
 						}
 					}
+					unset($value);
 				}
 
 			}
@@ -303,7 +305,12 @@ class Waymark_Config {
 		foreach ($values as $column_key => $column) {
 			//A single value is a one-row column
 			if (! is_array($column)) {
-				$column = [$column];
+				//A multi-value string already represents one value per row
+				if (is_string($column) && $column !== '' && strpos($column, self::$data['multi_value_seperator']) !== false) {
+					$column = explode(self::$data['multi_value_seperator'], $column);
+				} else {
+					$column = [$column];
+				}
 			}
 
 			//Flatten nested values so one row is always one value
@@ -316,8 +323,10 @@ class Waymark_Config {
 			$row_count            = max($row_count, sizeof($flat));
 		}
 
+		//No rows at all: return no rows rather than empty columns, which the
+		//transposition below would turn into a phantom blank row
 		if (! $row_count) {
-			return $columns;
+			return [];
 		}
 
 		foreach ($columns as $column_key => $column) {
@@ -431,6 +440,13 @@ class Waymark_Config {
 			'debug_mode' => current_user_can('administrator') && Waymark_Config::get_setting('misc', 'advanced', 'debug_mode'),
 		];
 
+		// Legacy key aliases for overlay types, read by the JS layer
+		$map_config['type_aliases'] = [
+			'marker' => Waymark_Helper::get_key_aliases('marker'),
+			'line' => Waymark_Helper::get_key_aliases('line'),
+			'shape' => Waymark_Helper::get_key_aliases('shape'),
+		];
+
 		//Viewer Options
 		$map_config['viewer_options'] = [
 			// Features
@@ -461,14 +477,18 @@ class Waymark_Config {
 
 		// Localisation
 
+		$locale = function_exists('determine_locale') ? determine_locale() : get_locale();
+
 		$map_config['language'] = Waymark_Lang::get_js_lang();
+		$map_config['locale']   = str_replace('_', '-', $locale);
 
 		// Waymark_Helper::debug($map_config);
 
 		if ($encode) {
 			//JSON_HEX_TAG keeps any HTML (e.g. the Basemap attribution) opaque to the
-			//wp_kses() pass that is applied when the config is output
-			return wp_json_encode($map_config, JSON_HEX_TAG);
+			//wp_kses() pass that is applied when the config is output. The remaining
+			//hex flags keep ampersands, apostrophes and quotes opaque too.
+			return wp_json_encode($map_config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 		} else {
 			return $map_config;
 		}

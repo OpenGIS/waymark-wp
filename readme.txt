@@ -67,7 +67,7 @@ For developers:
   - Collections use the `waymark_collection` Taxonomy.
   - Embed Maps using the `[Waymark]` [Shortcode](https://www.ogis.org/waymark-wp/) anywhere they are supported, or dynamically using the `do_shortcode(["Waymark"])` [function](https://developer.wordpress.org/reference/functions/do_shortcode/).
 - Geographical data is stored in [GeoJSON](https://geojson.org/) format. Types are specified using the `type` Property, i.e. `{feature: { geometry: { type: 'Point', coordinates: [0, 0] } }, properties: { type: 'Alert', title: 'Bridge Removed!' }`.
-- Specify which GeoJSON feature properties to store when importing (Settings > Overlays > Properties). These can be automatically appended to the Overlay Description, or accessed programatically via the `layer.feature.properties` Object.
+- Specify which GeoJSON feature properties to store when importing (Settings > Overlays > Properties). These can be automatically appended to the Overlay Description, or accessed programmatically via the `layer.feature.properties` Object.
 - Maps are displayed using the [Leaflet](https://leafletjs.com/) JavaScript library, which is bundled with Waymark and can be extended using the `waymark_loaded_callback` [callback function](https://www.ogis.org/waymark-wp/advanced/using-the-global-callback-function/).
 
 ### User Examples
@@ -124,6 +124,16 @@ Styles and scripts are compiled from Less and JavaScript sources into the minifi
 
 - `assets/` — the plugin CSS (compiled from `assets/less/`) and JavaScript, served as the `front` and `admin` bundles.
 - `waymark-js/` — the bundled [Waymark JS](https://www.ogis.org/waymark-js/) library powering the Viewer and Editor: sources in `src/` and `libs/`, built into `dist/`.
+
+### Translations
+
+Waymark uses the `waymark` text domain, with the translation template at `languages/waymark.pot`.
+
+- JavaScript strings are mirrored in `Waymark_Lang`, the JavaScript language defaults and the documentation demo config, so update all three when adding or changing a string.
+- `npm run i18n:check` verifies that the PHP, JavaScript and documentation language defaults stay in parity, and that `waymark_php_lang` keys are both localised and read.
+- `npm run grunt` rebuilds the POT and compiled assets after source changes.
+- Stable Type and Meta keys are internal identifiers, not translated labels. They are used in Shortcodes and CSS and must not be translated.
+- Translations ship through WordPress.org language packs.
 
 ### Testing
 

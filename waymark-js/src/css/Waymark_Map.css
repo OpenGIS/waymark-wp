@@ -97,6 +97,7 @@
 }
 .waymark-map-container .leaflet-control.leaflet-control-layers .leaflet-control-layers-list label .waymark-type-text {
   margin-left: 10px;
+  margin-inline-start: 10px;
 }
 .waymark-map-container .leaflet-control.leaflet-control-attribution a {
   font-size: 11px;
@@ -197,6 +198,7 @@
   max-height: inherit;
   vertical-align: middle;
   margin-left: 1px;
+  margin-inline-start: 1px;
   line-height: 0;
 }
 .waymark-marker .waymark-marker-icon.waymark-icon-icon {
@@ -205,9 +207,9 @@
 .waymark-marker .waymark-marker-icon.waymark-icon-text {
   font-weight: bold;
   font-family: monaco,
-				Consolas,
-				Lucida Console,
-				monospace;
+        Consolas,
+        Lucida Console,
+        monospace;
 }
 /*
 	==================================
@@ -218,6 +220,7 @@
   position: absolute;
   bottom: 0;
   left: 0;
+  inset-inline-start: 0;
   height: 60px;
   max-height: 60px;
   padding: 10px;
@@ -233,12 +236,15 @@
 }
 .waymark-gallery-container .waymark-image {
   float: left;
+  float: inline-start;
   width: 60px;
   max-width: 60px;
   height: 60px;
   max-height: 60px;
   overflow: hidden;
   margin: 0 7px 7px 0;
+  margin-inline-start: 0;
+  margin-inline-end: 7px;
   cursor: pointer;
 }
 .waymark-gallery-container .waymark-image img {

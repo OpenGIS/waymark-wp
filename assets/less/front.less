@@ -27,6 +27,7 @@
 
     .ion {
       margin-left: 3px;
+      margin-inline-start: 3px;
       font-size: 18px;
     }
 
@@ -36,6 +37,7 @@
 
     .waymark-link {
       float: right;
+      float: inline-end;
     }
 
     .waymark-meta {
@@ -43,11 +45,13 @@
       position: absolute;
       top: 0;
       right: 0;
+      inset-inline-end: 0;
       width: 320px;
       max-width: 80%;
       z-index: +1;
       background: rgba(255, 255, 255, 0.95);
       border-left: 1px solid #ccc;
+      border-inline-start: 1px solid #ccc;
       padding: 15px 10px;
       overflow: auto;
 
@@ -55,12 +59,14 @@
         position: absolute;
         top: 10px;
         right: 10px;
+        inset-inline-end: 10px;
       }
 
       .waymark-meta-close {
         position: absolute;
         top: 15px;
         left: 10px;
+        inset-inline-start: 10px;
         cursor: pointer;
       }
 
@@ -140,6 +146,7 @@
     }
     .waymark-meta-info {
       float: right;
+      float: inline-end;
       // 			position: absolute;
       // 			top: 15px;
       // 			right: 15px;
@@ -168,6 +175,7 @@
         &.waymark-meta-map_thumbnail {
           width: 50%;
           float: right;
+          float: inline-end;
         }
       }
 
@@ -187,5 +195,76 @@
     padding-top: 10px;
     margin-top: 10px;
     border-top: 1px solid #999;
+  }
+}
+
+/**
+ * ====================================
+ * ================ RTL ===============
+ * ====================================
+ */
+
+/* Keep the map details panel and tooltip anchored to the reading direction.
+   Logical properties handle modern engines; the physical fallbacks cover
+   older engines that ignore them. */
+[dir="rtl"] {
+  .waymark-right {
+    float: left;
+    float: inline-end;
+  }
+
+  .waymark-left {
+    float: right;
+    float: inline-start;
+  }
+
+  .waymark-shortcode .waymark-header {
+    .waymark-link {
+      float: left;
+      float: inline-start;
+    }
+
+    .waymark-meta {
+      right: auto;
+      left: 0;
+      inset-inline-end: auto;
+      inset-inline-start: 0;
+      border-left: 0;
+      border-right: 1px solid #ccc;
+      border-inline-start: 0;
+      border-inline-end: 1px solid #ccc;
+
+      .waymark-link {
+        right: auto;
+        left: 10px;
+        inset-inline-end: auto;
+        inset-inline-start: 10px;
+      }
+
+      .waymark-meta-close {
+        left: auto;
+        right: 10px;
+        inset-inline-start: auto;
+        inset-inline-end: 10px;
+      }
+    }
+  }
+
+  .waymark-meta-info {
+    float: left;
+    float: inline-start;
+  }
+
+  .waymark-meta-map_thumbnail {
+    float: left;
+    float: inline-start;
+  }
+
+  .waymark-tooltip {
+    float: left;
+    float: inline-end;
+    margin-right: 0;
+    margin-inline-start: 0.5%;
+    margin-inline-end: 0;
   }
 }

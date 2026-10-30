@@ -61,7 +61,7 @@ class Waymark_Revisions {
 					continue;
 				}
 
-				$keys['waymark_' . Waymark_Helper::make_key($meta['meta_title'], 'map')] = true;
+				$keys['waymark_map_' . Waymark_Helper::get_meta_key($meta)] = true;
 			}
 		}
 
@@ -204,7 +204,7 @@ class Waymark_Revisions {
 					continue;
 				}
 
-				$meta_key = 'waymark_' . Waymark_Helper::make_key($meta['meta_title'], 'map');
+				$meta_key = 'waymark_map_' . Waymark_Helper::get_meta_key($meta);
 
 				if (isset($fields[$meta_key])) {
 					continue;
@@ -243,8 +243,8 @@ class Waymark_Revisions {
 		if ($field === 'waymark_map_data') {
 			$feature_count = Waymark_GeoJSON::get_feature_count($value);
 			if ($feature_count) {
-				// translators: %d: Number of features
-				return sprintf(__('%d feature(s)', 'waymark'), $feature_count);
+				/* translators: %s: Number of features. */
+				return sprintf(_n('%s feature', '%s features', $feature_count, 'waymark'), number_format_i18n($feature_count));
 			}
 
 			return '—';

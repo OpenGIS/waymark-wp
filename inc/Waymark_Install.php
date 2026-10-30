@@ -43,6 +43,8 @@ class Waymark_Install {
 		delete_option('Waymark_Settings');			
 		delete_option('Waymark_Settings_Backup');			
 		delete_option('Waymark_Version');			
+		delete_option('Waymark_Key_Aliases');
+		delete_option('Waymark_Key_Migration');
 	}
 
 	static function add_action_links($links) {
@@ -58,15 +60,245 @@ class Waymark_Install {
 	
 	static function update_check() {
 		//If versions differ
-		if(get_option('Waymark_Version') != Waymark_Config::get_item('plugin_version')) {
-	    //Backup Settings
-	    add_option('Waymark_Settings_' . get_option('Waymark_Version'), get_option('Waymark_Settings'));		
-	    
+		$version_changed = get_option('Waymark_Version') != Waymark_Config::get_item('plugin_version');
+
+		if ($version_changed) {
+			//Backup Settings
+			add_option('Waymark_Settings_' . get_option('Waymark_Version'), get_option('Waymark_Settings'));
+		}
+
+		//Persist stable keys and legacy aliases on every admin_init; the
+		//migration is idempotent via the Waymark_Key_Migration flag
+		self::migrate_i18n_keys();
+
+		if ($version_changed) {
 			//Flush permalinks
-	    flush_rewrite_rules();
-			
+			flush_rewrite_rules();
+
 			//Update version
-	    update_option('Waymark_Version', Waymark_Config::get_item('plugin_version'));		
-		}		
+			update_option('Waymark_Version', Waymark_Config::get_item('plugin_version'));
+		}
+	}
+
+	/**
+	 * Populate stable key columns for overlay types, meta inputs and groups.
+	 *
+	 * Keys previously derived from translated titles at runtime. The migration
+	 * writes an explicit key per row and records aliases for the old PHP and
+	 * JavaScript derived keys, without rewriting any post data.
+	 *
+	 * @return void
+	 */
+	public static function migrate_i18n_keys() {
+		$settings = get_option('Waymark_Settings');
+
+		if (! is_array($settings)) {
+			return;
+		}
+
+		$sections = [
+			['markers', 'marker_types', 'marker_key', 'marker_title', 'marker'],
+			['lines', 'line_types', 'line_key', 'line_title', 'line'],
+			['shapes', 'shape_types', 'shape_key', 'shape_title', 'shape'],
+			['meta', 'inputs', 'meta_key', 'meta_title', 'meta'],
+			['meta', 'groups', 'group_key', 'group_title', 'group'],
+		];
+
+		//Does every section already have a key column of the right length?
+		$needs_migration = false;
+
+		foreach ($sections as $section) {
+			list($tab_key, $section_key, $key_field) = $section;
+
+			$rows       = Waymark_Config::get_item($tab_key, $section_key, true);
+			$row_count  = is_array($rows) ? sizeof($rows) : 0;
+			$key_column = isset($settings[$tab_key][$section_key][$key_field]) ? $settings[$tab_key][$section_key][$key_field] : null;
+
+			//A section with no rows needs no key column
+			if ($row_count === 0) {
+				$has_key_column = ($key_column === null) || (is_array($key_column) && sizeof($key_column) === 0);
+			} else {
+				$has_key_column = is_array($key_column) && sizeof($key_column) === $row_count;
+			}
+
+			if (! $has_key_column) {
+				$needs_migration = true;
+			}
+		}
+
+		if (! $needs_migration && get_option('Waymark_Key_Migration') === '1') {
+			return;
+		}
+
+		//Count the overlay type keys already used by persisted Maps
+		$persisted = [
+			'marker' => [],
+			'line'   => [],
+			'shape'  => [],
+		];
+
+		//Scan persisted Map data in batches so a large site does not load every
+		//Map ID into memory at once
+		$page = 1;
+
+		do {
+			$map_ids = get_posts([
+				'post_type'              => 'waymark_map',
+				'post_status'            => 'any',
+				'fields'                 => 'ids',
+				'posts_per_page'         => 100,
+				'paged'                  => $page,
+				'meta_key'               => 'waymark_map_data',
+				'no_found_rows'          => true,
+				'cache_results'          => false,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			]);
+
+			foreach ($map_ids as $map_id) {
+				$map_data = get_post_meta($map_id, 'waymark_map_data', true);
+
+				if (! is_string($map_data) || $map_data === '') {
+					continue;
+				}
+
+				$FeatureCollection = json_decode($map_data, true);
+
+				if (! is_array($FeatureCollection) || ! isset($FeatureCollection['features']) || ! is_array($FeatureCollection['features'])) {
+					continue;
+				}
+
+				foreach ($FeatureCollection['features'] as $feature) {
+					if (! is_array($feature) || ! isset($feature['properties']['type']) || ! is_scalar($feature['properties']['type'])) {
+						continue;
+					}
+
+					$type     = (string) $feature['properties']['type'];
+					$geometry = isset($feature['geometry']['type']) ? $feature['geometry']['type'] : '';
+					$kind     = '';
+
+					switch ($geometry) {
+					case 'Point':
+						$kind = isset($feature['properties']['radius']) ? 'shape' : 'marker';
+
+						break;
+					case 'LineString':
+					case 'MultiLineString':
+						$kind = 'line';
+
+						break;
+					case 'Polygon':
+					case 'MultiPolygon':
+						$kind = 'shape';
+
+						break;
+					}
+
+					if ($kind === '') {
+						continue;
+					}
+
+					if (! isset($persisted[$kind][$type])) {
+						$persisted[$kind][$type] = 0;
+					}
+
+					$persisted[$kind][$type]++;
+				}
+			}
+
+			$page++;
+		} while (sizeof($map_ids) === 100);
+
+		$aliases = get_option('Waymark_Key_Aliases');
+		$aliases = is_array($aliases) ? $aliases : [];
+
+		foreach ($sections as $section) {
+			list($tab_key, $section_key, $key_field, $title_field, $kind) = $section;
+
+			$rows = Waymark_Config::get_item($tab_key, $section_key, true);
+			$rows = is_array($rows) ? $rows : [];
+
+			//Do not store an empty key column: the repeatable reader treats an
+			//empty array as one blank row, which would break idempotence.
+			if (! sizeof($rows)) {
+				unset($settings[$tab_key][$section_key][$key_field]);
+
+				continue;
+			}
+
+			$existing_keys = isset($settings[$tab_key][$section_key][$key_field]) && is_array($settings[$tab_key][$section_key][$key_field])
+				? $settings[$tab_key][$section_key][$key_field]
+				: [];
+
+			$new_keys = [];
+			$used     = [];
+
+			foreach ($rows as $index => $row) {
+				$title = isset($row[$title_field]) ? $row[$title_field] : '';
+
+				$php = Waymark_Helper::make_key($title);
+				$js  = Waymark_Helper::make_key_js($title);
+
+				//Preserve an existing key
+				if (isset($existing_keys[$index]) && is_scalar($existing_keys[$index]) && (string) $existing_keys[$index] !== '') {
+					$key = (string) $existing_keys[$index];
+				} else {
+					$key = '';
+
+					if (in_array($kind, ['marker', 'line', 'shape'], true)) {
+						$php_count = ($php !== '' && isset($persisted[$kind][$php])) ? $persisted[$kind][$php] : 0;
+						$js_count  = ($js !== '' && isset($persisted[$kind][$js])) ? $persisted[$kind][$js] : 0;
+
+						if ($php !== '' && $js !== '' && $php !== $js) {
+							if ($php_count > $js_count) {
+								$key = $php;
+							} elseif ($js_count > $php_count) {
+								$key = $js;
+							} else {
+								$key = $php;
+							}
+						} else {
+							$key = ($php !== '') ? $php : $js;
+						}
+					} else {
+						$key = ($php !== '') ? $php : $js;
+					}
+
+					if ($key === '') {
+						$key = 'item_' . $index;
+					}
+				}
+
+				//Deduplicate within the section
+				$base   = $key;
+				$suffix = 2;
+
+				while (in_array($key, $used, true)) {
+					$key = $base . '_' . $suffix;
+					$suffix++;
+				}
+
+				$used[]     = $key;
+				$new_keys[] = $key;
+
+				//Alias both title-derived formats and the chosen key to the key
+				foreach ([$php, $js, $key] as $alias) {
+					if ($alias === '') {
+						continue;
+					}
+
+					$aliases[$kind][$alias] = $key;
+				}
+			}
+
+			$settings[$tab_key][$section_key][$key_field] = $new_keys;
+		}
+
+		update_option('Waymark_Settings', $settings);
+		update_option('Waymark_Key_Aliases', $aliases);
+		update_option('Waymark_Key_Migration', '1');
+
+		//Refresh the in-memory config
+		Waymark_Config::init();
 	}
 }

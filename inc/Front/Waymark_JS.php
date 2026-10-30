@@ -133,22 +133,22 @@ function waymark_load_map_data(map_instance, map_id, reset_map = true) {
 			$map_config['map_options'][$overlay_name . '_types'] = $submission_types;
 		}
 
-		self::add_call('var waymark_user_config = ' . wp_json_encode($map_config) . ';');
+		self::add_call('var waymark_user_config = ' . wp_json_encode($map_config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) . ';');
 
 		//Set basemap
 		if ($editor_basemap = Waymark_Config::get_setting('misc', 'editor_options', 'editor_basemap')) {
-			self::add_call('waymark_user_config.map_options.map_init_basemap = ' . wp_json_encode($editor_basemap));
+			self::add_call('waymark_user_config.map_options.map_init_basemap = ' . wp_json_encode($editor_basemap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
 		}
 
 		//Default view
 		if ($default_latlng = Waymark_Config::get_setting('misc', 'map_options', 'map_default_latlng')) {
 			// We have a valid LatLng
 			if ($default_latlng_array = Waymark_Helper::latlng_string_to_array($default_latlng)) {
-				self::add_call('waymark_user_config.map_options.map_init_latlng = ' . wp_json_encode([(float) $default_latlng_array[0], (float) $default_latlng_array[1]]));
+				self::add_call('waymark_user_config.map_options.map_init_latlng = ' . wp_json_encode([(float) $default_latlng_array[0], (float) $default_latlng_array[1]], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
 			}
 		}
 		if ($default_zoom = Waymark_Config::get_setting('misc', 'map_options', 'map_default_zoom')) {
-			self::add_call('waymark_user_config.map_options.map_init_zoom = ' . wp_json_encode((int) $default_zoom));
+			self::add_call('waymark_user_config.map_options.map_init_zoom = ' . wp_json_encode((int) $default_zoom, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
 		}
 
 		// Set up data container by adding ID

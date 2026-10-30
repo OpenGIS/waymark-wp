@@ -15,11 +15,11 @@ Drawing tools for Markers, Lines and Shapes. Each can be given a title, descript
 
 Types can be enabled for Submissions individually in <em>Settings &gt; [Markers/Lines/Shapes]</em>.
 
-### Photo Upload
+### Image Upload
 
 Uploaded images are added to the WordPress Media Library and location meta data will be used if detected (EXIF).
 
-Photos uploaded by guests can be stored separately from other Media Library uploads, to aid with moderation. If enabled, images uploaded by guests will be stored in a single directory found in the upload root (i.e. uploads/waymark_submission).
+Images uploaded by guests can be stored separately from other Media Library uploads, to aid with moderation. If enabled, images uploaded by guests will be stored in a single directory found in the upload root (i.e. uploads/waymark_submission).
 
 ### Read from File
 

@@ -38,9 +38,11 @@ Set a maximum zoom level for this Basemap, the default is 18.
 
 Customise how Markers are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.
 
+The label is a display name. The key is a stable internal identifier used in Shortcodes and CSS; translating the label does not change the key.
+
 ::settings
 :::setting{title="Marker Label" type="text" default="Photo"}
-What kind of Marker is this? E.g. "Photo", "Grocery Store", "Warning!". Once saved, Marker labels can not be edited. The Marker Label is displayed in the Tooltip (when hovering over the Marker) and in the Info Window (once the Marker is clicked). Hide in Settings &gt; Map &gt; Misc. &gt; Type Labels.
+What kind of Marker is this? E.g. "Photo", "Grocery Store", "Warning!". Once saved, Marker labels cannot be edited. The Marker Label is displayed in the Tooltip (when hovering over the Marker) and in the Info Window (once the Marker is clicked). Hide in Settings &gt; Misc. &gt; Type Labels.
 :::
 
 :::setting{title="Marker Shape" type="select" default="marker"}
@@ -59,15 +61,15 @@ The Marker background colour. Click "Select Colour" to select.
 When using the Overlay Filter you can choose to show/hide certain Types when the Map initially loads.
 :::
 
-:::setting{title="Marker Submissions?" type="boolean" default="1"}
+:::setting{title="Marker Submissions" type="boolean" default="1"}
 Make this Type available in front-end Submissions?
 :::
 
-:::setting{title="IconType" type="select" default="icon"}
+:::setting{title="Icon Type" type="select" default="icon"}
 Font Icons are available from Font Awesome and Ionic Icons. Simple Text or Emojis are supported, as well as custom HTML. So you can pretty much use anything you like!
 :::
 
-:::setting{title="IconName" type="text" default="ion-camera"}
+:::setting{title="Icon Name" type="text" default="ion-camera"}
 The desired icon name from Ionicons or Font Awesome, e.g. "ion-camera", or "fa-camera". Click the links to see the full list of icons available.
 
 Text to display inside the Marker, in the chosen colour. Space is very limited! Pro Tip: adjust text size using CSS; for all Markers: .waymark-icon-text{font-size: 18px}, or by Type: .waymark-marker-photo .waymark-icon-text{...}. Use your browser's inspector to dig for Type class names.
@@ -75,7 +77,7 @@ Text to display inside the Marker, in the chosen colour. Space is very limited! 
 The HTML entered will be added inside each Marker. Pro Tip! HTML Entities supported (e.g. &amp;cross; as well as Unicode and Emojis!), or provide HTML to integrate with other Icon providers.
 :::
 
-:::setting{title="IconColour" type="text" default="#475260"}
+:::setting{title="Icon Colour" type="text" default="#475260"}
 The colour of the icon. Click "Select Colour" to select.
 :::
 ::
@@ -88,16 +90,18 @@ The colour of the icon. Click "Select Colour" to select.
 
 Customise how Lines are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.
 
+The label is a display name. The key is a stable internal identifier used in Shortcodes and CSS; translating the label does not change the key.
+
 ::settings
 :::setting{title="Line Label" type="text" default="Red"}
-What kind of Line is this? E.g. "Easy", "Walking Only", "Dark Red". The Line Label is displayed in the Tooltip (when hovering over the Line) and in the Line Info Window. Once saved, Line labels can not be edited.
+What kind of Line is this? E.g. "Easy", "Walking Only", "Dark Red". The Line Label is displayed in the Tooltip (when hovering over the Line) and in the Line Info Window. Once saved, Line labels cannot be edited.
 :::
 
 :::setting{title="Line Colour" type="text" default="#d84848"}
 The colour of the Line. Click "Select Colour" to select.
 :::
 
-:::setting{title="Line Weight" type="text" default="3"}
+:::setting{title="Line Width" type="text" default="3"}
 The width of the Line, in pixels.
 :::
 
@@ -109,7 +113,7 @@ The opacity of the Line, between 0.0 and 1.0 (e.g. "0.5").
 When using the Overlay Filter you can choose to show/hide certain Types when the Map initially loads.
 :::
 
-:::setting{title="Line Submissions?" type="boolean" default="1"}
+:::setting{title="Line Submissions" type="boolean" default="1"}
 Make this Type available in front-end Submissions?
 :::
 ::
@@ -124,9 +128,11 @@ Make this Type available in front-end Submissions?
 
 Customise how Shapes are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.
 
+The label is a display name. The key is a stable internal identifier used in Shortcodes and CSS; translating the label does not change the key.
+
 ::settings
 :::setting{title="Shape Label" type="text" default="Red"}
-What kind of Shape is this? E.g. "Park", "Danger!", "Light Blue". The Shape Label is displayed in the Tooltip (when hovering over the Shape) and in the Shape Info Window. Once saved, Shape labels can not be edited.
+What kind of Shape is this? E.g. "Park", "Danger!", "Light Blue". The Shape Label is displayed in the Tooltip (when hovering over the Shape) and in the Shape Info Window. Once saved, Shape labels cannot be edited.
 :::
 
 :::setting{title="Shape Colour" type="text" default="#d84848"}
@@ -141,7 +147,7 @@ The opacity of the inside of the shape, between 0.0 and 1.0 (e.g. "0.5").
 When using the Overlay Filter you can choose to show/hide certain Types when the Map initially loads.
 :::
 
-:::setting{title="Shape Submissions?" type="boolean" default="1"}
+:::setting{title="Shape Submissions" type="boolean" default="1"}
 Make this Type available in front-end Submissions?
 :::
 ::
@@ -177,11 +183,11 @@ A comma-separated list of options for the input.
 Which group this Meta belongs to (if any). Meta in the same group will be displayed together when editing and viewing Maps. Meta not in a group will be displayed above any groups.
 :::
 
-:::setting{title="Meta In Shortcode?" type="boolean" default="0"}
+:::setting{title="Meta In Shortcode" type="boolean" default="0"}
 Whether this content should be displayed when embedding a Map using the Shortcode.
 :::
 
-:::setting{title="Meta In Submissions?" type="boolean" default="0"}
+:::setting{title="Meta In Submissions" type="boolean" default="0"}
 Make this Meta available in front-end Submissions?
 :::
 ::
@@ -204,7 +210,7 @@ The title appears above the Meta in that group.
 
 <a id="properties-props"></a>
 
-Read **[GeoJSON](https://geojson.org/)** feature properties when importing. <br /> <br /> If Waymark finds data for the property keys below it will stored when it is imported. These can be automatically appended to the Overlay Description, or accessed programatically the `layer.feature.properties` Object.
+Read **[GeoJSON](https://geojson.org/)** feature properties when importing. <br /> <br /> If Waymark finds data for the property keys below it will be stored when it is imported. These can be automatically appended to the Overlay Description, or accessed programmatically via the `layer.feature.properties` Object.
 
 ::settings
 :::setting{title="Property Key" type="text"}
@@ -251,12 +257,12 @@ Submissions will be available only to site administrators by default, but can al
 Allow registered users to create Maps from the front-end.
 
 ::settings
-:::setting{title="Allow From" type="select_multi"}
+:::setting{title="Allowed Roles" type="select_multi"}
 Users with the selected roles will be able to make Submissions through the front-end
 :::
 
 :::setting{title="Editor Features" type="select_multi"}
-What features to offer in the Editor. Important! Uploaded images are added to the Media Library, reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Map &gt; Meta.
+What features to offer in the Editor. Important! Uploaded images are added to the Media Library, reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Meta.
 :::
 
 :::setting{title="Default Status" type="select"}
@@ -275,16 +281,16 @@ If specified, user submissions will be automatically added to this Collection.
 This will allow Submissions from **any visitor**, without registration.
 
 ::settings
-:::setting{title="Public Submissions" type="boolean" default="0"}
+:::setting{title="Allow Public Submissions" type="boolean" default="0"}
 Allow _anyone_ to submit Maps to your site, without registration.
 :::
 
 :::setting{title="Editor Features" type="select_multi"}
-What features to offer in the Editor. Important! Uploaded images are added to the Media Library (see Upload Location below), reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Map &gt; Meta.
+What features to offer in the Editor. Important! Uploaded images are added to the Media Library (see Upload Location below), reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Meta.
 :::
 
 :::setting{title="Upload Location" type="select" default="waymark_submission"}
-Images upload by non-registered users can be stored seperately from other Media Library uploads, to aid with moderation. All uploaded images will be stored in a single directory (/waymark_submission) found in the upload root.
+Images uploaded by non-registered users can be stored separately from other Media Library uploads, to aid with moderation. All uploaded images will be stored in a single directory (/waymark_submission) found in the upload root.
 :::
 
 :::setting{title="Default Status" type="select"}
@@ -342,7 +348,7 @@ Waymark Maps will zoom when the user scrolls. This can cause some unexpected/ann
 
 ::settings
 :::setting{title="Hover Wake Time" type="text" default="2"}
-How many seconds before scroll zoom is enabled. 0 seconds will mean no delay (disabling this feature). A large number of seconds like 3600 (an hour) will esentially _disable hover to wake_, meaning the user will need to _click_ to wake.
+How many seconds before scroll zoom is enabled. 0 seconds will mean no delay (disabling this feature). A large number of seconds like 3600 (an hour) will essentially _disable hover to wake_, meaning the user will need to _click_ to wake.
 :::
 
 :::setting{title="Display Message" type="boolean" default="0"}
@@ -385,7 +391,7 @@ The shortcode header displays the title and link to the Map or Collection. Pro T
 :::
 
 :::setting{title="Header for Admin" type="select" default="0"}
-Use this Setting to always show the Shortcode Header when signed in as admin, useful for quickly navigating to embeded Maps.
+Use this Setting to always show the Shortcode Header when signed in as admin, useful for quickly navigating to embedded Maps.
 :::
 ::
 
@@ -408,7 +414,7 @@ Display elevation data in metric (m/km) or imperial (ft/mi) units.
 The colour of the elevation graph and associated Line.
 :::
 
-:::setting{title="Show Initially?" type="boolean" default="1"}
+:::setting{title="Show Initially" type="boolean" default="1"}
 Whether to show the elevation profile when the Map loads. If set to No, the user must click on a Line in order to display the elevation data. If there are multiple Lines with elevation data, the one added to the editor first will be the one shown initially.
 :::
 ::
@@ -432,7 +438,7 @@ Whether to load multiple Maps in the Background (uses AJAX to improve page load)
 Customising the Map Editor.
 
 ::settings
-:::setting{title="Confirm Delete?" type="boolean" default="1"}
+:::setting{title="Confirm Deletion" type="boolean" default="1"}
 Whether to show a confirmation dialog before deleting Markers/Lines/Shapes from the Map. Pro Tip! Even if you accidentally delete something, changes are not saved until the "Update" button is clicked.
 :::
 

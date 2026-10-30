@@ -24,7 +24,7 @@ class Waymark_Helper {
 		$out .= '			</div>' . "\n";
 		$out .= '		</div>' . "\n";
 		$out .= '		<ul class="ogis-panel__links">' . "\n";
-		$out .= '			<li><a href="' . esc_url(self::site_url()) . '">' . esc_html__('Read the Docs', 'waymark') . ' &raquo;</a></li>' . "\n";
+		$out .= '			<li><a href="' . esc_url(self::site_url()) . '">' . esc_html__('Read the Docs', 'waymark') . ' <span class="waymark-arrow" aria-hidden="true"></span></a></li>' . "\n";
 		$out .= '		</ul>' . "\n";
 
 		$out .= '		<hr />' . "\n";
@@ -139,7 +139,7 @@ class Waymark_Helper {
 				continue;
 			}
 
-			$meta_key = self::make_key($setting_meta['meta_title'], 'map');
+			$meta_key = 'map_' . self::get_meta_key($setting_meta);
 
 			//If we have data
 			if (array_key_exists($meta_key, $Map->data) && ! empty($Map->data[$meta_key])) {
@@ -249,9 +249,24 @@ class Waymark_Helper {
 	public static function get_meta_groups() {
 		//Get Groups
 		$meta_groups = Waymark_Config::get_item('meta', 'groups', true);
-		$meta_groups = self::multi_use_as_key($meta_groups, 'group_title');
+		$groups = [];
 
-		return $meta_groups;
+		if (! is_array($meta_groups)) {
+			return $groups;
+		}
+
+		foreach ($meta_groups as $meta_group) {
+			if (! is_array($meta_group)) {
+				continue;
+			}
+
+			$group_key = self::get_group_key($meta_group);
+			$meta_group['group_key'] = $group_key;
+
+			$groups[$group_key] = $meta_group;
+		}
+
+		return $groups;
 	}
 
 	public static function group_meta($meta_array, $meta_groups = []) {
@@ -263,9 +278,11 @@ class Waymark_Helper {
 		//Sort into groups
 		$meta_grouped = [];
 		foreach ($meta_array as $meta) {
+			$meta_group = isset($meta['meta_group']) ? self::resolve_group_key($meta['meta_group']) : '';
+
 			//Group exists
-			if (array_key_exists($meta['meta_group'], $meta_groups)) {
-				$meta_grouped[$meta['meta_group']][$meta['meta_key']] = $meta;
+			if (array_key_exists($meta_group, $meta_groups)) {
+				$meta_grouped[$meta_group][$meta['meta_key']] = $meta;
 				//Group does not exist
 			} else {
 				//Add to "None"
@@ -315,7 +332,7 @@ class Waymark_Helper {
 						$group_meta = $meta_grouped[$group_key];
 
 						//Container
-						$out .= '			<legend class="waymark-meta-group-title" title="Click to expand">' . esc_html($meta_groups['group_title']) . '</legend>' . "\n";
+						$out .= '			<legend class="waymark-meta-group-title" title="' . esc_attr__('Click to expand', 'waymark') . '">' . esc_html($meta_groups['group_title']) . '</legend>' . "\n";
 						$out .= '			<div class="waymark-accordion-group-content">' . "\n";
 
 						//Each meta in group
@@ -428,6 +445,128 @@ class Waymark_Helper {
 		$str = preg_replace('/[^a-z0-9+_]+/i', '', $str);
 
 		return $str;
+	}
+
+	/**
+	 * Mirror of the JavaScript Waymark.make_key() helper.
+	 *
+	 * Transliterates Cyrillic characters, strips everything except [a-z0-9+]
+	 * and lowercases the result. When nothing survives (for example a title
+	 * made entirely of punctuation or emoji) it falls back to the hex of each
+	 * character's code point, matching the JavaScript implementation for BMP
+	 * characters.
+	 *
+	 * Used to match keys derived by older JavaScript builds during migration.
+	 *
+	 * @param  mixed  $str Input string.
+	 * @return string      Key.
+	 */
+	public static function make_key_js($str) {
+		$str = is_scalar($str) ? (string) $str : '';
+
+		//The JavaScript helper returns falsy input untouched
+		if ($str === '') {
+			return '';
+		}
+
+		$original = $str;
+
+		//Cyrillic to Latin, ported from Waymark_Map.js
+		$cyrillic = [
+			'Ё' => 'YO',
+			'Й' => 'I',
+			'Ц' => 'TS',
+			'У' => 'U',
+			'К' => 'K',
+			'Е' => 'E',
+			'Н' => 'N',
+			'Г' => 'G',
+			'Ш' => 'SH',
+			'Щ' => 'SCH',
+			'З' => 'Z',
+			'Х' => 'H',
+			'Ъ' => "'",
+			'ё' => 'yo',
+			'й' => 'i',
+			'ц' => 'ts',
+			'у' => 'u',
+			'к' => 'k',
+			'е' => 'e',
+			'н' => 'n',
+			'г' => 'g',
+			'ш' => 'sh',
+			'щ' => 'sch',
+			'з' => 'z',
+			'х' => 'h',
+			'ъ' => "'",
+			'Ф' => 'F',
+			'Ы' => 'I',
+			'В' => 'V',
+			'А' => 'a',
+			'П' => 'P',
+			'Р' => 'R',
+			'О' => 'O',
+			'Л' => 'L',
+			'Д' => 'D',
+			'Ж' => 'ZH',
+			'Э' => 'E',
+			'ф' => 'f',
+			'ы' => 'i',
+			'в' => 'v',
+			'а' => 'a',
+			'п' => 'p',
+			'р' => 'r',
+			'о' => 'o',
+			'л' => 'l',
+			'д' => 'd',
+			'ж' => 'zh',
+			'э' => 'e',
+			'Я' => 'Ya',
+			'Ч' => 'CH',
+			'С' => 'S',
+			'М' => 'M',
+			'И' => 'I',
+			'Т' => 'T',
+			'Ь' => "'",
+			'Б' => 'B',
+			'Ю' => 'YU',
+			'я' => 'ya',
+			'ч' => 'ch',
+			'с' => 's',
+			'м' => 'm',
+			'и' => 'i',
+			'т' => 't',
+			'ь' => "'",
+			'б' => 'b',
+			'ю' => 'yu',
+		];
+
+		$str = strtr($str, $cyrillic);
+		$str = preg_replace('/[^a-z0-9+]+/i', '', $str);
+		$str = is_string($str) ? strtolower($str) : '';
+
+		if ($str !== '') {
+			return $str;
+		}
+
+		//Fall back to the hex of each character's code point
+		$chars = preg_split('//u', $original, -1, PREG_SPLIT_NO_EMPTY);
+		if (! is_array($chars)) {
+			$chars = str_split($original);
+		}
+
+		$hex = '';
+		foreach ($chars as $char) {
+			$code = function_exists('mb_ord') ? mb_ord($char, 'UTF-8') : false;
+
+			if (! $code) {
+				$code = ord($char);
+			}
+
+			$hex .= dechex($code);
+		}
+
+		return $hex;
 	}
 
 	public static function latlng_string_to_array($latlng_string) {
@@ -636,6 +775,161 @@ class Waymark_Helper {
 	}
 
 	/**
+	 * Get the stable key for an overlay type row.
+	 *
+	 * An explicit key column wins, otherwise the key is derived from the
+	 * (translated) title so older data without key columns still works.
+	 *
+	 * @param  array  $type         Overlay type row.
+	 * @param  string $feature_type marker, line or shape.
+	 * @return string               Type key.
+	 */
+	public static function get_type_key($type, $feature_type = 'marker') {
+		if (! is_array($type)) {
+			return '';
+		}
+
+		$key_field = $feature_type . '_key';
+		if (isset($type[$key_field]) && is_scalar($type[$key_field]) && $type[$key_field] !== '') {
+			return (string) $type[$key_field];
+		}
+
+		$title_field = $feature_type . '_title';
+		$title       = isset($type[$title_field]) ? $type[$title_field] : '';
+
+		$key = self::make_key($title);
+		if ($key !== '') {
+			return $key;
+		}
+
+		return self::make_key_js($title);
+	}
+
+	/**
+	 * Get the stable key for a meta input row.
+	 *
+	 * @param  array $meta Meta input row.
+	 * @return string      Meta key (without the map_ prefix).
+	 */
+	public static function get_meta_key($meta) {
+		if (! is_array($meta)) {
+			return '';
+		}
+
+		if (isset($meta['meta_key']) && is_scalar($meta['meta_key']) && $meta['meta_key'] !== '') {
+			return (string) $meta['meta_key'];
+		}
+
+		$key = self::make_key(isset($meta['meta_title']) ? $meta['meta_title'] : '');
+
+		if ($key === '') {
+			$key = self::make_key_js(isset($meta['meta_title']) ? $meta['meta_title'] : '');
+		}
+
+		return $key;
+	}
+
+	/**
+	 * Get the stable key for a meta group row.
+	 *
+	 * @param  array $group Meta group row.
+	 * @return string       Group key.
+	 */
+	public static function get_group_key($group) {
+		if (! is_array($group)) {
+			return '';
+		}
+
+		if (isset($group['group_key']) && is_scalar($group['group_key']) && $group['group_key'] !== '') {
+			return (string) $group['group_key'];
+		}
+
+		$key = self::make_key(isset($group['group_title']) ? $group['group_title'] : '');
+
+		if ($key === '') {
+			$key = self::make_key_js(isset($group['group_title']) ? $group['group_title'] : '');
+		}
+
+		return $key;
+	}
+
+	/**
+	 * Read the persisted key alias map.
+	 *
+	 * @param  string $kind Optional kind: marker, line, shape, meta or group.
+	 * @return array        Whole alias map, or the aliases for one kind.
+	 */
+	public static function get_key_aliases($kind = '') {
+		$aliases = get_option('Waymark_Key_Aliases');
+
+		if (! is_array($aliases)) {
+			$aliases = [];
+		}
+
+		if ($kind === '') {
+			return $aliases;
+		}
+
+		return (isset($aliases[$kind]) && is_array($aliases[$kind])) ? $aliases[$kind] : [];
+	}
+
+	/**
+	 * Resolve a persisted overlay type key to the key currently configured.
+	 *
+	 * Checks the explicit key first, then the migration alias map, then each
+	 * type's title using both the PHP and JavaScript key formats.
+	 *
+	 * @param  string $feature_type marker, line or shape.
+	 * @param  string $type_key     Key to resolve.
+	 * @return string               Resolved key, or the input unchanged.
+	 */
+	public static function resolve_type_key($feature_type = 'marker', $type_key = '') {
+		$type_key = is_scalar($type_key) ? (string) $type_key : '';
+
+		$types = self::get_overlay_types_by_key($feature_type);
+
+		//Already a configured explicit key
+		if ($type_key !== '' && array_key_exists($type_key, $types)) {
+			return $type_key;
+		}
+
+		//Migration alias
+		$aliases = self::get_key_aliases($feature_type);
+		if ($type_key !== '' && array_key_exists($type_key, $aliases)) {
+			return $aliases[$type_key];
+		}
+
+		//Match a legacy key derived from the title
+		$title_field = $feature_type . '_title';
+		foreach ($types as $configured_key => $type) {
+			$title = isset($type[$title_field]) ? $type[$title_field] : '';
+
+			if ($type_key !== '' && ($type_key === self::make_key($title) || $type_key === self::make_key_js($title))) {
+				return $configured_key;
+			}
+		}
+
+		return $type_key;
+	}
+
+	/**
+	 * Resolve a persisted meta group key to the key currently configured.
+	 *
+	 * @param  string $group_key Key to resolve.
+	 * @return string            Resolved key, or the input unchanged.
+	 */
+	public static function resolve_group_key($group_key = '') {
+		$group_key = is_scalar($group_key) ? (string) $group_key : '';
+
+		$aliases = self::get_key_aliases('group');
+		if ($group_key !== '' && array_key_exists($group_key, $aliases)) {
+			return $aliases[$group_key];
+		}
+
+		return $group_key;
+	}
+
+	/**
 	 * Get the overlay types
 	 *
 	 * @param  string  $feature_type      Feature type
@@ -645,6 +939,15 @@ class Waymark_Helper {
 	 */
 	public static function get_overlay_types($feature_type = 'marker', $use_key = '', $as_options = false) {
 		$object_types = Waymark_Config::get_item($feature_type . 's', $feature_type . '_types', true);
+
+		//Ensure every row carries its stable key
+		if (is_array($object_types)) {
+			foreach ($object_types as $index => $object_type) {
+				if (is_array($object_type)) {
+					$object_types[$index]['type_key'] = self::get_type_key($object_type, $feature_type);
+				}
+			}
+		}
 
 		//Use keys
 		if ($use_key) {
@@ -666,6 +969,41 @@ class Waymark_Helper {
 	}
 
 	/**
+	 * Get overlay types keyed by their explicit type_key.
+	 *
+	 * @param  string  $feature_type marker, line or shape.
+	 * @param  boolean $as_options   Return type_key => title options.
+	 * @return array                 Array of overlay types.
+	 */
+	public static function get_overlay_types_by_key($feature_type = 'marker', $as_options = false) {
+		$object_types = self::get_overlay_types($feature_type);
+		$keyed        = [];
+
+		if (! is_array($object_types)) {
+			return $keyed;
+		}
+
+		foreach ($object_types as $object_type) {
+			if (! is_array($object_type) || ! isset($object_type['type_key'])) {
+				continue;
+			}
+
+			$keyed[$object_type['type_key']] = $object_type;
+		}
+
+		if ($as_options) {
+			$options = [];
+			foreach ($keyed as $type_key => $type) {
+				$options[$type_key] = isset($type[$feature_type . '_title']) ? $type[$feature_type . '_title'] : $type_key;
+			}
+
+			return $options;
+		}
+
+		return $keyed;
+	}
+
+	/**
 	 * Get the overlay type data
 	 *
 	 * @param  string  $feature_type      Feature type
@@ -673,13 +1011,14 @@ class Waymark_Helper {
 	 * @return array                      Array of overlay types
 	 */
 	public static function get_type_data($feature_type = 'marker', $type_key = '') {
-		$marker_types = self::get_overlay_types($feature_type, $feature_type . '_title');
+		$type_key = self::resolve_type_key($feature_type, $type_key);
+		$types    = self::get_overlay_types_by_key($feature_type);
 
-		if (array_key_exists($type_key, $marker_types)) {
-			return $marker_types[$type_key];
-		} else {
-			return false;
+		if ($type_key !== '' && array_key_exists($type_key, $types)) {
+			return $types[$type_key];
 		}
+
+		return false;
 	}
 
 	public static function array_string_to_array($string) {
@@ -764,7 +1103,7 @@ class Waymark_Helper {
 		return false;
 	}
 
-	public static function repeatable_setting_option_array($tab, $section, $key) {
+	public static function repeatable_setting_option_array($tab, $section, $key, $key_field = '') {
 		$options_array = [];
 		$values = Waymark_Config::get_item($tab, $section, true);
 
@@ -775,8 +1114,15 @@ class Waymark_Helper {
 		foreach ($values as $s) {
 			//If exists
 			if (array_key_exists($key, $s)) {
+				//Prefer an explicit key column
+				if ($key_field && array_key_exists($key_field, $s) && $s[$key_field] !== '') {
+					$option_key = $s[$key_field];
+				} else {
+					$option_key = self::make_key($s[$key]);
+				}
+
 				//Add as option
-				$options_array[self::make_key($s[$key])] = $s[$key];
+				$options_array[$option_key] = $s[$key];
 			}
 		}
 
@@ -1025,10 +1371,9 @@ class Waymark_Helper {
 		// self::debug($type);
 
 		// If Type key not set
-		if (! isset($type['type_key'])) {
+		if (! isset($type['type_key']) || $type['type_key'] === '') {
 			//Create Type Key
-			$type['type_key'] = self::make_key($type['marker_title']);
-
+			$type['type_key'] = self::get_type_key($type);
 		}
 
 		$icon_data = [
@@ -1259,8 +1604,17 @@ class Waymark_Helper {
 
 		// If we don't have type data
 		if (empty($type_data)) {
+			// Stored GeoJSON uses properties.type; type_key is a legacy fallback
+			$type_key = '';
+
+			if (! empty($feature['properties']['type'])) {
+				$type_key = $feature['properties']['type'];
+			} elseif (! empty($feature['properties']['type_key'])) {
+				$type_key = $feature['properties']['type_key'];
+			}
+
 			// Get Type Data
-			$type_data = self::get_type_data($feature_type, $feature['properties']['type_key']);
+			$type_data = self::get_type_data($feature_type, $type_key);
 
 			self::debug($type_data);
 
@@ -1473,40 +1827,38 @@ class Waymark_Helper {
 
 				break;
 			case 'lines':
-				// Get valid line types
-				$line_types = self::get_overlay_types('line', 'line_title');
-
 				// Wrapper
 				$out .= '<div class="waymark-overlays waymark-lines">' . "\n";
 
 				// Every line type
 				foreach ($overlay as $line_type => $lines) {
-					// Ensure is valid line type
-					if (! array_key_exists($line_type, $line_types)) {
+					// Resolve the key and display the type title
+					$type_data = self::get_type_data('line', $line_type);
+
+					if (! $type_data) {
 						continue;
 					}
 
-					$out .= '<li>' . esc_html($line_type) . ' (' . sizeof($lines) . ')</li>' . "\n";
+					$out .= '<li>' . esc_html($type_data['line_title']) . ' (' . sizeof($lines) . ')</li>' . "\n";
 				}
 				$out .= '</div>' . "\n";
 
 				break;
 			case 'shapes':
-				// Get valid shape types
-				$shape_types = self::get_overlay_types('shape', 'shape_title');
-
 				// Wrapper
 				$out .= '<div class="waymark-overlays waymark-shapes">' . "\n";
 
 				// Every shape type
 				foreach ($overlay as $shape_type => $shapes) {
 
-					// Ensure is valid shape type
-					if (! array_key_exists($shape_type, $shape_types)) {
+					// Resolve the key and display the type title
+					$type_data = self::get_type_data('shape', $shape_type);
+
+					if (! $type_data) {
 						continue;
 					}
 
-					$out .= '<li>' . esc_html($shape_type) . ' (' . sizeof($shapes) . ')</li>' . "\n";
+					$out .= '<li>' . esc_html($type_data['shape_title']) . ' (' . sizeof($shapes) . ')</li>' . "\n";
 				}
 				$out .= '</div>' . "\n";
 

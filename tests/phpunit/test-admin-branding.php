@@ -33,11 +33,11 @@ class Test_Admin_Branding extends WP_UnitTestCase {
 		preg_match( '/<ul class="ogis-panel__links">(.*?)<\/ul>/s', $output, $matches );
 		$this->assertArrayHasKey( 1, $matches, 'The settings sidebar should render a links list.' );
 
-		preg_match_all( '/<a href="([^"]+)">([^<]+)<\/a>/', $matches[1], $links, PREG_SET_ORDER );
+		preg_match_all( '/<a href="([^"]+)">([^<]+) <span class="waymark-arrow" aria-hidden="true"><\/span><\/a>/', $matches[1], $links, PREG_SET_ORDER );
 
 		$this->assertCount( 1, $links );
 		$this->assertSame( [ 'https://www.ogis.org/waymark-wp/' ], array_column( $links, 1 ) );
-		$this->assertSame( [ 'Read the Docs &raquo;' ], array_column( $links, 2 ) );
+		$this->assertSame( [ 'Read the Docs' ], array_column( $links, 2 ) );
 
 		preg_match( '/<p class="ogis-panel__meta">(.*?)<\/p>/s', $output, $meta );
 		$this->assertArrayHasKey( 1, $meta, 'The settings sidebar should render a meta line.' );

@@ -234,7 +234,8 @@ function waymark_set_group_title(clone) {
   title = typeof title === "string" ? title.trim() : "";
 
   if (!title) {
-    title = waymark_php_lang.new_type;
+    var container = clone.closest(".waymark-repeatable");
+    title = container.attr("data-new-label") || waymark_php_lang.new_type;
   }
 
   if (jQuery("caption.waymark-group-title", clone).length === 0) {
@@ -569,12 +570,11 @@ function waymark_setup_select_icon_type() {
     ).parents("tr");
     var icon_input = jQuery(".waymark-input.waymark-marker_icon", container);
     var icon_content_row = icon_input.parents("tr");
-    var icon_name_text = jQuery(".waymark-icon-type", icon_content_row);
+    var icon_name_text = jQuery(".waymark-icon-label", icon_content_row);
     var icon_preview = jQuery(".waymark-controls i", icon_content_row);
     var icon_help = jQuery(".waymark-icons-help", icon_content_row);
 
     var icon_tip = jQuery(".waymark-tooltip", icon_content_row);
-    var icon_tips = icon_tip.attr("data-title").split("|");
 
     //Update logic
     var update_row = function (type) {
@@ -585,7 +585,7 @@ function waymark_setup_select_icon_type() {
           colour_row.show();
           icon_input.css("maxWidth", "unset");
           icon_name_text.text(waymark_php_lang.marker_icon_icon_label);
-          icon_tip.data("title", icon_tips[0]);
+          icon_tip.data("title", waymark_php_lang.marker_icon_icon_tip);
 
           break;
         case "text":
@@ -594,7 +594,7 @@ function waymark_setup_select_icon_type() {
           colour_row.show();
           icon_input.css("maxWidth", "45px");
           icon_name_text.text(waymark_php_lang.marker_icon_text_label);
-          icon_tip.data("title", icon_tips[1]);
+          icon_tip.data("title", waymark_php_lang.marker_icon_text_tip);
 
           break;
         case "html":
@@ -603,7 +603,7 @@ function waymark_setup_select_icon_type() {
           colour_row.hide();
           icon_input.css("maxWidth", "unset");
           icon_name_text.text(waymark_php_lang.marker_icon_html_label);
-          icon_tip.data("title", icon_tips[2]);
+          icon_tip.data("title", waymark_php_lang.marker_icon_html_tip);
 
           break;
       }
@@ -785,62 +785,6 @@ function waymark_setup_repeatable_parameters() {
       return false;
     });
   });
-}
-
-function waymark_admin_message(
-  text = null,
-  type = "info",
-  container_selector = "#wpbody-content",
-) {
-  if (text) {
-    var prefix = "";
-
-    //Prefix available?
-    if (
-      typeof waymark_admin_js.lang[type + "_message_prefix"] !== "undefined"
-    ) {
-      prefix = waymark_admin_js.lang[type + "_message_prefix"];
-    }
-
-    switch (type) {
-      // 			case 'error' :
-      //
-      // 				break;
-      default:
-        // 			case 'info' :
-
-        break;
-    }
-
-    if (prefix) {
-      prefix = "<b>[" + prefix + "]</b> ";
-    }
-
-    var message = prefix + text;
-
-    //Get container
-    var container = jQuery(container_selector).first();
-
-    //Container exists
-    if (container.length) {
-      //Remove existing
-      jQuery(".waymark-notice", container).each(function () {
-        jQuery(this).remove();
-      });
-
-      var notice_div = jQuery("<div />").attr({
-        class: "waymark-notice notice notice-" + type,
-      });
-      var notice_p = jQuery("<p />").html(message);
-      //Put together
-      notice_div.append(notice_p);
-
-      //Display
-      container.prepend(notice_div);
-    } else {
-      alert(message);
-    }
-  }
 }
 
 jQuery(document).ready(function () {

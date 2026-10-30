@@ -146,6 +146,7 @@ class Waymark_GeoJSON {
 
 					break;
 				case 'Polygon':
+				case 'MultiPolygon':
 					$type = 'shapes';
 
 					break;
@@ -154,6 +155,10 @@ class Waymark_GeoJSON {
 
 			//Add to Array if we have a type
 			if (isset($type)) {
+				//Normalise legacy and explicit keys so they group together
+				$feature_type = rtrim($type, 's');
+				$feature['properties']['type'] = Waymark_Helper::resolve_type_key($feature_type, $feature['properties']['type']);
+
 				$overlays[$type][$feature['properties']['type']][] = $feature;
 			}
 		}
