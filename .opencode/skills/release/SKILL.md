@@ -81,9 +81,19 @@ Add an `== Upgrade Notice ==` entry when the release changes requirements or car
 
 ## WordPress.org assets
 
-`.wordpress-org/` mirrors the WordPress.org SVN `assets/` directory (banners, icons, screenshots, and the README hero image). The deploy workflow syncs it to SVN with `rsync --delete`.
+`.wordpress-org/` is the canonical asset mirror deployed to the WordPress.org SVN `assets/` directory (banners, icons, screenshots, and the README hero image). The deploy workflow syncs it to SVN with `rsync --delete`.
 
-The readme screenshots are generated from the tested demo data. Recapture them with `npm run screenshots` (writes `editor-demo.jpg` and `screenshot-1..9.jpg` into `.wordpress-org/`), verify the captures with `npm run screenshots:check`, and include any updated assets in the release.
+The readme screenshots are generated from the tested demo data. The managed set is `editor-demo.jpg` plus `screenshot-1.jpg` through `screenshot-21.jpg`:
+
+```bash
+npm run screenshots        # capture canonical JPEGs, publish to .wordpress-org/, regenerate and validate readme hashes
+npm run screenshots:check  # recapture, then verify canonical vs published bytes and readme hashes
+npm run readme:check       # verify managed URLs and files without recapturing
+```
+
+Generated `readme.md` image URLs carry a content-hash query (`?v=<first 12 hex characters of the file's SHA-256>`) because GitHub's Camo image proxy caches by URL and cannot be purged. Rewriting the URL when the bytes change is the reliable cache invalidation; `readme.txt` stays unversioned.
+
+Byte-identical captures are a local release gate, not a CI pixel gate: they depend on the pinned Playwright/Chromium build and the local OS font stack. CI only runs the cheap `npm run readme:check` and generated-readme checks. A screenshot refresh should ship with a release, or wait for the SVN asset deploy before expecting the GitHub README to show the new bytes.
 
 > [!WARNING]
 > Every asset that should stay live must be present in `.wordpress-org/` — the deploy deletes anything missing. Maintain the full set, not just changed files.

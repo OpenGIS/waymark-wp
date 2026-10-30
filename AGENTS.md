@@ -80,6 +80,9 @@ cd docs && npm run generate
 - Run the suites that cover what you changed. `npm test` runs all three.
 - Rebuild generated assets with `npm run grunt` if you touched LESS, JS sources
   or translatable strings.
+- If admin/Settings UI shown in the WordPress.org readme screenshots changes,
+  run `npm run screenshots` and include the updated `.wordpress-org/` assets and
+  `readme.md`.
 - For screencast work, follow the runbook in `scripts/video/README.md` and run
   `npm run video:validate`.
 - Update `README.md` and `docs/` when behaviour changes.

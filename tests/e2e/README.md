@@ -113,8 +113,8 @@ The WordPress.org directory assets in `.wordpress-org/` are generated from the
 captures rather than edited by hand:
 
 ```sh
-npm run screenshots        # capture the canonical JPEGs and publish them
-npm run screenshots:check  # capture, then verify the published files match
+npm run screenshots        # capture the canonical JPEGs, publish them, and rewrite readme.md hashes
+npm run screenshots:check  # capture, verify the published files match, then run readme:check
 ```
 
 Both commands run the capture spec with `WAYMARK_SCREENSHOTS=1`, which writes
@@ -123,14 +123,20 @@ PNGs under `.opencode/tmp/screenshots/`. The publish or compare step only runs
 when that capture run passes:
 
 - `npm run screenshots` copies the managed files (`editor-demo.jpg` and
-  `screenshot-1.jpg` through `screenshot-21.jpg`) into `.wordpress-org/`.
+  `screenshot-1.jpg` through `screenshot-21.jpg`) into `.wordpress-org/` and
+  regenerates the `?v=` content hashes in `readme.md`.
 - `npm run screenshots:check` compares each managed canonical file against its
-  published copy by SHA-256 and exits non-zero, listing the mismatches, when a
-  published asset has drifted. It never writes to `.wordpress-org/`.
+  published copy by SHA-256, then runs `npm run readme:check`. It exits non-zero,
+  listing the mismatches, when a published asset or readme hash has drifted. It
+  never writes to `.wordpress-org/` or `readme.md`.
 
-The captures are deterministic, so the JPEGs are expected to be byte-identical
-across runs and `screenshots:check` passes without republishing. That guarantee
-is tied to the pinned Chromium build: a Chromium or Playwright upgrade can
-change the JPEG encoding even for identical pixels. After a browser upgrade,
-re-run `npm run screenshots:check`; if it reports drift, re-run
-`npm run screenshots` to recapture and republish.
+Byte-for-byte determinism is only expected within the canonical local
+environment: OS fonts and browser builds can change the output. The JPEGs should
+match across runs there and `screenshots:check` passes without republishing, but
+a Chromium or Playwright upgrade can change the JPEG encoding even for identical
+pixels. `screenshot-6` has shown occasional sub-pixel raster noise across
+sessions, so do not treat a single cross-environment hash mismatch as a content
+regression — verify the capture visually and rerun.
+
+Recapture after changes to admin/Settings UI that appear in the published
+screenshots, then commit the refreshed `.wordpress-org/` assets and `readme.md`.

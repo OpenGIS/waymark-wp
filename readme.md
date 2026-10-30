@@ -13,7 +13,7 @@ Create beautiful, interactive Maps with Waymark.
 
 ## Description ##
 
-![The Waymark Map Editor displaying a route on a map](https://ps.w.org/waymark/assets/editor-demo.jpg)
+![The Waymark Map Editor displaying a route on a map](https://ps.w.org/waymark/assets/editor-demo.jpg?v=339b9de4ca10)
 
 - **Overlays** - Create Markers, Lines and Shapes with a:
   - Title
@@ -190,67 +190,67 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 ## Screenshots ##
 
 ### 1. Add Overlays (Markers, Lines and Shapes) to create detailed interactive Maps. You can import/export from GPX/KML/GeoJSON. ###
-![Add Overlays (Markers, Lines and Shapes) to create detailed interactive Maps. You can import/export from GPX/KML/GeoJSON.](https://ps.w.org/waymark/assets/screenshot-1.jpg)
+![Add Overlays (Markers, Lines and Shapes) to create detailed interactive Maps. You can import/export from GPX/KML/GeoJSON.](https://ps.w.org/waymark/assets/screenshot-1.jpg?v=6228be322e16)
 
 ### 2. Every Overlay can be given a title, image and description. Marker images can be displayed as a gallery. ###
-![Every Overlay can be given a title, image and description. Marker images can be displayed as a gallery.](https://ps.w.org/waymark/assets/screenshot-2.jpg)
+![Every Overlay can be given a title, image and description. Marker images can be displayed as a gallery.](https://ps.w.org/waymark/assets/screenshot-2.jpg?v=66b4695c37af)
 
 ### 3. Waymark features a clean, intuitive Editor for creating and editing your Maps. Overlays are customisable using Types, which allow you set styles once (colours/icons etc.), so you can simply select it when you are adding to the Map.  ###
-![Waymark features a clean, intuitive Editor for creating and editing your Maps. Overlays are customisable using Types, which allow you set styles once (colours/icons etc.), so you can simply select it when you are adding to the Map. ](https://ps.w.org/waymark/assets/screenshot-3.jpg)
+![Waymark features a clean, intuitive Editor for creating and editing your Maps. Overlays are customisable using Types, which allow you set styles once (colours/icons etc.), so you can simply select it when you are adding to the Map. ](https://ps.w.org/waymark/assets/screenshot-3.jpg?v=65e90910b64e)
 
 ### 4. If you have more than one Basemap, you can switch between them when viewing the Map. Overlays can be shown/hidden by Type. ###
-![If you have more than one Basemap, you can switch between them when viewing the Map. Overlays can be shown/hidden by Type.](https://ps.w.org/waymark/assets/screenshot-4.jpg)
+![If you have more than one Basemap, you can switch between them when viewing the Map. Overlays can be shown/hidden by Type.](https://ps.w.org/waymark/assets/screenshot-4.jpg?v=6ec154804971)
 
 ### 5. Use Meta to provide extra information about your Maps. Meta inputs are customisable and can be grouped.  ###
-![Use Meta to provide extra information about your Maps. Meta inputs are customisable and can be grouped. ](https://ps.w.org/waymark/assets/screenshot-5.jpg)
+![Use Meta to provide extra information about your Maps. Meta inputs are customisable and can be grouped. ](https://ps.w.org/waymark/assets/screenshot-5.jpg?v=822d7867bcb6)
 
 ### 6. The Map Details page displays an image gallery, elevation profile, export options, featured image and all Meta provided for the Map. ###
-![The Map Details page displays an image gallery, elevation profile, export options, featured image and all Meta provided for the Map.](https://ps.w.org/waymark/assets/screenshot-6.jpg)
+![The Map Details page displays an image gallery, elevation profile, export options, featured image and all Meta provided for the Map.](https://ps.w.org/waymark/assets/screenshot-6.jpg?v=3591f1991cba)
 
 ### 7. Add Maps to your content using the Waymark Shortcode. You can choose which Meta is displayed. ###
-![Add Maps to your content using the Waymark Shortcode. You can choose which Meta is displayed.](https://ps.w.org/waymark/assets/screenshot-7.jpg)
+![Add Maps to your content using the Waymark Shortcode. You can choose which Meta is displayed.](https://ps.w.org/waymark/assets/screenshot-7.jpg?v=6f69b58c06ce)
 
 ### 8. Organise Maps with Collections and display multiple Maps at once using the Shortcode. Collections can be nested and Maps can be associated with multiple Collections. ###
-![Organise Maps with Collections and display multiple Maps at once using the Shortcode. Collections can be nested and Maps can be associated with multiple Collections.](https://ps.w.org/waymark/assets/screenshot-8.jpg)
+![Organise Maps with Collections and display multiple Maps at once using the Shortcode. Collections can be nested and Maps can be associated with multiple Collections.](https://ps.w.org/waymark/assets/screenshot-8.jpg?v=02b88b004395)
 
 ### 9. Basemaps — Add, reorder and configure raster basemaps. ###
-![Basemaps — Add, reorder and configure raster basemaps.](https://ps.w.org/waymark/assets/screenshot-9.jpg)
+![Basemaps — Add, reorder and configure raster basemaps.](https://ps.w.org/waymark/assets/screenshot-9.jpg?v=6df2538cb2ae)
 
 ### 10. Shortcodes — Control the Shortcode header and admin preview. ###
-![Shortcodes — Control the Shortcode header and admin preview.](https://ps.w.org/waymark/assets/screenshot-10.jpg)
+![Shortcodes — Control the Shortcode header and admin preview.](https://ps.w.org/waymark/assets/screenshot-10.jpg?v=5163af083b74)
 
 ### 11. Elevation — Configure the elevation profile, units, colours and initial visibility. ###
-![Elevation — Configure the elevation profile, units, colours and initial visibility.](https://ps.w.org/waymark/assets/screenshot-11.jpg)
+![Elevation — Configure the elevation profile, units, colours and initial visibility.](https://ps.w.org/waymark/assets/screenshot-11.jpg?v=aa2de95224fe)
 
 ### 12. Meta — Create custom Meta inputs and organise them into groups. ###
-![Meta — Create custom Meta inputs and organise them into groups.](https://ps.w.org/waymark/assets/screenshot-12.jpg)
+![Meta — Create custom Meta inputs and organise them into groups.](https://ps.w.org/waymark/assets/screenshot-12.jpg?v=5df734937bb0)
 
 ### 13. Sleep — Set the scroll-zoom wake delay and message. ###
-![Sleep — Set the scroll-zoom wake delay and message.](https://ps.w.org/waymark/assets/screenshot-13.jpg)
+![Sleep — Set the scroll-zoom wake delay and message.](https://ps.w.org/waymark/assets/screenshot-13.jpg?v=1ba19b9ff55d)
 
 ### 14. Clustering — Group nearby Markers and tune the cluster threshold and radius. ###
-![Clustering — Group nearby Markers and tune the cluster threshold and radius.](https://ps.w.org/waymark/assets/screenshot-14.jpg)
+![Clustering — Group nearby Markers and tune the cluster threshold and radius.](https://ps.w.org/waymark/assets/screenshot-14.jpg?v=cdb3a1ffeb34)
 
 ### 15. Misc. — Configure map height, zoom, gallery, filter and export behaviour. ###
-![Misc. — Configure map height, zoom, gallery, filter and export behaviour.](https://ps.w.org/waymark/assets/screenshot-15.jpg)
+![Misc. — Configure map height, zoom, gallery, filter and export behaviour.](https://ps.w.org/waymark/assets/screenshot-15.jpg?v=480d82ed970b)
 
 ### 16. Markers — Define Marker Types: label, shape, size, colour, icon and visibility. ###
-![Markers — Define Marker Types: label, shape, size, colour, icon and visibility.](https://ps.w.org/waymark/assets/screenshot-16.jpg)
+![Markers — Define Marker Types: label, shape, size, colour, icon and visibility.](https://ps.w.org/waymark/assets/screenshot-16.jpg?v=e9d65fa1c57e)
 
 ### 17. Lines — Define Line Types: colour, weight, opacity and visibility. ###
-![Lines — Define Line Types: colour, weight, opacity and visibility.](https://ps.w.org/waymark/assets/screenshot-17.jpg)
+![Lines — Define Line Types: colour, weight, opacity and visibility.](https://ps.w.org/waymark/assets/screenshot-17.jpg?v=07dc41f01355)
 
 ### 18. Shapes — Define Shape Types: colour, fill opacity and visibility. ###
-![Shapes — Define Shape Types: colour, fill opacity and visibility.](https://ps.w.org/waymark/assets/screenshot-18.jpg)
+![Shapes — Define Shape Types: colour, fill opacity and visibility.](https://ps.w.org/waymark/assets/screenshot-18.jpg?v=f5ee41c3de19)
 
 ### 19. Properties — Choose which GeoJSON feature properties are imported and shown. ###
-![Properties — Choose which GeoJSON feature properties are imported and shown.](https://ps.w.org/waymark/assets/screenshot-19.jpg)
+![Properties — Choose which GeoJSON feature properties are imported and shown.](https://ps.w.org/waymark/assets/screenshot-19.jpg?v=ac1ba196014d)
 
 ### 20. Submissions — Control front-end submissions by role and for guests. ###
-![Submissions — Control front-end submissions by role and for guests.](https://ps.w.org/waymark/assets/screenshot-20.jpg)
+![Submissions — Control front-end submissions by role and for guests.](https://ps.w.org/waymark/assets/screenshot-20.jpg?v=68e553a70dd1)
 
 ### 21. Advanced — Configure editor, collection, permalink, post type and debug options. ###
-![Advanced — Configure editor, collection, permalink, post type and debug options.](https://ps.w.org/waymark/assets/screenshot-21.jpg)
+![Advanced — Configure editor, collection, permalink, post type and debug options.](https://ps.w.org/waymark/assets/screenshot-21.jpg?v=8033ae28106b)
 
 
 ## Changelog ##

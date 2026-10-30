@@ -34,6 +34,14 @@ jobs:
       - name: i18n parity check
         run: npm run i18n:check
 
+      - name: Readme asset hashes
+        run: npm run readme:check
+
+      - name: Readme markdown is generated and up to date
+        run: |
+          npx grunt build_wp_md
+          git diff --exit-code -- readme.md
+
       - name: JS tests
         run: npm run test:js
 

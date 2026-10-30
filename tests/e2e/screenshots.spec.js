@@ -328,9 +328,11 @@ async function scrollToElementTop(locator, offset) {
 
 // Screenshot-only tweaks for Settings screens whose natural height runs past
 // the 1000px viewport. Meta hides the trailing Groups section so the framed
-// card ends cleanly after Meta Inputs with the Save button visible. Advanced is
-// the tallest tab; hiding its section descriptions and the trailing Post Type
-// and Debug sections keeps Collection, Editor and Permalinks framed with Save.
+// card ends cleanly after Meta Inputs with the Save button visible. Markers
+// hides its section description and footer so the eight rows and the WordPress
+// footer stay inside the frame. Advanced is the tallest tab; hiding its section
+// descriptions and the trailing Post Type and Debug sections keeps Collection,
+// Editor and Permalinks framed with Save.
 const SETTINGS_SCREEN_CSS = {
   "waymark-settings-tab-meta":
     "#waymark-admin-container .waymark-settings-tab-meta .waymark-settings-section-groups { display: none !important; }",
@@ -338,6 +340,11 @@ const SETTINGS_SCREEN_CSS = {
     "#waymark-admin-container .waymark-settings-tab-misc .waymark-settings-section-description," +
     "#waymark-admin-container .waymark-settings-tab-misc .waymark-settings-section-post," +
     "#waymark-admin-container .waymark-settings-tab-misc .waymark-settings-section-advanced { display: none !important; }",
+  "waymark-settings-tab-markers":
+    "#waymark-admin-container .waymark-settings-tab-markers .waymark-settings-section-description," +
+    "#waymark-admin-container .waymark-settings-tab-markers .waymark-settings-section-footer { display: none !important; }",
+  "waymark-settings-tab-properties":
+    "#waymark-admin-container .waymark-settings-tab-properties .waymark-settings-section-props .waymark-settings-section-footer { display: none !important; }",
 };
 
 /**
@@ -371,6 +378,65 @@ async function captureSettingsScreen(page, name, content) {
   });
 
   await page.evaluate(() => window.scrollTo(0, 0));
+
+  const viewport = page.viewportSize() ?? { width: 1600, height: 1000 };
+
+  // Guard against a screen whose Save button falls below the fixed capture
+  // viewport. A clipped submit button is a framing defect, so fail rather than
+  // silently publishing it. Screens that genuinely have no submit button are
+  // reported instead.
+  const submitButton = page
+    .locator('#waymark-admin-container p.submit input[type="submit"]')
+    .filter({ visible: true })
+    .first();
+
+  if ((await submitButton.count()) === 0) {
+    test.info().annotations.push({
+      type: "submit-viewport-guard",
+      description: `${name}: no visible Settings submit button to check`,
+    });
+  } else {
+    const box = await submitButton.boundingBox();
+
+    expect(
+      box,
+      `${name}: Settings submit button has no bounding box`,
+    ).not.toBeNull();
+
+    if (box) {
+      expect(
+        box.y + box.height,
+        `${name}: Settings submit button extends below the ${viewport.width}x${viewport.height} viewport (bounding box: x=${box.x}, y=${box.y}, width=${box.width}, height=${box.height})`,
+      ).toBeLessThanOrEqual(viewport.height);
+    }
+  }
+
+  // Guard the WordPress admin footer too: it must sit fully inside the fixed
+  // capture viewport, otherwise the screen is clipped at the frame edge. A
+  // Settings screen with no footer is reported rather than silently accepted.
+  const adminFooter = page
+    .locator("#wpfooter")
+    .filter({ visible: true })
+    .first();
+
+  if ((await adminFooter.count()) === 0) {
+    test.info().annotations.push({
+      type: "footer-viewport-guard",
+      description: `${name}: no visible #wpfooter to check`,
+    });
+  } else {
+    const box = await adminFooter.boundingBox();
+
+    expect(box, `${name}: #wpfooter has no bounding box`).not.toBeNull();
+
+    if (box) {
+      expect(
+        box.y + box.height,
+        `${name}: #wpfooter extends below the ${viewport.width}x${viewport.height} viewport (bounding box: x=${box.x}, y=${box.y}, width=${box.width}, height=${box.height})`,
+      ).toBeLessThanOrEqual(viewport.height);
+    }
+  }
+
   await capturePage(page, name);
 }
 

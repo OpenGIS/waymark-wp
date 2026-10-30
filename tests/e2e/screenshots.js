@@ -15,6 +15,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { MANAGED, hashReadmeFile } = require("../../scripts/readme-assets");
 
 const ROOT = path.join(__dirname, "..", "..");
 const CANONICAL_DIR = path.join(
@@ -25,12 +26,7 @@ const CANONICAL_DIR = path.join(
   "canonical",
 );
 const TARGET_DIR = path.join(ROOT, ".wordpress-org");
-
-// The hero plus screenshot-1..21.
-const MANAGED = [
-  "editor-demo",
-  ...Array.from({ length: 21 }, (_unused, index) => `screenshot-${index + 1}`),
-];
+const README_MD = path.join(ROOT, "readme.md");
 
 /**
  * @param {string} file
@@ -79,6 +75,13 @@ function publish() {
     return 1;
   }
 
+  if (!fs.existsSync(README_MD)) {
+    console.error(
+      `readme.md is missing; run \`npx grunt build_wp_md\` before publishing.`,
+    );
+    return 1;
+  }
+
   fs.mkdirSync(TARGET_DIR, { recursive: true });
 
   for (const name of MANAGED) {
@@ -90,6 +93,9 @@ function publish() {
       `published ${name}.jpg -> ${path.relative(ROOT, destination)} (${bytes} bytes)`,
     );
   }
+
+  hashReadmeFile();
+  console.log("Updated readme.md asset URLs with their content hashes.");
 
   return 0;
 }

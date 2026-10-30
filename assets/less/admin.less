@@ -659,6 +659,14 @@ body.waymark_page_waymark-settings {
           }
         }
       }
+
+      @media only screen and (min-width: 961px) {
+        .marker_icon-container .waymark-controls > .waymark-icons-help {
+          position: static;
+          margin: 0;
+          flex: 0 1 auto;
+        }
+      }
     }
     div.waymark-settings-section-description {
       margin-bottom: 15px;
@@ -1069,8 +1077,7 @@ div#waymark-admin-container {
         }
         th {
           padding: 10px 20px;
-          width: auto;
-          min-width: 160px;
+          width: 160px;
           vertical-align: middle;
         }
         td {
@@ -1552,6 +1559,46 @@ body.wp-admin.post-type-waymark_map {
         flex: 1 1 auto;
         min-width: 0;
       }
+    }
+  }
+}
+
+/* Compact settings form on desktop */
+@media only screen and (min-width: 961px) {
+  body.waymark_page_waymark-settings
+    div#waymark-admin-container
+    .waymark-settings-tab {
+    max-width: 880px;
+    margin-inline: auto;
+
+    .waymark-control-group:not(.waymark-short-input) {
+      input[type="text"] {
+        flex: 1 1 auto;
+        width: auto;
+        max-width: 560px;
+        min-width: 0;
+      }
+    }
+
+    .waymark-controls {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+
+      > .waymark-tooltip {
+        flex: 0 0 auto;
+        margin-inline-start: 6px;
+        margin-top: 2px;
+        float: none;
+      }
+    }
+  }
+
+  body.waymark_page_waymark-settings div#waymark-admin-container .card {
+    form > .submit {
+      max-width: 880px;
+      margin-inline: auto;
     }
   }
 }

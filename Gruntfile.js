@@ -1,3 +1,5 @@
+const readmeAssets = require("./scripts/readme-assets");
+
 module.exports = function (grunt) {
 	grunt.initConfig({
 		less: {
@@ -148,6 +150,7 @@ module.exports = function (grunt) {
 				},
 				options: {
 					screenshot_url: "https://ps.w.org/{plugin}/assets/{screenshot}.jpg",
+					post_convert: readmeAssets.rewriteReadmeAssetUrls,
 				},
 			},
 		},

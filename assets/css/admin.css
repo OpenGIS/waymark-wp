@@ -626,6 +626,13 @@ body.waymark_page_waymark-settings div.waymark-settings-tab.waymark-settings-tab
     margin: 4px auto 0 0;
   }
 }
+@media only screen and (min-width: 961px) {
+  body.waymark_page_waymark-settings div.waymark-settings-tab.waymark-settings-tab-markers .marker_icon-container .waymark-controls > .waymark-icons-help {
+    position: static;
+    margin: 0;
+    flex: 0 1 auto;
+  }
+}
 body.waymark_page_waymark-settings div.waymark-settings-tab div.waymark-settings-section-description {
   margin-bottom: 15px;
   padding-left: 13px;
@@ -931,8 +938,7 @@ div#waymark-admin-container .waymark-settings-tab table.form-table tr.waymark-al
 }
 div#waymark-admin-container .waymark-settings-tab table.form-table tr th {
   padding: 10px 20px;
-  width: auto;
-  min-width: 160px;
+  width: 160px;
   vertical-align: middle;
 }
 div#waymark-admin-container .waymark-settings-tab table.form-table tr td {
@@ -1320,6 +1326,35 @@ body.wp-admin.post-type-waymark_map #waymark_map_shortcode .inside input[type="t
   body.waymark_page_waymark-settings div#waymark-admin-container .waymark-settings-tab .waymark-controls > .wp-picker-container {
     flex: 1 1 auto;
     min-width: 0;
+  }
+}
+/* Compact settings form on desktop */
+@media only screen and (min-width: 961px) {
+  body.waymark_page_waymark-settings div#waymark-admin-container .waymark-settings-tab {
+    max-width: 880px;
+    margin-inline: auto;
+  }
+  body.waymark_page_waymark-settings div#waymark-admin-container .waymark-settings-tab .waymark-control-group:not(.waymark-short-input) input[type="text"] {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: 560px;
+    min-width: 0;
+  }
+  body.waymark_page_waymark-settings div#waymark-admin-container .waymark-settings-tab .waymark-controls {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+  body.waymark_page_waymark-settings div#waymark-admin-container .waymark-settings-tab .waymark-controls > .waymark-tooltip {
+    flex: 0 0 auto;
+    margin-inline-start: 6px;
+    margin-top: 2px;
+    float: none;
+  }
+  body.waymark_page_waymark-settings div#waymark-admin-container .card form > .submit {
+    max-width: 880px;
+    margin-inline: auto;
   }
 }
 /* Tablet */
