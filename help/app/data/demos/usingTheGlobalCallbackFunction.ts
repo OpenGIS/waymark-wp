@@ -1,4 +1,4 @@
-import routeMap, { routeMapMeta } from "./routeMap";
+import { demoGeoJson } from "./fixtures";
 
 function addRefreshControl(waymark: Record<string, any>) {
   const jQuery = (window as any).jQuery;
@@ -25,8 +25,7 @@ function addRefreshControl(waymark: Record<string, any>) {
 }
 
 const demo = {
-  geojson: routeMap,
-  meta: routeMapMeta,
+  geojson: demoGeoJson,
   globalCallback: addRefreshControl,
 };
 

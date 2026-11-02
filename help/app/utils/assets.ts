@@ -1,4 +1,8 @@
 function normaliseBase(baseURL: string): string {
+  if (/^https?:\/\//i.test(baseURL)) {
+    return baseURL.endsWith("/") ? baseURL : `${baseURL}/`;
+  }
+
   const withLeadingSlash = baseURL.startsWith("/") ? baseURL : `/${baseURL}`;
 
   return withLeadingSlash.endsWith("/")
@@ -57,4 +61,14 @@ export function resolveAssetStrings<T>(value: T, baseURL?: string): T {
   const base = normaliseBase(baseURL ?? useRuntimeConfig().app.baseURL);
 
   return resolveValue(value, base) as T;
+}
+
+export function resolveMapAssetStrings<T>(value: T, baseURL?: string): T {
+  const base = normaliseBase(baseURL ?? useRuntimeConfig().app.baseURL);
+  const absoluteBase =
+    typeof window === "undefined" || /^https?:\/\//i.test(base)
+      ? base
+      : `${window.location.origin}${base}`;
+
+  return resolveValue(value, absoluteBase) as T;
 }

@@ -9,7 +9,7 @@ Always perform a full back-up of your site before performing these steps.
 
 ## Maps
 
-Waymark stores Maps as Custom Post Types (custom post type ID `waymark_map`). These can be exported using the inbuilt `WordPress > Admin > Tools > Import/Export` feature by selecting “Maps” from the Export list.
+Waymark stores Maps as Custom Post Types (custom post type ID `waymark_map`). These can be exported using the built-in `Tools > Export` screen in the WordPress admin by selecting “Maps” from the Export list.
 
 ## Settings
 
@@ -27,7 +27,7 @@ Your database may be using a different wp_table prefix.
 
 ## Images
 
-Images are stored in the Media Library and should also be able to be Imported/Exported using the `WordPress > Admin > Tools > Import/Export` feature.
+Images are stored in the Media Library and should also be able to be exported and imported using the `Tools > Export` and `Tools > Import` screens in the WordPress admin.
 
 However, as Waymark stores links to Images as URLs a search/replace on the WordPress `wp_postmeta` database table will need to be performed to update these:
 

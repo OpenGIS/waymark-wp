@@ -12,8 +12,6 @@ This tutorial assumes you have a WordPress site (self-hosted) and have created y
 
 This Map illustrates the end result. Try clicking on the Line to view the Description.
 
-Click on any screenshot to enlarge.
-
 ## 1. Open the Map Editor
 
 In this step we are going to open the Map Editor.

@@ -1,4 +1,4 @@
-import routeMap, { routeMapMeta } from "./routeMap";
+import { routeGeoJson } from "./fixtures";
 
 const css = `.map-demo--elevation-profile-colours .elevation-control.elevation .axis text {
   fill: red !important;
@@ -25,8 +25,7 @@ const css = `.map-demo--elevation-profile-colours .elevation-control.elevation .
 }`;
 
 const demo = {
-  geojson: routeMap,
-  meta: routeMapMeta,
+  geojson: routeGeoJson,
   css,
   viewerOptions: {
     show_elevation: "1",

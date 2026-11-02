@@ -7,11 +7,11 @@ This enables very granular control over how Maps, Collections, Shortcodes and ev
 
 ## Map Details
 
-Maps in Waymark use the `waymark_map` [custom post type](https://developer.wordpress.org/plugins/post-types/registering-custom-post-types/). In WordPress every post has a unique ID, for example this page has an ID of 4089. We can target this page only by writing a CSS selector that uses one of many helpful [class names](https://developer.wordpress.org/reference/functions/body_class/) that WordPress adds to the HTML `<body>` element:
+Maps in Waymark use the `waymark_map` [custom post type](https://developer.wordpress.org/plugins/post-types/registering-custom-post-types/). In WordPress every post has a unique ID. For example, a Map might have an ID of `1234`. You can target that Map only by writing a CSS selector that uses one of the many helpful [class names](https://developer.wordpress.org/reference/functions/body_class/) that WordPress adds to the HTML `<body>` element:
 
 ```css
 /* Target Map Details page of a specific Map by ID */
-body.postid-4089 {
+body.postid-1234 {
   border: 10px solid red;
 }
 ```

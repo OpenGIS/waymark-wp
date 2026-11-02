@@ -101,4 +101,4 @@ All Icon content can be modified using CSS.
 }
 ```
 
-Use your browser’s inspector to dig for Type class names (more info here ).
+Use your browser’s inspector to inspect the Type class names; see [Styling With CSS Selectors](/customising/styling-with-css-selectors/) for a full example.

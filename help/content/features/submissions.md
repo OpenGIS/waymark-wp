@@ -59,7 +59,7 @@ Waymark content="submission"
 
 ## Feedback
 
-This feature was a large undertaking, so please let me know what you think by…
+Feedback is welcome. You can share it by:
 
 - Creating a new [support topic](https://wordpress.org/support/plugin/waymark/#new-topic-0) on the WordPress plugin directory.
 - Creating a [GitHub issue](https://github.com/OpenGIS/waymark-wp/issues/new).

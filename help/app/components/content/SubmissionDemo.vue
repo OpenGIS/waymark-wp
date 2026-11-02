@@ -105,12 +105,13 @@ onMounted(async () => {
 
     (window as any).waymark_security = DEMO_SECURITY;
 
-    const config = resolveAssetStrings(clone(waymarkUserConfig), baseURL);
-    const demoConfig = resolveAssetStrings(clone(submissionsEditor), baseURL);
+    const config = resolveMapAssetStrings(clone(waymarkUserConfig), baseURL);
+    const demoConfig = resolveMapAssetStrings(
+      clone(submissionsEditor),
+      baseURL,
+    );
 
     Object.assign(config.map_options, demoConfig.map_options);
-    Object.assign(config.viewer_options, demoConfig.viewer_options);
-    Object.assign(config.editor_options, demoConfig.editor_options);
     config.map_options.map_div_id = MAP_ID;
 
     const instance = factory.editor();

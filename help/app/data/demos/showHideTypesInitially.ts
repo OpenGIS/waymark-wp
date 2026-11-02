@@ -1,8 +1,7 @@
-import routeMap, { routeMapMeta } from "./routeMap";
+import { demoGeoJson } from "./fixtures";
 
 const demo = {
-  geojson: routeMap,
-  meta: routeMapMeta,
+  geojson: demoGeoJson,
   typeVisibility: {
     marker: {
       hide: ["photo", "alert"],

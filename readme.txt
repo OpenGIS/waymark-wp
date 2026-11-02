@@ -213,6 +213,10 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 
 == Changelog ==
 
+= 1.8.1 =
+* Help: renamed the admin Documentation links to Help.
+* Help: refreshed the guides, examples and live map demos, removing legacy placeholder content.
+
 = 1.8.0 =
 * Feature: Waymark is now fully translatable, with locale-aware number, coordinate and place formatting and right-to-left layout support.
 * Fix: Settings labels and controls are compact and consistently aligned; help icons sit beside their fields.

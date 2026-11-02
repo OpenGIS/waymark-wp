@@ -2,6 +2,7 @@
 import creatingYourFirstMap from "~/data/demos/creatingYourFirstMap";
 import drawingARoute from "~/data/demos/drawingARoute";
 import elevationProfileColours from "~/data/demos/elevationProfileColours";
+import { stylingGeoJson } from "~/data/demos/fixtures";
 import hideLocateButton from "~/data/demos/hideLocateButton";
 import hideTooltipTypeLabels from "~/data/demos/hideTooltipTypeLabels";
 import hidingMapControls from "~/data/demos/hidingMapControls";
@@ -10,10 +11,6 @@ import markerWithoutBackground from "~/data/demos/markerWithoutBackground";
 import markers from "~/data/demos/markers";
 import moveTheLocateButton from "~/data/demos/moveTheLocateButton";
 import showHideTypesInitially from "~/data/demos/showHideTypesInitially";
-import stylingCollection from "~/data/demos/stylingCollection";
-import stylingMapHash from "~/data/demos/stylingMapHash";
-import stylingMapId from "~/data/demos/stylingMapId";
-import stylingMarkers from "~/data/demos/stylingMarkers";
 import textMarkers from "~/data/demos/textMarkers";
 import usingTheGlobalCallbackFunction from "~/data/demos/usingTheGlobalCallbackFunction";
 import waymarkUserConfig from "~/data/waymarkUserConfig";
@@ -41,7 +38,6 @@ interface DemoEntry {
   mapId?: string;
   wrapperId?: string;
   canvasClass?: string;
-  meta?: Record<string, any>;
   css?: string;
   typeVisibility?: TypeVisibility;
   onReady?: (viewer: Record<string, any>) => void;
@@ -107,34 +103,35 @@ const demoData: Record<string, DemoEntry> = {
   "creating-your-first-map": creatingYourFirstMap,
   "drawing-a-route": drawingARoute,
   markers: {
-    geojson: markers,
+    ...markers,
     mapId: "waymark-map-7cd5bb",
     wrapperId: "waymark-shortcode-7cd5bb",
     canvasClass: "waymark-map",
   },
   "styling-map-id": {
-    geojson: stylingMapId,
+    geojson: stylingGeoJson,
+    viewerOptions: { show_gallery: 0, show_cluster: "0" },
     mapId: "waymark-map-8dfee3",
     wrapperId: "waymark-shortcode-8dfee3",
     canvasClass: "waymark-map waymark-map-id-4028",
   },
   "styling-collection": {
-    geojson: stylingCollection,
-    viewerOptions: { show_gallery: 0 },
+    geojson: stylingGeoJson,
+    viewerOptions: { show_gallery: 0, show_cluster: "0" },
     mapId: "waymark-map-ff12a2",
     wrapperId: "waymark-shortcode-ff12a2",
     canvasClass: "waymark-map waymark-collection-id-27",
   },
   "styling-map-hash": {
-    geojson: stylingMapHash,
-    viewerOptions: { show_gallery: 0 },
+    geojson: stylingGeoJson,
+    viewerOptions: { show_gallery: 0, show_cluster: "0" },
     mapId: "waymark-map-pink_me",
     wrapperId: "waymark-shortcode-pink_me",
     canvasClass: "waymark-map waymark-map-id-4028",
   },
   "styling-markers": {
-    geojson: stylingMarkers,
-    viewerOptions: { show_gallery: 0 },
+    geojson: stylingGeoJson,
+    viewerOptions: { show_gallery: 0, show_cluster: "0" },
     mapId: "waymark-map-beer_markers",
     wrapperId: "waymark-shortcode-beer_markers",
     canvasClass: "waymark-map waymark-map-id-4028",
@@ -142,7 +139,7 @@ const demoData: Record<string, DemoEntry> = {
 };
 
 const baseURL = useRuntimeConfig().app.baseURL;
-const resolvedDemoData = resolveAssetStrings(demoData, baseURL);
+const resolvedDemoData = resolveMapAssetStrings(demoData, baseURL);
 
 const demoEntry = computed(() => resolvedDemoData[props.demo]);
 const generatedMapId = `waymark-map-${useId()}`;
@@ -207,7 +204,7 @@ onMounted(async () => {
       throw new Error(`Unknown map demo: ${props.demo}`);
     }
 
-    const config = resolveAssetStrings(
+    const config = resolveMapAssetStrings(
       JSON.parse(JSON.stringify(waymarkUserConfig)),
       baseURL,
     );
@@ -228,12 +225,15 @@ onMounted(async () => {
 
     applyTypeVisibility(instance, config, demo.typeVisibility);
 
+    delete (window as any).waymark_loaded_callback;
+
+    viewer = instance;
+    instance.init(config);
+
     if (demo.globalCallback) {
       (window as any).waymark_loaded_callback = demo.globalCallback;
     }
 
-    viewer = instance;
-    instance.init(config);
     instance.load_json(JSON.parse(JSON.stringify(demo.geojson)));
     instance.load_done();
     demo.onReady?.(instance);
@@ -338,8 +338,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="map-demo" :class="`map-demo--${demo}`">
-    <MapMeta v-if="demoEntry?.meta" :meta="demoEntry.meta" />
-
     <component :is="'style'" v-if="demoEntry?.css" v-html="demoEntry.css" />
 
     <div :id="demoEntry?.wrapperId" class="map-demo__frame">

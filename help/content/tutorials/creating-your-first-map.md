@@ -12,8 +12,6 @@ This tutorial assumes you have a WordPress site (self-hosted) and are logged in 
 
 This Map illustrates the end result. Try clicking on the Marker Icon to view the Image and description.
 
-Click on any screenshot to enlarge.
-
 ## 1. Activating the Plugin
 
 In this step we are going to search for, install and activate the Waymark plugin.
