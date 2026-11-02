@@ -2,7 +2,7 @@
   "version": "1",
   "id": "adding-map-meta",
   "title": "Adding Map Meta",
-  "output": "docs/public/assets/video/adding-map-meta.mp4",
+  "output": "help/public/assets/video/adding-map-meta.mp4",
   "viewport": {
     "width": 1280,
     "height": 720

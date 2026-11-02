@@ -2,7 +2,7 @@
   "version": "1",
   "id": "using-collections",
   "title": "Using Collections",
-  "output": "docs/public/assets/video/using-collections.mp4",
+  "output": "help/public/assets/video/using-collections.mp4",
   "viewport": {
     "width": 1280,
     "height": 720

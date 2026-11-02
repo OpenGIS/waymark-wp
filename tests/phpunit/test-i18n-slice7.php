@@ -242,7 +242,7 @@ class Test_I18n_Slice7 extends WP_UnitTestCase {
 			// Collections notice.
 			'Collections allow you to organise your Maps.',
 			'Use the <a href="%s">Shortcode</a> to display all Maps in a Collection at once.',
-			'Read the Docs',
+			'View Help',
 			// Creating a Map notice.
 			'Use the Map <a href="%s">Editor</a> to place Markers, draw Lines/Shapes and display Images.',
 			'Each can be given a <a target="_blank" href="%s">Type</a>, title, description and an image.',
@@ -445,7 +445,7 @@ class Test_I18n_Slice7 extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Collections allow you to organise your Maps.', $html );
 		$this->assertStringContainsString( 'Use the <a href="https://www.ogis.org/waymark-wp/#shortcodes">Shortcode</a> to display all Maps in a Collection at once.', $html );
 		$this->assertStringContainsString( 'class="button waymark-right"', $html );
-		$this->assertStringContainsString( '>Read the Docs <span class="waymark-arrow" aria-hidden="true"></span></a>', $html );
+		$this->assertStringContainsString( '>View Help <span class="waymark-arrow" aria-hidden="true"></span></a>', $html );
 		$this->assertStringContainsString( 'customising/settings/#misc-collection_options', $html );
 
 		$this->assertStringNotContainsString( '&lt;a href', $html );

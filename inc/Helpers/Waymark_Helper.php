@@ -24,7 +24,7 @@ class Waymark_Helper {
 		$out .= '			</div>' . "\n";
 		$out .= '		</div>' . "\n";
 		$out .= '		<ul class="ogis-panel__links">' . "\n";
-		$out .= '			<li><a href="' . esc_url(self::site_url()) . '">' . esc_html__('Read the Docs', 'waymark') . ' <span class="waymark-arrow" aria-hidden="true"></span></a></li>' . "\n";
+		$out .= '			<li><a href="' . esc_url(self::site_url()) . '">' . esc_html__('View Help', 'waymark') . ' <span class="waymark-arrow" aria-hidden="true"></span></a></li>' . "\n";
 		$out .= '		</ul>' . "\n";
 
 		$out .= '		<hr />' . "\n";

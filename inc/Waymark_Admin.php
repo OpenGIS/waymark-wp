@@ -177,7 +177,7 @@ class Waymark_Admin {
 				$description = __('Collections allow you to organise your Maps.', 'waymark') . ' ' .
 					/* translators: %s: URL to the Shortcode documentation. */
 					sprintf(__('Use the <a href="%s">Shortcode</a> to display all Maps in a Collection at once.', 'waymark'), esc_url(Waymark_Helper::site_url('#shortcodes'))) . ' ' .
-					'<a href="' . esc_url(Waymark_Helper::site_url('customising/settings/#misc-collection_options')) . '" class="button waymark-right">' . esc_html__('Read the Docs', 'waymark') . ' <span class="waymark-arrow" aria-hidden="true"></span></a>';
+					'<a href="' . esc_url(Waymark_Helper::site_url('customising/settings/#misc-collection_options')) . '" class="button waymark-right">' . esc_html__('View Help', 'waymark') . ' <span class="waymark-arrow" aria-hidden="true"></span></a>';
 			}
 
 			//Map Posts List

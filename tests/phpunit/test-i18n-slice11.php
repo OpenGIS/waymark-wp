@@ -39,17 +39,16 @@ class Test_I18n_Slice11 extends WP_UnitTestCase {
 		$this->assertIsString( $pot );
 
 		$new_msgids = [
-			'Basemap Documentation',
-			'Type Documentation',
-			'Meta Documentation',
-			'Submission Documentation',
+			'Basemap Help',
+			'Type Help',
+			'Meta Help',
+			'Submission Help',
 			'See Examples',
-			'Clustering Documentation',
-			'Shortcode Documentation',
+			'Clustering Help',
+			'Shortcode Help',
 			'Elevation Styling',
-			'Collection Documentation',
+			'Collection Help',
 			'View Help',
-			'Read the Docs',
 		];
 
 		foreach ( $new_msgids as $msgid ) {

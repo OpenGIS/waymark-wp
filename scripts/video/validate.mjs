@@ -7,7 +7,7 @@
 // The check is read-only and offline. It validates every manifest entry that
 // exists, so the legacy videos without an entry do not fail the build. The docs
 // side is checked independently: every `/assets/video/...` reference in the
-// content must resolve to a file under `docs/public/`.
+// content must resolve to a file under `help/public/`.
 "use strict";
 
 import fs from "node:fs";
@@ -16,11 +16,9 @@ import { fileURLToPath } from "node:url";
 
 import { runTool } from "./lib/audio.mjs";
 import { probeMedia, sha256 } from "./lib/manifest.mjs";
+import { CONTENT_DIR, PUBLIC_DIR, REPO_ROOT } from "./lib/paths.mjs";
 
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(VIDEO_DIR, "..", "..");
-const PUBLIC_DIR = path.join(REPO_ROOT, "docs", "public");
-const CONTENT_DIR = path.join(REPO_ROOT, "docs", "content");
 const MANIFEST_PATH = path.join(PUBLIC_DIR, "assets", "video", "manifest.json");
 const DURATION_TOLERANCE = 0.2;
 const POSTER_WIDTH = 1280;
@@ -443,7 +441,7 @@ function validateTranscript(filePath, id, failures) {
 
 /**
  * Resolve every video attribute in the docs content and confirm the target
- * exists under `docs/public/`.
+ * exists under `help/public/`.
  *
  * @param {string[]} failures
  * @returns {number} the number of references checked
@@ -466,7 +464,7 @@ function validateDocsReferences(failures) {
           failures,
           displayPath(filePath),
           `${attribute}="${reference}" does not resolve to a file under ` +
-            `docs/public.`,
+            `help/public.`,
         );
       }
     }

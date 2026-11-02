@@ -86,7 +86,7 @@ function buildScenario(id) {
     version: "1",
     id,
     title,
-    output: `docs/public/assets/video/${id}.mp4`,
+    output: `help/public/assets/video/${id}.mp4`,
     viewport: { width: 1280, height: 720 },
     storageState: "scripts/video/work/auth/storage-state.json",
     mapSlug: "cape-scott-trail",

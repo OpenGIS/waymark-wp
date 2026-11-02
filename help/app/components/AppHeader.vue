@@ -2,7 +2,7 @@
   <header class="site-header">
     <HeaderMap />
     <div class="site-header__inner">
-      <NuxtLink to="/" class="brand" aria-label="Documentation home">
+      <NuxtLink to="/" class="brand" aria-label="Help home">
         <span class="brand__mark-wrap">
           <svg
             class="brand__mark"

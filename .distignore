@@ -19,6 +19,7 @@ Gruntfile.js
 assets/less
 assets/img/waymark-icon-template.psd
 docs
+help
 scripts
 tests/
 phpunit.xml.dist

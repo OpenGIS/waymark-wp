@@ -71,8 +71,8 @@ class Waymark_Settings {
 					'footer' => '<small>' . sprintf(__('Pro Tip! If you have more than one Basemap, you can switch between them when viewing the Map. The first listed will be used as the default, unless specified in the shortcode like this: %s. Drag to re-order, remove all to restore defaults.', 'waymark'), '[' . Waymark_Config::get_item('shortcode') . ' map_id=&quot;1234&quot; basemap=&quot;Basemap Name&quot;]') . '</small>',
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#tiles')),
-						// translators: The link to the Basemaps documentation
-						'text' => __('Basemap Documentation', 'waymark'),
+						// translators: The link to the Basemaps help page
+						'text' => __('Basemap Help', 'waymark'),
 					],
 					'fields' => [
 						'layer_name' => [
@@ -162,8 +162,8 @@ class Waymark_Settings {
 					'footer' => '<small>' . __('<b>Pro Tip!</b> The first listed will be used as the default. Drag to re-order, remove all to restore defaults.', 'waymark') . '</small>',
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#markers')),
-						// translators: The link to the Marker Types documentation
-						'text' => __('Type Documentation', 'waymark'),
+						// translators: The link to the Marker Types help page
+						'text' => __('Type Help', 'waymark'),
 					],
 					'fields' => [
 						'marker_title' => [
@@ -339,8 +339,8 @@ class Waymark_Settings {
 					'description' => '<span class="waymark-lead">' . __('Customise how Lines are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.', 'waymark') . '</span>',
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#lines')),
-						// translators: The link to the Line Types documentation
-						'text' => __('Type Documentation', 'waymark'),
+						// translators: The link to the Line Types help page
+						'text' => __('Type Help', 'waymark'),
 					],
 					'footer' => '<small>' . __('<b>Pro Tip!</b> The first listed will be used as the default. Drag to re-order, remove all to restore defaults.', 'waymark') . '</small>',
 					'fields' => [
@@ -461,8 +461,8 @@ class Waymark_Settings {
 					'description' => '<span class="waymark-lead">' . __('Customise how Shapes are displayed on the Map. Set these styles once, then select the appropriate Type when you add to the Map.', 'waymark') . '</span>',
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#shapes')),
-						// translators: The link to the Shape Types documentation
-						'text' => __('Type Documentation', 'waymark'),
+						// translators: The link to the Shape Types help page
+						'text' => __('Type Help', 'waymark'),
 					],
 					// translators: The footer of the section for adding Shape Types
 					'footer' => '<small>' . __('<b>Pro Tip!</b> The first listed will be used as the default. Drag to re-order, remove all to restore defaults.', 'waymark') . '</small>',
@@ -572,8 +572,8 @@ class Waymark_Settings {
 					'description' => '<span class="waymark-lead">' . __('Create additional input fields that appear underneath the Map Editor. Any Meta that has been input is displayed on the Map Details page, and can also be displayed by the Shortcode.', 'waymark') . '</span>',
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#meta')),
-						// translators: The link to the Meta documentation
-						'text' => __('Meta Documentation', 'waymark'),
+						// translators: The link to the Meta help page
+						'text' => __('Meta Help', 'waymark'),
 					],
 					'footer' => '<small>' . __('<b>Pro Tip!</b> The first listed will be used as the default. Drag to re-order, remove all to restore defaults.', 'waymark') . '</small>',
 					'fields' => [
@@ -866,8 +866,8 @@ class Waymark_Settings {
 					'description' => sprintf(__('Use the %s Shortcode to allow Map submissions from the front-end of your site.', 'waymark'), '<span class="waymark-code">[Waymark content="submission"]</span>'),
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('features/submissions/')),
-						// translators: The link to the Submissions documentation
-						'text' => __('Submission Documentation', 'waymark'),
+						// translators: The link to the Submissions help page
+						'text' => __('Submission Help', 'waymark'),
 					],
 					'fields' => [
 						'submission_enable' => [
@@ -1086,7 +1086,7 @@ class Waymark_Settings {
 					'description' => esc_html__('Use these options to change how Maps are displayed.', 'waymark'),
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('examples/')),
-						// translators: The link to the Examples documentation
+						// translators: The link to the Examples help page
 						'text' => __('See Examples', 'waymark'),
 					],
 					'fields' => [
@@ -1245,8 +1245,8 @@ class Waymark_Settings {
 					'description' => __('With Clustering enabled, Markers will be grouped together when they are close together. This can help to reduce clutter on the Map.', 'waymark'),
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#misc-cluster_options')),
-						// translators: The link to the Clustering documentation
-						'text' => __('Clustering Documentation', 'waymark'),
+						// translators: The link to the Clustering help page
+						'text' => __('Clustering Help', 'waymark'),
 					],
 					'fields' => [
 						'show_cluster' => [
@@ -1301,8 +1301,8 @@ class Waymark_Settings {
 					'description' => esc_html__('How Maps are embedded into your content using the shortcode.', 'waymark'),
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('#shortcodes')),
-						// translators: The link to the Shortcodes documentation
-						'text' => __('Shortcode Documentation', 'waymark'),
+						// translators: The link to the Shortcodes help page
+						'text' => __('Shortcode Help', 'waymark'),
 					],
 					'fields' => [
 						'shortcode_header' => [
@@ -1349,7 +1349,7 @@ class Waymark_Settings {
 					'description' => esc_html__('Lines with elevation data.', 'waymark'),
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('examples/elevation-profile-colours/')),
-						// translators: The link to the Elevation Profile documentation
+						// translators: The link to the Elevation Profile help page
 						'text' => __('Elevation Styling', 'waymark'),
 					],
 					'fields' => [
@@ -1430,8 +1430,8 @@ class Waymark_Settings {
 					'description' => esc_html__('How Collections are displayed.', 'waymark'),
 					'help' => [
 						'url' => esc_attr(Waymark_Helper::site_url('customising/settings/#misc-collection_options')),
-						// translators: The link to the Collections documentation
-						'text' => __('Collection Documentation', 'waymark'),
+						// translators: The link to the Collections help page
+						'text' => __('Collection Help', 'waymark'),
 					],
 					'fields' => [
 						'load_method' => [

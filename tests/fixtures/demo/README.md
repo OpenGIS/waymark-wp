@@ -65,5 +65,5 @@ before every e2e suite.
 ## Licence
 
 The route photos are derived from the repository's existing fixture images in
-`docs/assets/img/` and are normalised with `sips -Z 1920` to keep the committed
+`assets/img/` and are normalised with `sips -Z 1920` to keep the committed
 fixtures small.

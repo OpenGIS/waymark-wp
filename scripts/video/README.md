@@ -178,7 +178,7 @@ A scenario is a JSON object with these top-level fields:
 | `id`                  | Yes      | Scenario identifier. It names the raw take, timeline and the matching narration file.                                                                                                                                                           |
 | `title`               | No       | Human-readable title used in the recorder summary, MP4 metadata and manifest.                                                                                                                                                                   |
 | `version`             | No       | Optional version recorded verbatim as `scenarioVersion` in the manifest; otherwise a 12-character SHA-256 prefix of the scenario JSON.                                                                                                          |
-| `output`              | No       | Delivery MP4 path. Defaults to `docs/public/assets/video/<id>.mp4` when omitted.                                                                                                                                                                |
+| `output`              | No       | Delivery MP4 path. Defaults to `help/public/assets/video/<id>.mp4` when omitted.                                                                                                                                                                |
 | `viewport`            | No       | Recording viewport. The pipeline is fixed at 1280x720; other values warn and are ignored.                                                                                                                                                       |
 | `storageState`        | No       | Informational only. The recorder always uses the fixed path `scripts/video/work/auth/storage-state.json`, creates it on demand and ignores this value.                                                                                          |
 | `mapSlug`             | No       | Seeded map slug resolved to a map id for `{{mapId}}` tokens. Defaults to `cape-scott-trail`.                                                                                                                                                    |
@@ -431,7 +431,7 @@ The runbook is deliberately ordered. Do not record before the scenario and narra
 7. **Build** with `npm run video:build -- <id>`. This reads `work/timeline-<id>.json` and `work/audio/<id>/timings.json`, and writes the MP4, poster, captions, transcript and manifest entry.
 8. **Audit** with `npm run video:audit -- <id>`, then with `--strict`. Investigate every warning: fix the narration or scenario and rebuild, or record a deliberate threshold override and say why in review.
 9. **Validate** with `npm run video:validate`. It checks the committed assets against the manifest and every docs asset reference. Both must pass before the video is called rebuilt.
-10. **Wire the docs.** Add `captions="/assets/video/captions/<id>.en.vtt"` to the matching `::video-figure` in `docs/content/`, and keep its `src` and `poster` paths on the same `/assets/video/...` convention. Update the inventory table in this file, then run `npm run video:doctor -- <id>` once more to confirm the docs wiring is complete.
+10. **Wire the docs.** Add `captions="/assets/video/captions/<id>.en.vtt"` to the matching `::video-figure` in `help/content/`, and keep its `src` and `poster` paths on the same `/assets/video/...` convention. Update the inventory table in this file, then run `npm run video:doctor -- <id>` once more to confirm the docs wiring is complete.
 
 ### Validation and warnings
 
@@ -471,11 +471,11 @@ Flags:
 - The captions are non-empty WebVTT containing at least one cue, with valid, ordered timestamps.
 - The transcript is non-empty.
 
-It also scans `docs/content/` for `src`, `poster` and `captions` attributes pointing at `/assets/video/...` and confirms each target exists under `docs/public/`.
+It also scans `help/content/` for `src`, `poster` and `captions` attributes pointing at `/assets/video/...` and confirms each target exists under `help/public/`.
 
 The `Video` job in `.github/workflows/tests.yml` runs the validator on Ubuntu with Node 24 and ffmpeg. CI validates only; it never records, synthesises or encodes.
 
-After changing the docs site, run `cd docs && npm run generate` and smoke-check that every poster loads, every video plays with native controls, captions are selectable and timed, paths resolve under both `/` and `/waymark-wp/`, and there are no console errors or missing assets.
+After changing the docs site, run `cd help && npm run generate` and smoke-check that every poster loads, every video plays with native controls, captions are selectable and timed, paths resolve under both `/` and `/waymark-wp/`, and there are no console errors or missing assets.
 
 ## Narration providers
 
@@ -747,22 +747,22 @@ If a TTS take runs long, shorten the script rather than speeding it up beyond ab
 ## Delivery layout and playback
 
 ```text
-docs/public/assets/video/<id>.mp4
-docs/public/assets/video/posters/<id>.jpg
-docs/public/assets/video/captions/<id>.en.vtt
-docs/public/assets/video/transcripts/<id>.md
-docs/public/assets/video/manifest.json
+help/public/assets/video/<id>.mp4
+help/public/assets/video/posters/<id>.jpg
+help/public/assets/video/captions/<id>.en.vtt
+help/public/assets/video/transcripts/<id>.md
+help/public/assets/video/manifest.json
 ```
 
 Posters are 1280×720 JPEG. The high-resolution source PNG is an intermediate under `scripts/video/work/poster/` and is not delivered. Captions use the `.en.vtt` language suffix and live in `captions/`; transcripts live in `transcripts/` as Markdown. Delivery is 720p only; no separate 1080p master is archived. Do not hand-edit a delivered poster unless the edit is recorded in the manifest.
 
 ### Docs wiring
 
-The docs render individual videos with `docs/app/components/content/VideoFigure.vue`; the six-video Getting Started grid is wrapped by `docs/app/components/content/VideoGrid.vue`. All eight videos are wired with a `captions=` attribute:
+The docs render individual videos with `help/app/components/content/VideoFigure.vue`; the six-video Getting Started grid is wrapped by `help/app/components/content/VideoGrid.vue`. All eight videos are wired with a `captions=` attribute:
 
-- `docs/content/index.md` — the six-video grid: Getting Started, Using the Editor, Using Types, Changing Basemaps, Using Collections, Adding Map Meta.
-- `docs/content/customising/markers.md` — Markers.
-- `docs/content/customising/settings.md` — Settings.
+- `help/content/index.md` — the six-video grid: Getting Started, Using the Editor, Using Types, Changing Basemaps, Using Collections, Adding Map Meta.
+- `help/content/customising/markers.md` — Markers.
+- `help/content/customising/settings.md` — Settings.
 
 `VideoFigure.vue` renders a native `<video controls playsinline preload="metadata">` with the supplied poster. Its optional `captions` prop accepts a path string or an array of `{ src, srclang, label, default }` objects. A string becomes one English track marked default; an array becomes one `<track kind="captions">` per entry. Both forms are resolved through `withAssetBase`:
 
@@ -781,7 +781,7 @@ captions: [
 ];
 ```
 
-`withAssetBase` is defined in `docs/app/utils/assets.ts`. Keep the `/assets/video/...` path convention: it resolves correctly whether the docs are served from `/` or `/waymark-wp/`. Moving or renaming these paths breaks base-path handling. English is the only caption language delivered.
+`withAssetBase` is defined in `help/app/utils/assets.ts`. Keep the `/assets/video/...` path convention: it resolves correctly whether the docs are served from `/` or `/waymark-wp/`. Moving or renaming these paths breaks base-path handling. English is the only caption language delivered.
 
 ### Accessibility
 

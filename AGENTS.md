@@ -2,16 +2,21 @@
 
 Pointers for anyone — human or automated — changing this repository.
 
-## Read the documentation first
+## Documentation map
 
-The user-facing documentation lives in `docs/content/**/*.md`. It describes how
-the plugin is meant to behave, and it is usually the fastest way to understand a
-feature before touching its code.
+Three bodies of documentation live in the repository, each with a different
+audience:
 
-- `docs/content/` — documentation source (Nuxt Content, Markdown)
-- `docs/app/` — the documentation site itself
-- `docs/public/` — static assets, including the screencasts in `assets/video/`
-- `scripts/video/README.md` — how the screencasts are produced
+- **User-facing documentation** — `help/content/**/*.md`, the source for the help
+  site (Nuxt Content, Markdown). It describes how the plugin is meant to behave,
+  and it is usually the fastest way to understand a feature before touching its
+  code.
+  - `help/app/` — the Nuxt help site itself
+  - `help/public/` — static assets, including the screencasts in `assets/video/`
+- **Developer documentation** — [`docs/`](docs/README.md), covering setup,
+  architecture, the video pipeline, testing, build and release
+- **Screencast runbook** — [`scripts/video/README.md`](scripts/video/README.md),
+  the authoritative guide to producing the videos
 
 If code and documentation disagree, treat that as a defect in one of them and
 fix both.
@@ -44,7 +49,7 @@ A WordPress plugin.
 - `waymark-js/` — the map library, built into `waymark-js/dist`
 - `languages/` — translation template
 - `tests/` — PHPUnit, Vitest and Playwright suites
-- `docs/` — the documentation site
+- `help/` — the help site
 
 Compiled files are committed. Edit the sources and rebuild; never hand-edit
 `*.min.*`, `waymark-js/dist` or the generated translation template.
@@ -57,11 +62,11 @@ npm run grunt    # rebuild CSS, JS bundles and the translation template
 npm test         # Vitest, PHPUnit and Playwright
 ```
 
-The documentation site is separate:
+The help site is separate:
 
 ```sh
-cd docs && npm run dev     # http://localhost:11003
-cd docs && npm run generate
+cd help && npm run dev     # http://localhost:11003
+cd help && npm run generate
 ```
 
 ## Conventions
@@ -85,7 +90,7 @@ cd docs && npm run generate
   `readme.md`.
 - For screencast work, follow the runbook in `scripts/video/README.md` and run
   `npm run video:validate`.
-- Update `README.md` and `docs/` when behaviour changes.
+- Update `readme.md`, `docs/` and `help/` when behaviour changes.
 
 ## Git
 

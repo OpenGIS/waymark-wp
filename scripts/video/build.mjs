@@ -32,12 +32,11 @@ import {
   sha256,
   toolchainVersions,
 } from "./lib/manifest.mjs";
+import { DELIVERY_DIR, PUBLIC_DIR, REPO_ROOT } from "./lib/paths.mjs";
 
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(VIDEO_DIR, "..", "..");
 const WORK_DIR = path.join(VIDEO_DIR, "work");
 const SCENARIO_DIR = path.join(VIDEO_DIR, "scenarios");
-const DELIVERY_DIR = path.join(REPO_ROOT, "docs", "public", "assets", "video");
 const POSTER_DIR = path.join(DELIVERY_DIR, "posters");
 const CAPTION_DIR = path.join(DELIVERY_DIR, "captions");
 const TRANSCRIPT_DIR = path.join(DELIVERY_DIR, "transcripts");
@@ -918,8 +917,10 @@ function shortHash(buffer) {
  * @returns {string}
  */
 function assetPath(filePath) {
-  const publicDir = path.join(REPO_ROOT, "docs", "public");
-  const relative = path.relative(publicDir, filePath).split(path.sep).join("/");
+  const relative = path
+    .relative(PUBLIC_DIR, filePath)
+    .split(path.sep)
+    .join("/");
 
   return `/${relative}`;
 }

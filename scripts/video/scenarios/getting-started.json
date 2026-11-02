@@ -2,7 +2,7 @@
   "version": "2",
   "id": "getting-started",
   "title": "Getting Started",
-  "output": "docs/public/assets/video/getting-started.mp4",
+  "output": "help/public/assets/video/getting-started.mp4",
   "viewport": {
     "width": 1280,
     "height": 720

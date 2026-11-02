@@ -24,7 +24,7 @@ class Waymark_Menu {
 		add_submenu_page($this->menu_slug, __('Collections', 'waymark'), __('Collections', 'waymark'), 'manage_categories', 'edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map');
 
 		//Help
-		add_submenu_page($this->menu_slug, __('Documentation', 'waymark'), __('Documentation', 'waymark') . ' <i style="font-size:12px" class="fa fa-external-link"></i>', 'edit_posts', Waymark_Helper::site_url());
+		add_submenu_page($this->menu_slug, __('Help', 'waymark'), __('Help', 'waymark') . ' <i style="font-size:12px" class="fa fa-external-link"></i>', 'edit_posts', Waymark_Helper::site_url());
 
 		//Settings
 		add_submenu_page($this->menu_slug, __('Settings', 'waymark'), __('Settings', 'waymark'), 'manage_options', 'waymark-settings', [new Waymark_Settings, 'content_admin_page']);

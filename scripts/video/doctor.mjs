@@ -16,14 +16,16 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadNarration, NARRATION_DIR } from "./lib/narration.mjs";
+import {
+  CONTENT_DIR,
+  DELIVERY_DIR,
+  PUBLIC_DIR,
+  REPO_ROOT,
+} from "./lib/paths.mjs";
 import { timelinePath } from "./lib/timeline.mjs";
 import { validateScenario, validateScenes } from "./record.mjs";
 
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(VIDEO_DIR, "..", "..");
-const DELIVERY_DIR = path.join(REPO_ROOT, "docs", "public", "assets", "video");
-const PUBLIC_DIR = path.join(REPO_ROOT, "docs", "public");
-const CONTENT_DIR = path.join(REPO_ROOT, "docs", "content");
 const SCENARIO_DIR = path.join(VIDEO_DIR, "scenarios");
 const WORK_DIR = path.join(VIDEO_DIR, "work");
 const AUTH_PATH = path.join(WORK_DIR, "auth", "storage-state.json");

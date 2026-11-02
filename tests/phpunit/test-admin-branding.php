@@ -37,7 +37,7 @@ class Test_Admin_Branding extends WP_UnitTestCase {
 
 		$this->assertCount( 1, $links );
 		$this->assertSame( [ 'https://www.ogis.org/waymark-wp/' ], array_column( $links, 1 ) );
-		$this->assertSame( [ 'Read the Docs' ], array_column( $links, 2 ) );
+		$this->assertSame( [ 'View Help' ], array_column( $links, 2 ) );
 
 		preg_match( '/<p class="ogis-panel__meta">(.*?)<\/p>/s', $output, $meta );
 		$this->assertArrayHasKey( 1, $meta, 'The settings sidebar should render a meta line.' );
@@ -70,10 +70,10 @@ class Test_Admin_Branding extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Documentation links are appended to the configured site root, including
+	 * Help links are appended to the configured site root, including
 	 * landing-page anchors and paths with or without a leading slash.
 	 */
-	public function test_site_url_appends_documentation_paths() {
+	public function test_site_url_appends_help_paths() {
 		$base = trailingslashit( Waymark_Config::get_item( 'site_url' ) );
 
 		$this->assertSame( $base, Waymark_Helper::site_url() );

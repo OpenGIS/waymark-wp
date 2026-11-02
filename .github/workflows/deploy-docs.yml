@@ -3,6 +3,11 @@ name: Deploy Docs to GitHub Pages
 on:
   push:
     branches: [master]
+    paths:
+      - "help/**"
+      - "waymark-js/dist/**"
+      - "assets/css/front.min.css"
+      - "package.json"
   workflow_dispatch:
 
 permissions:
@@ -29,18 +34,18 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: docs/package-lock.json
+          cache-dependency-path: help/package-lock.json
 
       - name: Install docs dependencies
-        working-directory: docs
+        working-directory: help
         run: npm ci
 
       - name: Sync Waymark assets
-        working-directory: docs
+        working-directory: help
         run: npm run sync-assets
 
       - name: Generate docs
-        working-directory: docs
+        working-directory: help
         run: npm run generate
         env:
           NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
@@ -48,7 +53,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/.output/public
+          path: help/.output/public
 
       - name: Deploy to GitHub Pages
         id: deployment

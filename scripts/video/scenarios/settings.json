@@ -2,7 +2,7 @@
   "version": "1",
   "id": "settings",
   "title": "Settings",
-  "output": "docs/public/assets/video/settings.mp4",
+  "output": "help/public/assets/video/settings.mp4",
   "viewport": {
     "width": 1280,
     "height": 720

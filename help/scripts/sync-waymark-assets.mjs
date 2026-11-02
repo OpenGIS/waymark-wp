@@ -3,9 +3,9 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
-const docsRoot = resolve(scriptDir, "..");
-const repoRoot = resolve(docsRoot, "..");
-const assetRoot = resolve(docsRoot, "public/assets");
+const helpRoot = resolve(scriptDir, "..");
+const repoRoot = resolve(helpRoot, "..");
+const assetRoot = resolve(helpRoot, "public/assets");
 
 const directoryCopies = [
   ["waymark-js/dist/css", "waymark-js/css"],
@@ -34,4 +34,4 @@ for (const [source, destination] of fileCopies) {
   await copyFile(from, to);
 }
 
-console.log("Synced Waymark assets into docs/public/assets/");
+console.log("Synced Waymark assets into help/public/assets/");

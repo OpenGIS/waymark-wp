@@ -21,7 +21,7 @@ export default defineNuxtConfig({
       htmlAttrs: {
         lang: "en-GB",
       },
-      title: "Documentation",
+      title: "Help",
       titleTemplate: "%s – Waymark",
       link: [
         {

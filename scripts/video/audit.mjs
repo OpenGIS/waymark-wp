@@ -17,11 +17,10 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { resolveTool, runTool } from "./lib/audio.mjs";
+import { DELIVERY_DIR, REPO_ROOT } from "./lib/paths.mjs";
 import { timelinePath } from "./lib/timeline.mjs";
 
 const VIDEO_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.resolve(VIDEO_DIR, "..", "..");
-const DELIVERY_DIR = path.join(REPO_ROOT, "docs", "public", "assets", "video");
 const SCENARIO_DIR = path.join(VIDEO_DIR, "scenarios");
 const DEFAULT_ID = "changing-basemaps";
 const SAMPLE_RATE = 48_000;

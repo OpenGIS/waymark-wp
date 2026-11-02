@@ -274,16 +274,16 @@ test("Collections screen renders the Collections notice markup", async ({
     "https://www.ogis.org/waymark-wp/#shortcodes",
   );
 
-  const docs = notice.locator("a", { hasText: "Read the Docs" });
-  await expect(docs).toBeVisible();
-  await expect(docs).toHaveAttribute(
+  const helpLink = notice.locator("a", { hasText: "View Help" });
+  await expect(helpLink).toBeVisible();
+  await expect(helpLink).toHaveAttribute(
     "href",
     "https://www.ogis.org/waymark-wp/customising/settings/#misc-collection_options",
   );
-  await expect(docs).toHaveClass(/button/);
-  await expect(docs).toHaveClass(/waymark-right/);
-  await expect(docs).toContainText("Read the Docs");
-  await expect(docs.locator(".waymark-arrow")).toHaveCount(1);
+  await expect(helpLink).toHaveClass(/button/);
+  await expect(helpLink).toHaveClass(/waymark-right/);
+  await expect(helpLink).toContainText("View Help");
+  await expect(helpLink.locator(".waymark-arrow")).toHaveCount(1);
 
   await expect(notice).not.toContainText("<a href=");
   await expect(notice).not.toContainText("<span");

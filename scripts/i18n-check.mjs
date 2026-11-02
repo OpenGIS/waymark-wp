@@ -17,7 +17,7 @@ const SOURCES = [
   },
   {
     name: "Docs",
-    file: "docs/app/data/waymarkUserConfig.ts",
+    file: "help/app/data/waymarkUserConfig.ts",
     parse: parseJsLanguage,
   },
 ];

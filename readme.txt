@@ -33,7 +33,7 @@ Create beautiful, interactive Maps with Waymark.
 
 🌟 [GitHub](https://github.com/opengis/waymark-wp)
 👐 [WordPress](https://wordpress.org/plugins/waymark/)
-📖 [Demo & Docs](https://www.ogis.org/waymark-wp/)
+📖 [Demo & Help](https://www.ogis.org/waymark-wp/)
 
 ### Displaying Maps
 
@@ -101,12 +101,12 @@ npm install
 npm run dev
 ~~~
 
-### Documentation
+### Help
 
-The documentation site is a Nuxt 4 app in `docs/`, built with `@nuxt/content`. Node 24.15 or newer is required.
+The help site is a Nuxt 4 app in `help/`, built with `@nuxt/content`. Node 24.15 or newer is required.
 
 ~~~bash
-cd docs
+cd help
 npm ci
 npm run sync-assets
 npm run dev
@@ -170,7 +170,7 @@ WP_ENV_PHP_VERSION=8.5 WP_ENV_CORE=WordPress/WordPress#trunk npm run test:php
 
 = Can I Get More Help? =
 
-Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Documentation</a>.
+Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Help</a>.
 
 = How Can I Contribute? =
 

@@ -69,7 +69,7 @@ echo "Applying .distignore..."
 rsync -rc --exclude-from="$STAGE/.distignore" "$STAGE/" "$DIST/waymark/" --delete --delete-excluded
 
 echo "Verifying distributable..."
-FORBIDDEN='(^|/)\.md$|(^|/)waymark-icon-template\.psd$|(^|/)tests(/|$)|(^|/)docs(/|$)|(^|/)\.opencode(/|$)|(^|/)scripts(/|$)|(^|/)\.distignore$'
+FORBIDDEN='(^|/)\.md$|(^|/)waymark-icon-template\.psd$|(^|/)tests(/|$)|(^|/)help(/|$)|(^|/)docs(/|$)|(^|/)\.opencode(/|$)|(^|/)scripts(/|$)|(^|/)\.distignore$'
 
 DIST_VERSION=$(sed -n 's/^Version:[[:space:]]*//p' "$DIST/waymark/Waymark.php" | head -1 | tr -d '[:space:]')
 if [ "$DIST_VERSION" != "$VERSION" ]; then

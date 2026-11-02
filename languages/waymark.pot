@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Waymark 1.8.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-10-30 18:51:56+00:00\n"
+"POT-Creation-Date: 2026-10-31 13:54:59+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -106,7 +106,7 @@ msgid "Collections"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:27
-msgid "Documentation"
+msgid "Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:30 inc/Helpers/Waymark_Helper.php:15
@@ -272,8 +272,8 @@ msgid ""
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:75
-#. translators: The link to the Basemaps documentation
-msgid "Basemap Documentation"
+#. translators: The link to the Basemaps help page
+msgid "Basemap Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:84
@@ -361,10 +361,10 @@ msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:166 inc/Admin/Waymark_Settings.php:343
 #: inc/Admin/Waymark_Settings.php:465
-#. translators: The link to the Marker Types documentation
-#. translators: The link to the Line Types documentation
-#. translators: The link to the Shape Types documentation
-msgid "Type Documentation"
+#. translators: The link to the Marker Types help page
+#. translators: The link to the Line Types help page
+#. translators: The link to the Shape Types help page
+msgid "Type Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:175
@@ -705,8 +705,8 @@ msgid ""
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:576
-#. translators: The link to the Meta documentation
-msgid "Meta Documentation"
+#. translators: The link to the Meta help page
+msgid "Meta Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:586
@@ -958,8 +958,8 @@ msgid ""
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:870
-#. translators: The link to the Submissions documentation
-msgid "Submission Documentation"
+#. translators: The link to the Submissions help page
+msgid "Submission Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:878
@@ -1156,7 +1156,7 @@ msgid "Use these options to change how Maps are displayed."
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1090
-#. translators: The link to the Examples documentation
+#. translators: The link to the Examples help page
 msgid "See Examples"
 msgstr ""
 
@@ -1323,8 +1323,8 @@ msgid ""
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1249
-#. translators: The link to the Clustering documentation
-msgid "Clustering Documentation"
+#. translators: The link to the Clustering help page
+msgid "Clustering Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1257
@@ -1373,8 +1373,8 @@ msgid "How Maps are embedded into your content using the shortcode."
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1305
-#. translators: The link to the Shortcodes documentation
-msgid "Shortcode Documentation"
+#. translators: The link to the Shortcodes help page
+msgid "Shortcode Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1313
@@ -1434,7 +1434,7 @@ msgid "Lines with elevation data."
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1353
-#. translators: The link to the Elevation Profile documentation
+#. translators: The link to the Elevation Profile help page
 msgid "Elevation Styling"
 msgstr ""
 
@@ -1525,8 +1525,8 @@ msgid "How Collections are displayed."
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1434
-#. translators: The link to the Collections documentation
-msgid "Collection Documentation"
+#. translators: The link to the Collections help page
+msgid "Collection Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1445
@@ -1701,7 +1701,8 @@ msgstr ""
 msgid "Waymark settings"
 msgstr ""
 
-#: inc/Admin/Waymark_Settings.php:2113
+#: inc/Admin/Waymark_Settings.php:2113 inc/Helpers/Waymark_Helper.php:27
+#: inc/Waymark_Admin.php:180
 msgid "View Help"
 msgstr ""
 
@@ -1760,10 +1761,6 @@ msgstr ""
 
 #: inc/Helpers/Waymark_Helper.php:23
 msgid "by"
-msgstr ""
-
-#: inc/Helpers/Waymark_Helper.php:27 inc/Waymark_Admin.php:180
-msgid "Read the Docs"
 msgstr ""
 
 #: inc/Helpers/Waymark_Helper.php:193 inc/Waymark_Taxonomies.php:21
