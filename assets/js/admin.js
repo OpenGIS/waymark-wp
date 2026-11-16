@@ -549,7 +549,7 @@ function waymark_setup_select_meta_type() {
     }
 
     //On change
-    select.change(function () {
+    select.on("change", function () {
       if (select.val() == "select" || select.val() == "select_multi") {
         options_row.show();
       } else {
@@ -616,7 +616,7 @@ function waymark_setup_select_icon_type() {
     update_row(select.val());
 
     //On change
-    select.change(function () {
+    select.on("change", function () {
       update_row(select.val());
     });
   });

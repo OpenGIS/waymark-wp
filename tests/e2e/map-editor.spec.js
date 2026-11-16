@@ -19,9 +19,26 @@ test("creates a Map with a linked marker description and renders it on the front
   // The flow spans several full page loads plus tile waits.
   test.setTimeout(90_000);
 
+  // WordPress ships jQuery Migrate with deprecation warnings muted
+  // (jQuery.migrateMute = true) unless SCRIPT_DEBUG is on. Unmute the copy it
+  // serves so deprecated shorthands surface as console warnings here.
+  await page.route("**/wp-admin/load-scripts.php**", async (route) => {
+    const response = await route.fetch();
+    const body = await response.text();
+    const unmute = body.includes("migrateMute")
+      ? "\n;window.jQuery && (window.jQuery.migrateMute = false);"
+      : "";
+
+    await route.fulfill({ response, body: body + unmute });
+  });
+
   const consoleErrors = [];
   const pageErrors = [];
+  const jqueryWarnings = [];
   page.on("console", (msg) => {
+    if (msg.type() === "warning" && /JQMIGRATE|jQuery\.fn\./.test(msg.text())) {
+      jqueryWarnings.push(`[${msg.type()}] ${msg.text()}`);
+    }
     if (msg.type() === "error" && !FAVICON_URL.test(msg.location().url)) {
       consoleErrors.push(`[${msg.type()}] ${msg.text()}`);
     }
@@ -81,6 +98,36 @@ test("creates a Map with a linked marker description and renders it on the front
   await page.waitForFunction(
     () => window.tinymce && window.tinymce.get("waymark-info-description"),
   );
+
+  // 5b. Select a marker type from the popup's preview grid. This exercises the
+  // `.prop("selected")` path that previously emitted a jQuery Migrate warning
+  // through removeAttr("selected").
+  if ((await page.locator(".leaflet-popup").count()) === 0) {
+    await page.evaluate(() =>
+      window.Waymark.map_data.eachLayer(
+        (layer) => layer.openPopup && layer.openPopup(),
+      ),
+    );
+  }
+  const markerPopup = page.locator(".leaflet-popup").last();
+  const popupSelect = markerPopup.locator(".waymark-info-type select").first();
+  const typePreviews = markerPopup.locator(
+    ".waymark-overlay-preview .waymark-type",
+  );
+  const previewCount = await typePreviews.count();
+  expect(previewCount).toBeGreaterThan(1);
+
+  const currentType = await popupSelect.inputValue();
+  const previewTypeKeys = await typePreviews.evaluateAll((elements) =>
+    elements.map((element) => window.jQuery(element).data("type_key")),
+  );
+  const targetIndex = previewTypeKeys.findIndex(
+    (typeKey) => typeKey && typeKey !== currentType,
+  );
+  expect(targetIndex).toBeGreaterThanOrEqual(0);
+
+  await typePreviews.nth(targetIndex).click();
+  await expect(popupSelect).toHaveValue(previewTypeKeys[targetIndex]);
 
   // 6. Set an HTML description containing a link.
   await page.evaluate((html) => {
@@ -155,4 +202,8 @@ test("creates a Map with a linked marker description and renders it on the front
     [],
   );
   expect(pageErrors, `Page errors:\n${pageErrors.join("\n")}`).toEqual([]);
+  expect(
+    jqueryWarnings,
+    `jQuery Migrate warnings:\n${jqueryWarnings.join("\n")}`,
+  ).toEqual([]);
 });

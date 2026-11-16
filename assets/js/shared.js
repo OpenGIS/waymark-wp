@@ -266,7 +266,7 @@ function waymark_setup_accordions() {
 				}
 
 				//Slide
-				jQuery(this).click(function () {
+				jQuery(this).on("click", function () {
 					var clicked_group_index = jQuery(this)
 						.parents(".waymark-accordion-group")
 						.data("waymark-index");

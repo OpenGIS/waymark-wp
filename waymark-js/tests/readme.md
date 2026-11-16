@@ -1,6 +1,6 @@
 ### Testing
 
-Tests cover the library's documented API chapters, one test file per chapter. Run them from the repository root (`vitest.config.mjs` configures Vitest with the jsdom environment):
+`tests/docs/` covers the library's documented API chapters, one test file per chapter; the remaining suites are behaviour regressions. Run them from the repository root (`vitest.config.mjs` configures Vitest with the jsdom environment):
 
 ```bash
 npm run test:js
@@ -8,14 +8,19 @@ npm run test:js
 
 ```
 tests/
-├── setup.js          # Global test setup (loads globals like $, L)
+├── setup.js                     # Global test setup (loads globals like $, L)
 ├── docs/
 │   ├── 1.index.test.js
 │   ├── 2.map.test.js
 │   ├── 3.viewer.test.js
 │   ├── 4.editor.test.js
 │   └── 5.customise.test.js
-└── xss.test.js
+├── console-regressions.test.js  # Editor console regressions
+├── editor-i18n.test.js          # Per-type editor strings
+├── i18n-escaping.test.js        # Escaped translated output
+├── locale-formatting.test.js    # Locale-aware number formatting
+├── stable-type-keys.test.js     # Stable overlay type keys
+└── xss.test.js                  # Popup sanitisation regressions
 ```
 
 ## Handling Legacy Code (Non-Module)
@@ -37,7 +42,18 @@ The chapter numbering keeps the tests aligned with the library's documented API:
 3. **Concept Verification**: Tests implement the documented code examples and assert the expected outcome.
 
 > [!NOTE]
-> `tests/xss.test.js` is an exception to the 1:1 mirroring: it is a security regression suite covering the popup sanitisation helpers (`sanitize_description`, `escape_html`, `is_safe_url`) and is not mirrored from a doc page.
+> The suites outside `tests/docs/` are exceptions to the 1:1 mirroring. They are
+> behaviour regressions, not chapter documentation:
+>
+> - `xss.test.js` covers the popup sanitisation helpers (`sanitize_description`,
+>   `escape_html`, `is_safe_url`).
+> - `editor-i18n.test.js`, `i18n-escaping.test.js` and
+>   `locale-formatting.test.js` cover per-type editor strings, escaping of
+>   translated output and locale-aware number formatting.
+> - `stable-type-keys.test.js` covers stable overlay type keys.
+> - `console-regressions.test.js` covers editor console regressions:
+>   deprecated jQuery shorthands, selection via `.prop`, copied data defaults and
+>   the circle-only `getRadius` path.
 
 ## Example Test Structure (`tests/docs/2.map.test.js`)
 

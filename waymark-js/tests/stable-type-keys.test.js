@@ -116,7 +116,7 @@ describe("stable overlay type keys", () => {
       });
 
     expect(option.val()).toBe("trail_access");
-    expect(option.attr("selected")).toBe("selected");
+    expect(option.prop("selected")).toBe(true);
   });
 
   it("falls back to the title when a legacy key has no explicit key", () => {

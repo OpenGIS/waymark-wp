@@ -10644,26 +10644,26 @@ function Waymark_Map_Editor() {
       //Use default type data
       switch (true) {
         case layer instanceof Waymark_L.Circle:
-          layer.feature.properties = Waymark.config.shape_data_defaults;
+          layer.feature.properties = Waymark.get_data_defaults("shape");
 
           //Set radius
           layer.feature.properties.radius = layer.getRadius();
 
           break;
         case layer instanceof Waymark_L.Rectangle:
-          layer.feature.properties = Waymark.config.shape_data_defaults;
+          layer.feature.properties = Waymark.get_data_defaults("shape");
 
           //Remember that this is a rectangle, not any old polygon
           layer.feature.properties.rectangle = true;
 
           break;
         case layer instanceof Waymark_L.Polygon:
-          layer.feature.properties = Waymark.config.shape_data_defaults;
+          layer.feature.properties = Waymark.get_data_defaults("shape");
 
           break;
 
         case layer instanceof Waymark_L.Polyline:
-          layer.feature.properties = Waymark.config.line_data_defaults;
+          layer.feature.properties = Waymark.get_data_defaults("line");
 
           break;
       }
@@ -10685,7 +10685,7 @@ function Waymark_Map_Editor() {
       //Circle?
       if (
         typeof layer.feature !== "undefined" &&
-        layer.feature.properties.radius
+        layer instanceof Waymark_L.Circle
       ) {
         layer.feature.properties.radius = layer.getRadius();
       }
@@ -10887,7 +10887,7 @@ function Waymark_Map_Editor() {
             name: "add_file",
           })
           .css("display", "none")
-          .change(function () {
+          .on("change", function () {
             Waymark.handle_file_upload(jQuery(this));
           });
 
@@ -11173,7 +11173,7 @@ function Waymark_Map_Editor() {
       );
 
       //On change
-      jq_line_direction_select.change(function () {
+      jq_line_direction_select.on("change", function () {
         var selected_input = jQuery("option:selected", jQuery(this));
 
         //Get direction value
@@ -11204,7 +11204,7 @@ function Waymark_Map_Editor() {
               Waymark.make_key(feature.properties.direction)
             );
           })
-          .attr("selected", "selected");
+          .prop("selected", true);
       }
     }
 
@@ -11216,9 +11216,7 @@ function Waymark_Map_Editor() {
 
     jq_layer_type_select.append(
       jQuery("<option />")
-        .attr({
-          disabled: "disabled",
-        })
+        .prop("disabled", true)
         .text(Waymark.config.language["object_type_label_" + layer_type]),
     );
 
@@ -11238,7 +11236,7 @@ function Waymark_Map_Editor() {
     }
 
     //On change
-    jq_layer_type_select.change(function () {
+    jq_layer_type_select.on("change", function () {
       var selected_input = jQuery("option:selected", jQuery(this));
 
       //Get type value
@@ -11294,7 +11292,7 @@ function Waymark_Map_Editor() {
       .filter(function () {
         return jQuery(this).val() == resolved_feature_type;
       })
-      .attr("selected", "selected");
+      .prop("selected", true);
 
     // ================================
     // ========= TYPE PREVIEW =========
@@ -11380,11 +11378,7 @@ function Waymark_Map_Editor() {
 
         //Set selected
         jQuery("option", jq_layer_type_select).each(function () {
-          if (overlay_preview.val() == clicked_type_key) {
-            overlay_preview.attr("selected", "selected");
-          } else {
-            overlay_preview.removeAttr("selected");
-          }
+          jQuery(this).prop("selected", jQuery(this).val() == clicked_type_key);
         });
 
         //Update actual select
@@ -11498,14 +11492,14 @@ function Waymark_Map_Editor() {
               target: "_blank",
             })
             .append(img_ele)
-            .hover(
-              function () {
+            .on({
+              mouseenter: function () {
                 jQuery(this).addClass("waymark-hover");
               },
-              function () {
+              mouseleave: function () {
                 jQuery(this).removeClass("waymark-hover");
               },
-            );
+            });
 
           //Upload
 

@@ -32,7 +32,7 @@ function waymark_setup_map_editor(waymark_editor = {}) {
 					name: "add_photo",
 				})
 				.css("display", "none")
-				.change(function () {
+				.on("change", function () {
 					waymark_editor.handle_file_upload(jQuery(this));
 				});
 
@@ -71,7 +71,7 @@ function waymark_setup_map_editor(waymark_editor = {}) {
 						name: "marker_photo",
 					})
 					.css("display", "none")
-					.change(function () {
+					.on("change", function () {
 						waymark_editor.handle_file_upload(jQuery(this), {
 							feature: feature,
 							img_view: jQuery(
