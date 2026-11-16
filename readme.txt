@@ -179,6 +179,8 @@ Yes, please view the <a href="https://www.ogis.org/waymark-wp/">Help</a>.
 
 If you have anything bad to say, please <a href="https://wordpress.org/support/plugin/waymark/#new-topic-0">create an issue</a> before leaving a review, this is how the plugin gets better!
 
+Special thanks to [ljosh](https://profiles.wordpress.org/ljosh/) ([GitHub](https://github.com/JoshJourney)) for their contributions to Waymark.
+
 = Does Waymark Support Google Maps? =
 
 Yes! While the Google Maps API is not used, <a href="https://gist.github.com/morehawes/f2982753074599363ca3a9f8582cd572">Google Basemaps can be added to Waymark</a> as raster tiles.  
@@ -212,6 +214,15 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 21. Advanced — Configure editor, collection, permalink, post type and debug options.
 
 == Changelog ==
+
+= 1.8.2 =
+* Fix: Multi-select Meta values display as line breaks instead of visible break markup.
+* Fix: Info windows stay in view when zooming out.
+* Fix: Editor info window buttons no longer overlap when a theme resets box-sizing.
+* Fix: Marker and route preset panels only show a scrollbar when they overflow.
+* Fix: The Meta fields Settings link opens the correct tab.
+* Fix: Sharper shortcode header text, fixing blurry titles on some themes.
+* Fix: Resolve deprecated jQuery event warnings in the editor and map scripts.
 
 = 1.8.1 =
 * Help: renamed the admin Documentation links to Help.
