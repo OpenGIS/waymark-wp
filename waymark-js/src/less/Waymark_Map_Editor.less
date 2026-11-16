@@ -140,6 +140,10 @@
 		ul.waymark-info {
 			height: 315px;
 			width: 225px;
+			//The 70px type-preview gutter sits outside the field column, so pin
+			//the box sum: a theme's global border-box reset would otherwise
+			//shrink the list and pull the direction select over the buttons.
+			box-sizing: content-box;
 
 			position: relative;
 			list-style-type: none;
@@ -172,12 +176,12 @@
 					}
 				}
 				&.waymark-info-description {
-					max-height: 170px;
+					max-height: 150px;
 					margin-bottom: 8px;
 					overflow: hidden;
 					textarea {
 						padding: 5px;
-						height: 140px;
+						height: 130px;
 						border: none;
 					}
 					border: 1px solid #d2d2d2;
@@ -276,7 +280,7 @@
 
 				&.waymark-info-direction {
 					position: absolute;
-					bottom: 0;
+					bottom: -5px;
 					right: 0;
 
 					select {

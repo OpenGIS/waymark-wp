@@ -105,6 +105,7 @@
 .waymark-map-container.waymark-is-editor ul.waymark-info {
   height: 315px;
   width: 225px;
+  box-sizing: content-box;
   position: relative;
   list-style-type: none;
   padding-left: 70px;
@@ -138,14 +139,14 @@
   border-radius: 4px;
 }
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-description {
-  max-height: 170px;
+  max-height: 150px;
   margin-bottom: 8px;
   overflow: hidden;
   border: 1px solid #d2d2d2;
 }
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-description textarea {
   padding: 5px;
-  height: 140px;
+  height: 130px;
   border: none;
 }
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-type.waymark-marker-type,
@@ -230,7 +231,7 @@
 }
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-direction {
   position: absolute;
-  bottom: 0;
+  bottom: -5px;
   right: 0;
 }
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-direction select {
