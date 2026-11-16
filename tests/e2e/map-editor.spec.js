@@ -159,7 +159,7 @@ test("creates a Map with a linked marker description and renders it on the front
   expect(geoJson.features[0].properties.description).toBe(DESCRIPTION_HTML);
 
   // 9. Editor screenshot.
-  await page.screenshot({ path: ".opencode/tmp/e2e-map-01-editor.png" });
+  await page.screenshot({ path: "temp/e2e-map-01-editor.png" });
 
   // 10. Publish and capture the post ID and permalink.
   await page.click("#publish");
@@ -181,7 +181,7 @@ test("creates a Map with a linked marker description and renders it on the front
 
   // 12. Front end screenshot (scroll the map into frame first).
   await page.locator(".leaflet-container").scrollIntoViewIfNeeded();
-  await page.screenshot({ path: ".opencode/tmp/e2e-map-02-frontend.png" });
+  await page.screenshot({ path: "temp/e2e-map-02-frontend.png" });
 
   // 13. Reopen the editor; the saved data survived the round trip.
   await page.goto(`/wp-admin/post.php?post=${postId}&action=edit`);
@@ -194,7 +194,7 @@ test("creates a Map with a linked marker description and renders it on the front
   );
 
   // 14. Reloaded editor screenshot.
-  await page.screenshot({ path: ".opencode/tmp/e2e-map-03-editor-reload.png" });
+  await page.screenshot({ path: "temp/e2e-map-03-editor-reload.png" });
 
   // 15. Tidy up: move the test post to the trash.
   page.once("dialog", (dialog) => dialog.accept());

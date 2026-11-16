@@ -506,16 +506,26 @@ class Test_I18n_Slice7 extends WP_UnitTestCase {
 
 		$mutated = $pot . "\n\n#: inc/Admin/Waymark_Settings.php:62\nmsgid \"\"\n\"" . str_replace( '"', '\\"', $combined ) . "\"\nmsgstr \"\"\n";
 
-		$path = dirname( __DIR__, 2 ) . '/.opencode/tmp/slice7-waymark.mutated.pot';
+		$dir = dirname( __DIR__, 2 ) . '/temp/phpunit';
 
-		file_put_contents( $path, $mutated );
+		if ( ! is_dir( $dir ) ) {
+			wp_mkdir_p( $dir );
+		}
 
-		$entries = $this->pot_entries( $path );
+		$path = $dir . '/slice7-waymark.mutated.' . uniqid() . '.pot';
 
-		$this->assertArrayHasKey( "\0" . $combined, $entries, 'The mutation should restore the combined msgid.' );
+		try {
+			file_put_contents( $path, $mutated );
 
-		$this->expectException( PHPUnit\Framework\AssertionFailedError::class );
-		$this->assertArrayNotHasKey( "\0" . $combined, $entries, 'The production assertion must fail when the combined msgid is restored.' );
+			$entries = $this->pot_entries( $path );
+
+			$this->assertArrayHasKey( "\0" . $combined, $entries, 'The mutation should restore the combined msgid.' );
+
+			$this->expectException( PHPUnit\Framework\AssertionFailedError::class );
+			$this->assertArrayNotHasKey( "\0" . $combined, $entries, 'The production assertion must fail when the combined msgid is restored.' );
+		} finally {
+			@unlink( $path );
+		}
 	}
 
 	/**
@@ -532,23 +542,33 @@ class Test_I18n_Slice7 extends WP_UnitTestCase {
 
 		$this->assertNotSame( $source, $mutated, 'The mutation should change the source.' );
 
-		$path = dirname( __DIR__, 2 ) . '/.opencode/tmp/Waymark_Settings_Mutated.php';
+		$dir = dirname( __DIR__, 2 ) . '/temp/phpunit';
 
-		file_put_contents( $path, $mutated );
-		require_once $path;
+		if ( ! is_dir( $dir ) ) {
+			wp_mkdir_p( $dir );
+		}
 
-		$settings = new Waymark_Settings_Mutated();
-		$settings->register_settings();
+		$path = $dir . '/Waymark_Settings_Mutated.' . uniqid() . '.php';
 
-		$_GET['content'] = 'waymark-settings-tab-properties';
+		try {
+			file_put_contents( $path, $mutated );
+			require_once $path;
 
-		ob_start();
-		$settings->content_admin_page();
-		$html = ob_get_clean();
+			$settings = new Waymark_Settings_Mutated();
+			$settings->register_settings();
 
-		unset( $_GET['content'] );
+			$_GET['content'] = 'waymark-settings-tab-properties';
 
-		$this->assertStringNotContainsString( '<pre>', $html );
-		$this->assertStringContainsString( '"type": "FeatureCollection"', $html );
+			ob_start();
+			$settings->content_admin_page();
+			$html = ob_get_clean();
+
+			unset( $_GET['content'] );
+
+			$this->assertStringNotContainsString( '<pre>', $html );
+			$this->assertStringContainsString( '"type": "FeatureCollection"', $html );
+		} finally {
+			@unlink( $path );
+		}
 	}
 }

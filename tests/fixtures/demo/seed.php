@@ -50,7 +50,7 @@ global $wpdb;
 $upload_subdir   = 'waymark-demo';
 $demo_date       = '2026-06-15 10:30:00';
 $demo_image_dir  = __DIR__ . '/images';
-$tmp_dir         = $plugin_dir . '/.opencode/tmp';
+$tmp_dir         = $plugin_dir . '/temp/demo';
 $demo_page_id    = 110;
 $demo_page_slug  = 'waymark-demo';
 $settings_url    = '/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers';

@@ -27,7 +27,7 @@ const screenshotDefaults = {
 module.exports = defineConfig({
   testDir: "./tests/e2e",
   globalSetup: "./tests/e2e/global.setup.js",
-  outputDir: ".opencode/tmp/playwright",
+  outputDir: "temp/playwright",
   timeout: 15_000,
   expect: { timeout: 5_000 },
   retries: 0,

@@ -4,11 +4,11 @@
 // Each navigates, settles the Map, asserts the UI it exercises, gates on zero
 // console/page errors (excluding only the browser-chrome `/favicon.ico`
 // request), waits for the capture target's geometry to stop reflowing, and
-// writes a deterministic PNG to `.opencode/tmp/screenshots/`.
+// writes a deterministic PNG to `temp/screenshots/`.
 //
 // These specs double as functional smoke coverage: they run in the normal
 // `npm run test:e2e` suite. With `WAYMARK_SCREENSHOTS=1` they instead write
-// quality-85 JPEGs to `.opencode/tmp/screenshots/canonical/`; the
+// quality-85 JPEGs to `temp/screenshots/canonical/`; the
 // `screenshots`/`screenshots:check` npm scripts publish and verify those. This
 // file never writes to `.wordpress-org/` itself.
 "use strict";
@@ -24,7 +24,7 @@ const {
 } = require("./fixtures");
 
 const ROOT = path.join(__dirname, "..", "..");
-const SHOT_DIR = path.join(ROOT, ".opencode", "tmp", "screenshots");
+const SHOT_DIR = path.join(ROOT, "temp", "screenshots");
 
 // `WAYMARK_SCREENSHOTS=1` switches the captures to the canonical readme assets:
 // JPEG (quality 85) written to a separate directory, from which the npm scripts

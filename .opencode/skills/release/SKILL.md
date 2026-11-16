@@ -69,7 +69,7 @@ If CI fails before the deploy step, run the command above, inspect the result, t
 
 ## Local distributable
 
-`npm run dist` builds a CI-faithful plugin zip at `.opencode/tmp/waymark-<version>.zip`.
+`npm run dist` builds a CI-faithful plugin zip at `temp/waymark-<version>.zip`.
 
 It copies tracked files into a temporary tree, runs `grunt sync_version build`, applies `.distignore`, and zips the `waymark/` folder. The repository is not modified; use the zip to inspect or test-install the distributable.
 

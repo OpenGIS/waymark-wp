@@ -33,7 +33,7 @@ const TILES_DIR = path.join(DEMO_DIR, "tiles");
 const IMAGES_DIR = path.join(DEMO_DIR, "images");
 const SEED_OUTPUT_PATH = path.join(DEMO_DIR, "seed-output.json");
 const D3_PATH = path.join(ROOT, "node_modules", "d3", "dist", "d3.min.js");
-const TMP_DIR = path.join(ROOT, ".opencode", "tmp");
+const TMP_DIR = path.join(ROOT, "temp");
 const TILE_RECORD_LOG = path.join(TMP_DIR, "tile-record.log");
 const TILE_SERVE_LOG = path.join(TMP_DIR, "tile-serve.log");
 

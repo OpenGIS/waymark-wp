@@ -68,7 +68,7 @@ Record mode fetches only the tiles that are missing from the pack; tiles already
 present are served from disk without a network round-trip. Fetches are throttled
 to at most one per second and sent with a descriptive user agent. Each recorded
 tile is logged to stdout (prefixed `[tile-record]`) and appended to
-`.opencode/tmp/tile-record.log`.
+`temp/tile-record.log`.
 
 ```sh
 WAYMARK_RECORD_TILES=1 npx playwright test tests/e2e/screenshots.spec.js
@@ -88,7 +88,7 @@ To confirm the pack matches the captures exactly:
 
 1. Run the capture spec with served-tile logging enabled. Every tile served from
    disk is printed as `[tile-serve] served <host>/<z>/<x>/<y>` and appended to
-   `.opencode/tmp/tile-serve.log`. The logging is off unless the variable is set,
+   `temp/tile-serve.log`. The logging is off unless the variable is set,
    so a normal run stays quiet.
 
    ```sh
@@ -107,7 +107,7 @@ left unserved, and the pack must be re-recorded before pruning.
 npx playwright test tests/e2e/screenshots.spec.js
 ```
 
-Each capture is written to `.opencode/tmp/screenshots/` as a PNG, alongside a
+Each capture is written to `temp/screenshots/` as a PNG, alongside a
 `manifest.json` recording its pixel dimensions and SHA-256. The full suite
 (`npm run test:e2e`) runs every spec in this directory together.
 
@@ -122,8 +122,8 @@ npm run screenshots:check  # capture, verify the published files match, then run
 ```
 
 Both commands run the capture spec with `WAYMARK_SCREENSHOTS=1`, which writes
-quality-85 JPEGs to `.opencode/tmp/screenshots/canonical/` instead of the usual
-PNGs under `.opencode/tmp/screenshots/`. The publish or compare step only runs
+quality-85 JPEGs to `temp/screenshots/canonical/` instead of the usual
+PNGs under `temp/screenshots/`. The publish or compare step only runs
 when that capture run passes:
 
 - `npm run screenshots` copies the managed files (`editor-demo.jpg` and

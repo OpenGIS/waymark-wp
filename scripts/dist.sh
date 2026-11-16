@@ -4,7 +4,7 @@
 #
 # Copies tracked files into a temporary staging tree, runs the release build
 # there, applies .distignore with the same rsync semantics as the 10up deploy
-# action, and writes .opencode/tmp/waymark-<version>.zip. The working tree is
+# action, and writes temp/waymark-<version>.zip. The working tree is
 # never modified.
 
 set -euo pipefail
@@ -12,7 +12,7 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
-TMP_DIR="$ROOT/.opencode/tmp"
+TMP_DIR="$ROOT/temp"
 VERSION=$(grep -m1 '^Version:' "$ROOT/Waymark.php" | awk '{print $NF}')
 
 if [ -z "$VERSION" ]; then
@@ -69,7 +69,7 @@ echo "Applying .distignore..."
 rsync -rc --exclude-from="$STAGE/.distignore" "$STAGE/" "$DIST/waymark/" --delete --delete-excluded
 
 echo "Verifying distributable..."
-FORBIDDEN='(^|/)\.md$|(^|/)waymark-icon-template\.psd$|(^|/)tests(/|$)|(^|/)help(/|$)|(^|/)docs(/|$)|(^|/)\.opencode(/|$)|(^|/)scripts(/|$)|(^|/)\.distignore$'
+FORBIDDEN='(^|/)\.md$|(^|/)waymark-icon-template\.psd$|(^|/)tests(/|$)|(^|/)help(/|$)|(^|/)docs(/|$)|(^|/)temp(/|$)|(^|/)scripts(/|$)|(^|/)\.distignore$'
 
 DIST_VERSION=$(sed -n 's/^Version:[[:space:]]*//p' "$DIST/waymark/Waymark.php" | head -1 | tr -d '[:space:]')
 if [ "$DIST_VERSION" != "$VERSION" ]; then

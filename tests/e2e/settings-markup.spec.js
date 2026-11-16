@@ -9,7 +9,7 @@ const SETTINGS_PATH =
   "/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings";
 const COLLECTIONS_PATH =
   "/wp-admin/edit-tags.php?taxonomy=waymark_collection&post_type=waymark_map";
-const TMP_DIR = path.join(__dirname, "..", "..", ".opencode", "tmp");
+const TMP_DIR = path.join(__dirname, "..", "..", "temp");
 
 /**
  * Build a Settings URL for a tab or section.

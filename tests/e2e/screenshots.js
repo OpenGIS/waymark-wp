@@ -1,7 +1,7 @@
 // Readme-screenshot publisher and verifier.
 //
 // The capture spec writes canonical JPEGs to
-// `.opencode/tmp/screenshots/canonical/` when `WAYMARK_SCREENSHOTS=1`. This
+// `temp/screenshots/canonical/` when `WAYMARK_SCREENSHOTS=1`. This
 // helper owns the managed mapping between those files and the WordPress.org
 // plugin directory, and is driven by the `screenshots` / `screenshots:check`
 // npm scripts (which only reach it after a passing capture run):
@@ -18,13 +18,7 @@ const crypto = require("node:crypto");
 const { MANAGED, hashReadmeFile } = require("../../scripts/readme-assets");
 
 const ROOT = path.join(__dirname, "..", "..");
-const CANONICAL_DIR = path.join(
-  ROOT,
-  ".opencode",
-  "tmp",
-  "screenshots",
-  "canonical",
-);
+const CANONICAL_DIR = path.join(ROOT, "temp", "screenshots", "canonical");
 const TARGET_DIR = path.join(ROOT, ".wordpress-org");
 const README_MD = path.join(ROOT, "readme.md");
 
