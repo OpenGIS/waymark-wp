@@ -78,9 +78,13 @@ test("creates a Map with a linked marker description and renders it on the front
       ),
     );
   }
-  await page.waitForFunction(
-    () => window.tinymce && window.tinymce.get("waymark-info-description"),
-  );
+  // TinyMCE creates the editor object before it is initialised; setting content
+  // any earlier silently stores an empty description.
+  await page.waitForFunction(() => {
+    const editor =
+      window.tinymce && window.tinymce.get("waymark-info-description");
+    return editor && editor.initialized;
+  });
 
   // 6. Set an HTML description containing a link.
   await page.evaluate((html) => {
