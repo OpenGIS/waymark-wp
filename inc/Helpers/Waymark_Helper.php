@@ -163,14 +163,15 @@ class Waymark_Helper {
 					$options_array = self::comma_string_to_array($setting_meta['meta_options']);
 					$values_array = self::array_string_to_array($Map->data[$meta_key]);
 
-					//Build output
-					$data['meta_value'] = '';
+					//Collect labels; they are joined with newlines and escaped at output
+					$labels = [];
 					foreach ($values_array as $value) {
 						//Only if option exists
 						if (isset($options_array[$value])) {
-							$data['meta_value'] .= $options_array[$value] . '<br />';
+							$labels[] = $options_array[$value];
 						}
 					}
+					$data['meta_value'] = implode("\n", $labels);
 					//Rich text
 				} elseif (in_array($setting_meta['meta_type'], ['textarea_rich'])) {
 					$data['meta_value'] = wpautop($Map->data[$meta_key]);
@@ -368,6 +369,9 @@ class Waymark_Helper {
 		//Rich text fields allow HTML (sanitised against post content allowed HTML)
 		if (isset($meta['meta_type']) && in_array($meta['meta_type'], ['textarea_rich'])) {
 			$meta_value = wp_kses_post($meta_value);
+			//Multi-select values are plain text joined with newlines, so escape then add line breaks
+		} elseif (isset($meta['meta_type']) && $meta['meta_type'] == 'select_multi') {
+			$meta_value = nl2br(esc_html($meta_value));
 			//Internally generated HTML (thumbnail, collection links, export form) is trusted, leave as-is
 		} elseif (! in_array($meta['meta_key'], ['map_thumbnail', 'collection_list', 'collection_desc', 'export_data'])) {
 			$meta_value = esc_html($meta_value);

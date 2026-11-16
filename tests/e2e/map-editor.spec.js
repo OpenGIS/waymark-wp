@@ -95,9 +95,13 @@ test("creates a Map with a linked marker description and renders it on the front
       ),
     );
   }
-  await page.waitForFunction(
-    () => window.tinymce && window.tinymce.get("waymark-info-description"),
-  );
+  // TinyMCE creates the editor object before it is initialised; setting content
+  // any earlier silently stores an empty description.
+  await page.waitForFunction(() => {
+    const editor =
+      window.tinymce && window.tinymce.get("waymark-info-description");
+    return editor && editor.initialized;
+  });
 
   // 5b. Select a marker type from the popup's preview grid. This exercises the
   // `.prop("selected")` path that previously emitted a jQuery Migrate warning
