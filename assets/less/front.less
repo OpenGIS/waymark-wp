@@ -18,12 +18,10 @@
     // Translucent overlay adapts the header to the theme page colour (light pages → light header, dark pages → dark header)
     background: rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid #ccc;
-    // Crisp 1px dark-grey outline keeps theme text readable on the adaptive header background
+    // Directional 1px shadow keeps the text crisp on the adaptive header background
     text-shadow:
       1px 0 0 rgba(34, 34, 34, 0.25),
-      -1px 0 0 rgba(34, 34, 34, 0.25),
-      0 1px 0 rgba(34, 34, 34, 0.25),
-      0 -1px 0 rgba(34, 34, 34, 0.25);
+      0 1px 0 rgba(34, 34, 34, 0.25);
 
     .ion {
       margin-left: 3px;
