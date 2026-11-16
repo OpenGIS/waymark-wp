@@ -373,7 +373,7 @@ function Waymark_Map_Viewer() {
     var title = feature.properties.title;
 
     //Bind content to info window
-    layer.bindPopup(content.get(0)).openPopup();
+    layer.bindPopup(content.get(0), { autoPanPadding: [20, 20] }).openPopup();
   };
 
   this.line_has_elevation_data = function (feature) {

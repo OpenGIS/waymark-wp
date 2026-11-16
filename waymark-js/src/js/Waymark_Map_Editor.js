@@ -1019,7 +1019,7 @@ function Waymark_Map_Editor() {
     var content_html = content.get(0);
 
     //Bind content to info window
-    layer.bindPopup(content_html).openPopup();
+    layer.bindPopup(content_html, { autoPanPadding: [20, 20] }).openPopup();
   };
 
   this.load_file_contents = function (file_contents, file_type) {

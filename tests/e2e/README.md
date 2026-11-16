@@ -22,10 +22,15 @@ auto-use fixture, so a spec only has to navigate and assert:
 | `installTileRoutes`           | Records and replays the Leaflet basemap tiles from the tile pack.                                                  |
 | `settleMap`                   | Waits for a Leaflet map's tiles and fonts to settle, and closes the popups the editor opens automatically on load. |
 
-Four specs live in this directory:
+The specs in this directory include:
 
 - `screenshots.spec.js` — the capture specs, and functional smoke coverage. It
   imports the harness.
+- `info-window-zoom.spec.js` — regression coverage for the Map info window
+  staying inside its container, and its editor fields staying usable, after
+  zooming out. It also proves multiple Maps re-fit independently. It stubs every
+  basemap tile transparently because it zooms beyond the frozen pack. It imports
+  the harness.
 - `responsive-admin.spec.js` — the settings screen at a 500px viewport: the
   sidebar stacks below the card, the OGIS callout banner is absent, the help icons
   stay inline with their inputs, and neither tab scrolls horizontally. It
@@ -104,8 +109,7 @@ npx playwright test tests/e2e/screenshots.spec.js
 
 Each capture is written to `.opencode/tmp/screenshots/` as a PNG, alongside a
 `manifest.json` recording its pixel dimensions and SHA-256. The full suite
-(`npm run test:e2e`) runs these captures, the responsive admin spec, the
-repeatable settings spec and the legacy smoke test together.
+(`npm run test:e2e`) runs every spec in this directory together.
 
 ## Readme assets
 
