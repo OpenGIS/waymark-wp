@@ -8505,10 +8505,44 @@ function Waymark_Map() {
     Waymark.setup_layers();
     Waymark.create_data_layer();
     Waymark.create_buttons();
+    Waymark.setup_info_window_fit();
+  };
+
+  this.setup_info_window_fit = function () {
+    Waymark = this;
+
+    //Track the open popup on this map instance rather than the shared global,
+    //so pages with more than one map re-fit the right popup.
+    var instance = this;
+
+    //Re-fit the open info window after zooming: the map container clips it,
+    //which makes fields above the clip line impossible to click.
+    instance.map.on("zoomend", function () {
+      var layer = instance.active_layer;
+
+      if (
+        !layer ||
+        typeof layer.getPopup !== "function" ||
+        !layer.isPopupOpen()
+      ) {
+        return;
+      }
+
+      var popup = layer.getPopup();
+
+      //Popup.update() re-appends the popup content, which resets nested
+      //editors such as the description rich text field; reposition instead.
+      if (popup && typeof popup._adjustPan === "function") {
+        popup._adjustPan();
+      }
+    });
   };
 
   this.create_data_layer = function () {
     Waymark = this;
+
+    //Capture this map instance so the active popup stays scoped to it.
+    var instance = this;
 
     //Create data layer
     Waymark.map_data = Waymark_L.geoJSON(null, {
@@ -8528,10 +8562,10 @@ function Waymark_Map() {
       onEachFeature: function (feature, layer) {
         // Active
         layer.on("popupopen", function (e) {
-          Waymark.active_layer = layer;
+          instance.active_layer = layer;
         });
         layer.on("popupclose", function (e) {
-          Waymark.active_layer = null;
+          instance.active_layer = null;
         });
 
         switch (feature.geometry.type) {
@@ -10182,7 +10216,7 @@ function Waymark_Map_Viewer() {
     var title = feature.properties.title;
 
     //Bind content to info window
-    layer.bindPopup(content.get(0)).openPopup();
+    layer.bindPopup(content.get(0), { autoPanPadding: [20, 20] }).openPopup();
   };
 
   this.line_has_elevation_data = function (feature) {
@@ -11540,7 +11574,7 @@ function Waymark_Map_Editor() {
     var content_html = content.get(0);
 
     //Bind content to info window
-    layer.bindPopup(content_html).openPopup();
+    layer.bindPopup(content_html, { autoPanPadding: [20, 20] }).openPopup();
   };
 
   this.load_file_contents = function (file_contents, file_type) {
