@@ -17,6 +17,18 @@
             "slug": "north-coast-trail",
             "title": "North Coast Trail",
             "permalink": "http://localhost:8889/map/north-coast-trail/"
+        },
+        {
+            "id": 103,
+            "slug": "circle-only",
+            "title": "Circle Only",
+            "permalink": "http://localhost:8889/map/circle-only/"
+        },
+        {
+            "id": 104,
+            "slug": "empty-map",
+            "title": "Empty Map",
+            "permalink": "http://localhost:8889/map/empty-map/"
         }
     ],
     "page": {

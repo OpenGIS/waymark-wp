@@ -19,6 +19,7 @@ tests/
 ├── editor-i18n.test.js          # Per-type editor strings
 ├── i18n-escaping.test.js        # Escaped translated output
 ├── locale-formatting.test.js    # Locale-aware number formatting
+├── map-view-defaults.test.js    # Default Map view fallbacks (issue #86)
 ├── stable-type-keys.test.js     # Stable overlay type keys
 └── xss.test.js                  # Popup sanitisation regressions
 ```
@@ -51,6 +52,9 @@ The chapter numbering keeps the tests aligned with the library's documented API:
 >   `locale-formatting.test.js` cover per-type editor strings, escaping of
 >   translated output and locale-aware number formatting.
 > - `stable-type-keys.test.js` covers stable overlay type keys.
+> - `map-view-defaults.test.js` covers the default Map view fallbacks: a viewer
+>   with no initial centre or zoom must load before fitting data, fall back to
+>   the configured defaults or a world view, and keep a numeric zoom.
 > - `console-regressions.test.js` covers editor console regressions:
 >   deprecated jQuery shorthands, selection via `.prop`, copied data defaults and
 >   the circle-only `getRadius` path.

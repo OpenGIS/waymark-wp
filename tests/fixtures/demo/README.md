@@ -32,6 +32,11 @@ creep back in.
 
 Every feature `properties.type` matches a Type seeded in Settings.
 
+Two extra Maps are regression fixtures for the default-view fallback: `103`
+`circle-only` is a single Circle overlay and `104` `empty-map` is an empty
+FeatureCollection. Neither is assigned to a Collection, so the demo Page and
+Collection output stay unchanged.
+
 ## Image tokens
 
 Image URL fields use tokens of the form:

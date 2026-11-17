@@ -7713,6 +7713,8 @@ function Waymark_Map() {
         map_width: null,
         map_init_zoom: null,
         map_init_latlng: null,
+        map_default_zoom: null,
+        map_default_latlng: null,
         map_init_basemap: null,
         map_max_zoom: null,
 
@@ -8306,6 +8308,87 @@ function Waymark_Map() {
 	==================================
 */
 
+  //Return a finite number, or NaN when the value is absent or invalid
+  this.to_view_number = function (value) {
+    if (
+      value === null ||
+      typeof value === "undefined" ||
+      typeof value === "boolean" ||
+      value === ""
+    ) {
+      return NaN;
+    }
+
+    return Number(value);
+  };
+
+  //Accept both a Leaflet LatLng and a [lat, lng] array, returning [lat, lng]
+  this.normalise_latlng = function (latlng) {
+    if (!latlng) {
+      return false;
+    }
+
+    var lat;
+    var lng;
+
+    if (
+      typeof latlng.lat !== "undefined" &&
+      typeof latlng.lng !== "undefined"
+    ) {
+      lat = Waymark.to_view_number(latlng.lat);
+      lng = Waymark.to_view_number(latlng.lng);
+    } else if (Array.isArray(latlng) && latlng.length >= 2) {
+      lat = Waymark.to_view_number(latlng[0]);
+      lng = Waymark.to_view_number(latlng[1]);
+    } else {
+      return false;
+    }
+
+    if (!isFinite(lat) || !isFinite(lng)) {
+      return false;
+    }
+
+    return [lat, lng];
+  };
+
+  //Resolve the view the Map should fall back to: the initial view wins, then
+  //the configured default, then a world view. The zoom is always finite.
+  this.resolve_map_view = function () {
+    var options = Waymark.config.map_options;
+
+    var latlng = Waymark.normalise_latlng(options.map_init_latlng) ||
+      Waymark.normalise_latlng(options.map_default_latlng) || [0, 0];
+
+    var zoom = Waymark.to_view_number(options.map_init_zoom);
+    if (!isFinite(zoom)) {
+      zoom = Waymark.to_view_number(options.map_default_zoom);
+    }
+    if (!isFinite(zoom)) {
+      zoom = 2;
+    }
+
+    return {
+      latlng: latlng,
+      zoom: zoom,
+    };
+  };
+
+  //Ensure the Map has a loaded view before any layer bounds are read. Layers
+  //added before the first setView() are queued, and a queued Circle has no
+  //_map, so Circle.getBounds() throws.
+  this.ensure_map_view = function () {
+    Waymark = this;
+
+    //Already loaded
+    if (Waymark.map._loaded) {
+      return;
+    }
+
+    var map_view = Waymark.resolve_map_view();
+
+    Waymark.map.setView(map_view.latlng, map_view.zoom, { reset: true });
+  };
+
   this.setup_map = function () {
     Waymark = this;
 
@@ -8428,33 +8511,8 @@ function Waymark_Map() {
     //Add reference
     Waymark.jq_map_container.data("Waymark", Waymark);
 
-    //View
-    let initial_latlng = Waymark.config.map_options.map_init_latlng;
-    if (typeof initial_latlng !== "undefined" && initial_latlng) {
-      Waymark.map.setView(initial_latlng);
-    } else {
-      initial_latlng = false;
-    }
-
-    let initial_zoom = Waymark.config.map_options.map_init_zoom;
-    if (typeof initial_zoom !== "undefined" && initial_zoom) {
-      Waymark.map.setZoom(initial_zoom);
-    } else {
-      initial_zoom = false;
-    }
-
-    // If no initial latlng or zoom
-    if (!initial_latlng && !initial_zoom) {
-      Waymark.debug("No initial latlng or zoom set! 🌍");
-
-      // Random country bounds
-      // let fallback_bounds = Waymark.country_code_to_bounds();
-
-      // // Fit
-      // Waymark.map.fitBounds(fallback_bounds, {
-      // 	padding: [50, 50],
-      // });
-    }
+    //View (before layers are added, so the Map is loaded for bounds reads)
+    Waymark.ensure_map_view();
 
     //Set default style
     Waymark_L.Path.mergeOptions({
@@ -9980,13 +10038,18 @@ function Waymark_Map_Viewer() {
 
   //Initally hidden?
   this.setup_hidden_checker = function () {
-    let hidden_checker = setInterval(function () {
-      is_hidden = Waymark.jq_map_container.is(":hidden");
+    // Keep this map's interval separate from any other map on the page
+    var instance = this;
+    var is_hidden = true;
+
+    var hidden_checker = setInterval(function () {
+      is_hidden = instance.jq_map_container.is(":hidden");
 
       if (!is_hidden) {
-        Waymark.reset_map_view();
-
+        // Clear before resetting so a throw cannot leave the loop running
         clearInterval(hidden_checker);
+
+        instance.reset_map_view();
       }
     }, 100);
   };
@@ -10012,6 +10075,11 @@ function Waymark_Map_Viewer() {
   this.reset_map_view = function () {
     Waymark = this;
 
+    //Guarantee a loaded Map with a finite zoom before any bounds are read
+    Waymark.ensure_map_view();
+
+    Waymark.map.invalidateSize();
+
     let init_latlng = Waymark.config.map_options.map_init_latlng;
     let init_zoom = Waymark.config.map_options.map_init_zoom;
 
@@ -10023,37 +10091,48 @@ function Waymark_Map_Viewer() {
       init_zoom = false;
     }
 
+    var bounds = Waymark.map_data.getBounds();
+
     //No view specified
     if (!init_latlng && !init_zoom) {
       //Use data layer bounds (if we have)
-      var bounds = Waymark.map_data.getBounds();
       if (typeof bounds === "object" && bounds.isValid()) {
-        Waymark.map.invalidateSize();
-
         Waymark.map.fitBounds(bounds);
+      } else {
+        //Keep the provisional view. invalidateSize() drops Leaflet's cached
+        //centre, so re-apply it to keep getCenter() exact.
+        var map_view = Waymark.resolve_map_view();
+
+        Waymark.map.setView(map_view.latlng, map_view.zoom, { reset: true });
       }
       //Both zoom AND centre specified
     } else if (init_latlng && init_zoom) {
       //Use them
-      Waymark.map.setView(init_latlng, init_zoom);
+      Waymark.map.setView(init_latlng, init_zoom, { reset: true });
       //Either zoom or centre specified
     } else {
       //Centre specified
       if (init_latlng) {
-        Waymark.map.setView(init_latlng);
+        Waymark.map.setView(init_latlng, Waymark.map.getZoom(), {
+          reset: true,
+        });
 
         //Use data layer for zoom
-        Waymark.map.setZoom(
-          Waymark.map.getBoundsZoom(Waymark.map_data.getBounds()),
-        );
+        if (typeof bounds === "object" && bounds.isValid()) {
+          Waymark.map.setZoom(Waymark.map.getBoundsZoom(bounds));
+        }
       }
 
       //Zoom specified
       if (init_zoom) {
-        Waymark.map.setZoom(init_zoom);
+        var default_view = Waymark.resolve_map_view();
+
+        Waymark.map.setView(default_view.latlng, init_zoom, { reset: true });
 
         //Use data layer for centre
-        Waymark.map.setView(Waymark.map_data.getBounds().getCenter());
+        if (typeof bounds === "object" && bounds.isValid()) {
+          Waymark.map.setView(bounds.getCenter(), init_zoom, { reset: true });
+        }
       }
     }
   };
@@ -11652,6 +11731,9 @@ function Waymark_Map_Editor() {
     if (typeof json === "object") {
       //Add JSON
       Waymark.map_data.addData(json);
+
+      //Guarantee a loaded Map before any layer bounds are read
+      Waymark.ensure_map_view();
 
       //Save
       Waymark.map_was_edited();

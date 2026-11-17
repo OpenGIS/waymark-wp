@@ -31,6 +31,12 @@ The specs in this directory include:
   zooming out. It also proves multiple Maps re-fit independently. It stubs every
   basemap tile transparently because it zooms beyond the frozen pack. It imports
   the harness.
+- `map-view-defaults.spec.js` — regression coverage for the guaranteed initial
+  Map view. It opens the seeded `circle-only` Map and proves it loads and fits
+  its Circle with valid bounds, then opens `empty-map` and proves it renders at
+  the Settings Default Centre/Zoom. Both must finish with zero console and page
+  errors. It stubs every basemap tile transparently because the fallback view
+  sits outside the frozen pack. It imports the harness.
 - `responsive-admin.spec.js` — the settings screen at a 500px viewport: the
   sidebar stacks below the card, the OGIS callout banner is absent, the help icons
   stay inline with their inputs, and neither tab scrolls horizontally. It

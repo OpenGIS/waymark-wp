@@ -423,9 +423,29 @@ class Waymark_Config {
 		}
 		unset($tile_layer);
 
+		//Default map view, used when a map has no initial view of its own
+		$map_default_latlng = null;
+		if ($default_latlng = Waymark_Config::get_setting('misc', 'map_options', 'map_default_latlng')) {
+			$default_latlng_array = Waymark_Helper::latlng_string_to_array($default_latlng);
+
+			if (is_array($default_latlng_array)) {
+				$map_default_latlng = [(float) $default_latlng_array[0], (float) $default_latlng_array[1]];
+			}
+		}
+
+		$map_default_zoom = null;
+		$default_zoom     = Waymark_Config::get_setting('misc', 'map_options', 'map_default_zoom');
+
+		if (is_numeric($default_zoom)) {
+			$map_default_zoom = (int) $default_zoom;
+		}
+
 		//Map Options
 		$map_config['map_options'] = [
 			'map_height' => Waymark_Config::get_setting('misc', 'map_options', 'map_height'),
+
+			'map_default_latlng' => $map_default_latlng,
+			'map_default_zoom'   => $map_default_zoom,
 
 			// Basemaps
 			'tile_layers' => $tile_layers,

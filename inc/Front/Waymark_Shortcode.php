@@ -304,11 +304,6 @@ class Waymark_Shortcode {
 			if (is_array($map_latlng_array)) {
 				$out .= '	waymark_config.map_options.map_init_latlng = [' . esc_js($map_latlng_array[0]) . ',' . esc_js($map_latlng_array[1]) . '];' . "\n";
 			}
-			// } else if ($default_latlng = Waymark_Config::get_setting('misc', 'map_options', 'map_default_latlng')) {
-			// 	// We have a valid LatLng
-			// 	if ($default_latlng_array = Waymark_Helper::latlng_string_to_array($default_latlng)) {
-			// 		$out .= '	waymark_config.map_options.map_init_latlng = [' . $default_latlng_array[0] . ', ' . $default_latlng_array[1] . '];' . "\n";
-			// 	}
 		}
 
 		//Map Zoom
@@ -318,9 +313,6 @@ class Waymark_Shortcode {
 			if (is_numeric($map_init_zoom)) {
 				$out .= '	waymark_config.map_options.map_init_zoom = ' . esc_js($map_init_zoom) . ";\n";
 			}
-			// Default Zoom
-			// } elseif ($default_zoom = Waymark_Config::get_setting('misc', 'map_options', 'map_default_zoom')) {
-			// 	$out .= '	waymark_config.map_options.map_init_zoom = ' . $default_zoom . ";\n";
 		}
 
 		//Max Zoom

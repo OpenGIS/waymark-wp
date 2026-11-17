@@ -495,6 +495,31 @@ $north_coast = [
 waymark_demo_assert_no_invented_elevation($san_josef, 'San Josef Bay');
 waymark_demo_assert_no_invented_elevation($north_coast, 'North Coast Trail');
 
+// Regression fixtures for a Map with no explicit centre or zoom. The Circle
+// gives the viewer valid data bounds; the empty FeatureCollection has none.
+$circle_only = [
+	'type'     => 'FeatureCollection',
+	'features' => [
+		[
+			'type'       => 'Feature',
+			'properties' => [
+				'type'        => 'blue',
+				'title'       => 'Cape Scott Circle',
+				'description' => 'A Circle overlay used to prove the Map loads before its bounds are fitted.',
+				'radius'      => 250,
+			],
+			'geometry'   => ['type' => 'Point', 'coordinates' => [-128.152, 50.690]],
+		],
+	],
+];
+
+$empty_map = [
+	'type'     => 'FeatureCollection',
+	'features' => [],
+];
+
+waymark_demo_assert_no_invented_elevation($circle_only, 'Circle Only');
+
 $demo_maps = [
 	[
 		'id'          => 100,
@@ -529,6 +554,26 @@ $demo_maps = [
 		'journal'     => '<p>Tide tables ruled the schedule. Nels Bight was the highlight: empty beach, huge driftwood, no phone signal.</p>',
 		'date'        => '2026-06-18',
 		'distance'    => '43.0',
+	],
+	[
+		'id'          => 103,
+		'slug'        => 'circle-only',
+		'title'       => 'Circle Only',
+		'data'        => json_encode($circle_only, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+		'description' => '<p>A single Circle overlay on a Map with no explicit centre or zoom.</p>',
+		'journal'     => '<p>Regression fixture: the Map must load before the Circle bounds are fitted.</p>',
+		'date'        => '2026-06-19',
+		'distance'    => '0.3',
+	],
+	[
+		'id'          => 104,
+		'slug'        => 'empty-map',
+		'title'       => 'Empty Map',
+		'data'        => json_encode($empty_map, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+		'description' => '<p>An empty FeatureCollection with no data bounds.</p>',
+		'journal'     => '<p>Regression fixture: the Map must fall back to the configured default view.</p>',
+		'date'        => '2026-06-20',
+		'distance'    => '0.0',
 	],
 ];
 
@@ -566,7 +611,7 @@ foreach ($demo_maps as $demo_map) {
 		update_post_meta($post_id, 'waymark_map_weather', wp_slash($demo_map['weather']));
 	}
 
-	if (isset($image_ids[$demo_map['thumbnail']])) {
+	if (isset($demo_map['thumbnail']) && isset($image_ids[$demo_map['thumbnail']])) {
 		set_post_thumbnail($post_id, $image_ids[$demo_map['thumbnail']]);
 	}
 

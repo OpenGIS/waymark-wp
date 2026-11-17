@@ -1098,6 +1098,9 @@ function Waymark_Map_Editor() {
       //Add JSON
       Waymark.map_data.addData(json);
 
+      //Guarantee a loaded Map before any layer bounds are read
+      Waymark.ensure_map_view();
+
       //Save
       Waymark.map_was_edited();
 
