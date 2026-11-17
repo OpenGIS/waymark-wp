@@ -37,6 +37,11 @@ The specs in this directory include:
   the Settings Default Centre/Zoom. Both must finish with zero console and page
   errors. It stubs every basemap tile transparently because the fallback view
   sits outside the frozen pack. It imports the harness.
+- `map-editor-height.spec.js` — regression coverage for the admin Map editor
+  height. It proves the editor renders at the configured Map Height, follows a
+  non-default setting, never drops below the 450px floor, and keeps its height
+  across saving and dismissing the update notice. It stubs every basemap tile
+  transparently and imports the harness.
 - `responsive-admin.spec.js` — the settings screen at a 500px viewport: the
   sidebar stacks below the card, the OGIS callout banner is absent, the help icons
   stay inline with their inputs, and neither tab scrolls horizontally. It
