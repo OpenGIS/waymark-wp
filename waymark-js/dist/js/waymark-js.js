@@ -7858,7 +7858,7 @@ function Waymark_Map() {
         error_geocoder: "Nothing found.",
         //Editor
         add_line_title: "Draw a Line",
-        add_photo_title: "Add Image",
+        add_photo_title: "Add Marker from Image",
         add_marker_title: "Place a Marker",
         add_rectangle_title: "Draw a Rectangle",
         add_polygon_title: "Draw a Polygon",

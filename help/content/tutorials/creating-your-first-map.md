@@ -63,7 +63,7 @@ The image we will use first needs to be downloaded onto your computer. Click [th
 ::
 
 ::docs-figure{src="/assets/img/first-map-step-9-1024x658.png" srcset="/assets/img/first-map-step-9-1024x658.png 1024w, /assets/img/first-map-step-9-700x450.png 700w, /assets/img/first-map-step-9-768x494.png 768w, /assets/img/first-map-step-9-1536x988.png 1536w, /assets/img/first-map-step-9.png 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}
-**4.2** Click on the “Select Files” button to upload an Image.
+**4.2** Click on the “Upload files” tab at the top of the dialog, then click the “Select Files” button to upload an Image.
 ::
 
 ::docs-figure{src="/assets/img/first-map-step-10-1024x658.jpg" srcset="/assets/img/first-map-step-10-1024x658.jpg 1024w, /assets/img/first-map-step-10-700x450.jpg 700w, /assets/img/first-map-step-10-768x494.jpg 768w, /assets/img/first-map-step-10-1536x988.jpg 1536w, /assets/img/first-map-step-10.jpg 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}

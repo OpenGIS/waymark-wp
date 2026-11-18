@@ -29,7 +29,7 @@ class Waymark_Lang {
 
 			//Editor
 			'add_line_title' => __('Draw a Line', 'waymark'),
-			'add_photo_title' => __('Add Image', 'waymark'),
+			'add_photo_title' => __('Add Marker from Image', 'waymark'),
 			'add_marker_title' => __('Place a Marker', 'waymark'),
 			'add_rectangle_title' => __('Draw a Rectangle', 'waymark'),
 			'add_polygon_title' => __('Draw a Polygon', 'waymark'),
