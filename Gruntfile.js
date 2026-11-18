@@ -13,6 +13,7 @@ module.exports = function (grunt) {
 			wj_css: {
 				files: {
 					"waymark-js/src/css/Waymark_Map.css": "waymark-js/src/less/Waymark_Map.less",
+					"waymark-js/src/css/Waymark_Lightbox.css": "waymark-js/src/less/Waymark_Lightbox.less",
 					"waymark-js/src/css/Waymark_Map_Viewer.css": "waymark-js/src/less/Waymark_Map_Viewer.less",
 					"waymark-js/src/css/Waymark_Map_Editor.css": "waymark-js/src/less/Waymark_Map_Editor.less",
 				},
@@ -49,6 +50,7 @@ module.exports = function (grunt) {
 					"waymark-js/libs/js/leaflet.min.js",
 					"waymark-js/libs/js/*",
 					"waymark-js/src/js/Waymark_Map.js",
+					"waymark-js/src/js/Waymark_Lightbox.js",
 					"waymark-js/src/js/Waymark_Map_Viewer.js",
 					"waymark-js/src/js/Waymark_Map_Editor.js",
 					"waymark-js/src/js/Waymark_Map_Factory.js",

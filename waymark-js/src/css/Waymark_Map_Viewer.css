@@ -69,9 +69,13 @@
   margin: 0;
   padding: 0;
   border-bottom: none;
-  background-size: 260px;
-  background-repeat: no-repeat;
-  background-position: left center;
+  overflow: hidden;
+}
+.waymark-map-container.waymark-is-viewer ul.waymark-info li.waymark-info-image_large_url a img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .waymark-map-container.waymark-is-viewer.waymark-has-cluster .waymark-cluster .waymark-marker {
   position: absolute;

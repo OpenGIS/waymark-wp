@@ -727,30 +727,18 @@ test("screenshot-2: marker popup with photo", async ({ page, waymark }) => {
   await expect(popup).toBeVisible();
   await expect(popup).toContainText(POPUP_MARKER_TITLE);
 
-  // The overlay photo is rendered as a background-image link, so wait for it
-  // to be applied and then preload its bytes before capturing.
+  // The photo is a real <img> inside the link; wait for it to decode before
+  // capturing so the popup never shows an empty image box.
   const photoLink = popup.locator(".waymark-info-image_large_url a");
   await expect(photoLink).toBeVisible();
+  const photo = photoLink.locator("img");
+  await expect(photo).toBeVisible();
   await expect
     .poll(
-      () => photoLink.evaluate((el) => getComputedStyle(el).backgroundImage),
+      () => photo.evaluate((el) => Boolean(el.complete && el.naturalWidth > 0)),
       { timeout: 15_000 },
     )
-    .toContain("url(");
-  await photoLink.evaluate(async (el) => {
-    const match = getComputedStyle(el).backgroundImage.match(
-      /url\(["']?(.*?)["']?\)/,
-    );
-    if (!match) {
-      return;
-    }
-    await new Promise((resolve) => {
-      const img = new Image();
-      img.onload = resolve;
-      img.onerror = resolve;
-      img.src = match[1];
-    });
-  });
+    .toBe(true);
 
   // Place the marker at a fixed point so the (autoPan-disabled) popup is fully
   // framed and the Map offset is reproducible.

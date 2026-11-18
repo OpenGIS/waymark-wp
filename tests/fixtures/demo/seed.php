@@ -425,7 +425,14 @@ $san_josef = [
 	'features' => [
 		[
 			'type'       => 'Feature',
-			'properties' => ['type' => 'green', 'title' => 'San Josef Bay Trail', 'direction' => 'default'],
+			'properties' => [
+				'type'                => 'green',
+				'title'               => 'San Josef Bay Trail',
+				'direction'           => 'default',
+				'image_thumbnail_url' => '%%IMG:shoe-tree:thumbnail%%',
+				'image_medium_url'    => '%%IMG:shoe-tree:medium%%',
+				'image_large_url'     => '%%IMG:shoe-tree:large%%',
+			],
 			'geometry'   => [
 				'type'        => 'LineString',
 				'coordinates' => [
@@ -450,7 +457,13 @@ $san_josef = [
 		],
 		[
 			'type'       => 'Feature',
-			'properties' => ['type' => 'camp', 'title' => 'Eric Lake Camp'],
+			'properties' => [
+				'type'                => 'camp',
+				'title'               => 'Eric Lake Camp',
+				'image_thumbnail_url' => '%%IMG:nahwitti-lake:thumbnail%%',
+				'image_medium_url'    => '%%IMG:nahwitti-lake:medium%%',
+				'image_large_url'     => '%%IMG:nahwitti-lake:large%%',
+			],
 			'geometry'   => ['type' => 'Point', 'coordinates' => [-128.281, 50.667]],
 		],
 	],

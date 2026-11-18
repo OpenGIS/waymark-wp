@@ -1,0 +1,141 @@
+/*
+	==================================
+	=========== LIGHTBOX =============
+	==================================
+*/
+
+html.waymark-lightbox-open {
+  overflow: hidden;
+}
+
+.waymark-lightbox {
+  position: relative;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: transparent;
+  overflow: visible;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.85);
+  }
+}
+
+.waymark-lightbox:focus,
+.waymark-lightbox:focus-visible {
+  outline: none;
+}
+
+.waymark-lightbox-figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.waymark-lightbox-image {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 90vw;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.waymark-lightbox-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: #f1f1f1;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+
+  .waymark-lightbox-full {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:hover,
+    &:focus {
+      text-decoration-thickness: 2px;
+    }
+  }
+}
+
+.waymark-lightbox-no-full {
+  .waymark-lightbox-full {
+    display: none;
+  }
+}
+
+.waymark-lightbox-close,
+.waymark-lightbox-prev,
+.waymark-lightbox-next {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(0, 0, 0, 0.7);
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+.waymark-lightbox-close {
+  top: 8px;
+  right: 8px;
+}
+
+.waymark-lightbox-prev {
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+}
+
+.waymark-lightbox-next {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+.waymark-lightbox-single {
+  .waymark-lightbox-prev,
+  .waymark-lightbox-next {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .waymark-lightbox-image {
+    max-height: 70vh;
+  }
+
+  .waymark-lightbox-close,
+  .waymark-lightbox-prev,
+  .waymark-lightbox-next {
+    width: 36px;
+    height: 36px;
+    font-size: 26px;
+  }
+}

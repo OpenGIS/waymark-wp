@@ -46,6 +46,7 @@ Embed your Maps using the `[Waymark]` Shortcode, or link to the Map Details page
   - Display a Basemap only, without any Overlays by providing centre and zoom parameters.
 - **Basemaps** - Uses [OpenStreetMap](https://www.openstreetmap.org/fixthemap) by default, with support for multiple raster tiled/"slippy" Basemaps. You can switch Basemaps using the Overlay Filter.
 - **Overlay Filter** - Allow the user to filter which Overlays are currently visible on the Map.
+- **Image Viewer** - Click an Overlay image to view it over the Map, step through every image on the Map with the Previous/Next buttons or arrow keys, and open the original full-size file in a new tab.
 - **Export**
   - (Optionally) Let anyone Export Maps into GPX, KML and GeoJSON formats through the Shortcode Header or on the Map Details page.
   - Works on mobile devices.

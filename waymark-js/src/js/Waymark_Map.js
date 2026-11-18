@@ -173,6 +173,13 @@ function Waymark_Map() {
         label_unit_mi: "mi",
         label_unit_ft: "ft",
         error_geocoder: "Nothing found.",
+        action_close: "Close",
+        action_previous_image: "Previous image",
+        action_next_image: "Next image",
+        label_view_full_size: "View full size",
+        label_view_image: "View image",
+        label_image_viewer: "Image viewer",
+        label_image_count: "%1$s of %2$s",
         //Editor
         add_line_title: "Draw a Line",
         add_photo_title: "Upload Image",
@@ -2213,5 +2220,5 @@ function Waymark_Map() {
   this.pre_map_setup = function () {};
   this.init_done = function () {};
   this.info_window = function (layer_type, feature, layer) {};
-  this.build_content = function (layer_type, feature) {};
+  this.build_content = function (layer_type, feature, layer) {};
 }

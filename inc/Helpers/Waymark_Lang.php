@@ -26,6 +26,20 @@ class Waymark_Lang {
 			'label_unit_ft' => __('ft', 'waymark'),
 			/* translators: Shown when the geocoder search returns no results. */
 			'error_geocoder' => __('Nothing found.', 'waymark'),
+			/* translators: Closes the image viewer. */
+			'action_close' => __('Close', 'waymark'),
+			/* translators: Moves to the previous image in the image viewer. */
+			'action_previous_image' => __('Previous image', 'waymark'),
+			/* translators: Moves to the next image in the image viewer. */
+			'action_next_image' => __('Next image', 'waymark'),
+			/* translators: Opens the original, full size image in a new tab. */
+			'label_view_full_size' => __('View full size', 'waymark'),
+			/* translators: Accessible name for an image link that has no title. */
+			'label_view_image' => __('View image', 'waymark'),
+			/* translators: Accessible name for the image viewer dialog. */
+			'label_image_viewer' => __('Image viewer', 'waymark'),
+			/* translators: 1: current image number, 2: total number of images. */
+			'label_image_count' => __('%1$s of %2$s', 'waymark'),
 
 			//Editor
 			'add_line_title' => __('Draw a Line', 'waymark'),

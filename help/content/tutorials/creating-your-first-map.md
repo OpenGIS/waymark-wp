@@ -10,7 +10,7 @@ This tutorial assumes you have a WordPress site (self-hosted) and are logged in 
 ::map-demo{demo="creating-your-first-map" height="300"}
 ::
 
-This Map illustrates the end result. Try clicking on the Marker Icon to view the Image and description.
+This Map illustrates the end result. Try clicking on the Marker Icon to view the Image and description, then click the image to open it in the viewer.
 
 ## 1. Activating the Plugin
 
@@ -104,7 +104,7 @@ We are now ready to publish the Map and make it publicly accessible on your site
 ::
 
 ::docs-figure{src="/assets/img/first-map-step-15-1024x658.jpg" srcset="/assets/img/first-map-step-15-1024x658.jpg 1024w, /assets/img/first-map-step-15-700x450.jpg 700w, /assets/img/first-map-step-15-768x494.jpg 768w, /assets/img/first-map-step-15-1536x988.jpg 1536w, /assets/img/first-map-step-15.jpg 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}
-**6.3** You will be taken to your interactive Map on the front-end of your site.
+**6.3** You will be taken to your interactive Map on the front-end of your site. Click the Marker to open its Info Window, then click the image to open the viewer.
 ::
 
 **Congratulations!**

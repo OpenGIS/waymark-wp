@@ -11,6 +11,10 @@ function Waymark_Map_Viewer() {
     Waymark = this;
 
     Waymark.mode = "view";
+
+    // One lightbox per viewer so maps on the same page stay independent.
+    Waymark.lightbox = new Waymark_Lightbox();
+    Waymark.lightbox.init({ language: Waymark.config.language });
   };
 
   this.init_done = function () {
@@ -236,7 +240,7 @@ function Waymark_Map_Viewer() {
     }
   };
 
-  this.build_content = function (layer_type, feature) {
+  this.build_content = function (layer_type, feature, layer) {
     Waymark = this;
 
     var content = jQuery("<div />");
@@ -305,14 +309,71 @@ function Waymark_Map_Viewer() {
               typeof feature.properties.image_medium_url !== "undefined" &&
               Waymark.is_safe_url(feature.properties.image_medium_url)
             ) {
-              var thumb_url = feature.properties.image_medium_url;
+              thumb_url = feature.properties.image_medium_url;
             }
 
-            ele = jQuery("<a />").attr({
+            var title = feature.properties.title || "";
+
+            // An untitled feature leaves the image with no accessible name.
+            var view_label =
+              typeof Waymark.lightbox !== "undefined" &&
+              Waymark.lightbox.strings.label_view_image
+                ? Waymark.lightbox.strings.label_view_image
+                : "View image";
+
+            var attributes = {
               href: feature.properties.image_large_url,
               target: "_blank",
-              style: "background-image:url(" + thumb_url + ")",
-            });
+              rel: "noopener noreferrer",
+            };
+
+            if (!title) {
+              attributes["aria-label"] = view_label;
+            }
+
+            ele = jQuery("<a />")
+              .attr(attributes)
+              .append(
+                jQuery("<img />").attr({
+                  src: thumb_url,
+                  alt: title,
+                  loading: "lazy",
+                }),
+              )
+              .on(
+                "click",
+                { W: Waymark, layer: layer, feature: feature },
+                function (event) {
+                  var W = event.data.W;
+
+                  // Leave modified and non-primary clicks to the browser.
+                  if (
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  ) {
+                    return;
+                  }
+
+                  // Tests build popups without initialising the viewer.
+                  if (typeof W.lightbox === "undefined") {
+                    return;
+                  }
+
+                  var items = W.get_lightbox_images();
+                  var index = W.get_lightbox_index(
+                    items,
+                    event.data.layer,
+                    event.data.feature,
+                  );
+
+                  if (W.lightbox.open(items, index)) {
+                    event.preventDefault();
+                  }
+                },
+              );
             //We don't have an image
           } else {
             list.addClass("waymark-no-image");
@@ -337,6 +398,69 @@ function Waymark_Map_Viewer() {
     }
 
     return content;
+  };
+
+  // Every feature image on the map, in draw order.
+  this.get_lightbox_images = function () {
+    Waymark = this;
+
+    var items = [];
+
+    if (typeof Waymark.map_data === "undefined" || !Waymark.map_data) {
+      return items;
+    }
+
+    Waymark.map_data.eachLayer(function (layer) {
+      if (
+        !layer.feature ||
+        !layer.feature.properties ||
+        typeof layer.feature.properties.image_large_url === "undefined"
+      ) {
+        return;
+      }
+
+      var properties = layer.feature.properties;
+
+      if (!Waymark.is_safe_url(properties.image_large_url)) {
+        return;
+      }
+
+      items.push({
+        url: properties.image_large_url,
+        href: properties.image_large_url,
+        alt: properties.title || "",
+        title: properties.title || "",
+        layer: layer,
+        feature: layer.feature,
+      });
+    });
+
+    return items;
+  };
+
+  // Prefer the exact layer, then the feature; an unmatched lookup returns -1
+  // so it never opens another feature's photo. Callers can pass the result
+  // straight to open(), which already treats -1 as out of range.
+  this.get_lightbox_index = function (items, layer, feature) {
+    var i;
+
+    if (typeof layer !== "undefined") {
+      for (i = 0; i < items.length; i++) {
+        if (items[i].layer === layer) {
+          return i;
+        }
+      }
+    }
+
+    if (typeof feature !== "undefined") {
+      for (i = 0; i < items.length; i++) {
+        if (items[i].feature === feature) {
+          return i;
+        }
+      }
+    }
+
+    return -1;
   };
 
   this.info_window = function (layer_type, feature, layer) {
@@ -702,18 +826,28 @@ function Waymark_Map_Viewer() {
               .addClass("waymark-image")
 
               //When a gallery image is clicked
-              .on("click", { marker: image.marker }, function (e) {
+              .on("click", { W: Waymark, marker: image.marker }, function (e) {
+                var W = e.data.W;
                 var marker = e.data.marker;
 
                 //Zoom in
-                Waymark.map.setView(marker.getLatLng(), 16);
+                W.map.setView(marker.getLatLng(), 16);
 
                 //Open popup at marker
                 marker.openPopup();
+
+                //Also open the lightbox at this image
+                if (typeof W.lightbox === "undefined") {
+                  return;
+                }
+
+                var items = W.get_lightbox_images();
+                W.lightbox.open(items, W.get_lightbox_index(items, marker));
               });
 
             var img = jQuery("<img />").attr({
               src: image.image_thumbnail_url,
+              alt: image.title || "",
             });
             div.append(img);
 

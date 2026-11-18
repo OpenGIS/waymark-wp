@@ -164,3 +164,45 @@ Waymark collection_id="27" map_hash="beer_markers"
 
 ::map-demo{demo="styling-markers" height="640"}
 ::
+
+## Image Viewer
+
+Overlay images open in a viewer built on the native `<dialog>` element. The viewer is appended to the document body, outside the Map container, and carries these classes:
+
+```html
+<dialog class="waymark-lightbox" aria-label="Image viewer" tabindex="-1">
+  <button class="waymark-lightbox-close" aria-label="Close">×</button>
+  <button class="waymark-lightbox-prev" aria-label="Previous image">‹</button>
+  <figure class="waymark-lightbox-figure">
+    <img class="waymark-lightbox-image" src="…" alt="…" />
+    <figcaption class="waymark-lightbox-caption">
+      <span class="waymark-lightbox-title">Tower Bridge</span>
+      <span class="waymark-lightbox-count">2 of 5</span>
+      <a
+        class="waymark-lightbox-full"
+        href="…"
+        target="_blank"
+        rel="noopener noreferrer"
+        >View full size</a
+      >
+    </figcaption>
+  </figure>
+  <button class="waymark-lightbox-next" aria-label="Next image">›</button>
+</dialog>
+```
+
+- `html.waymark-lightbox-open` is added while the viewer is open and locks page scrolling.
+- `.waymark-lightbox-single` is added when there is only one image, hiding the Previous and Next buttons.
+- `.waymark-lightbox-no-full` is added when the full-size link is unavailable, hiding it.
+- Style the backdrop with `.waymark-lightbox::backdrop`.
+
+```css
+/* Darker backdrop */
+.waymark-lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.95);
+}
+/* Larger caption text */
+.waymark-lightbox .waymark-lightbox-caption {
+  font-size: 15px;
+}
+```

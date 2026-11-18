@@ -1,6 +1,6 @@
 ---
 title: Markers
-description: Learn how Waymark Markers are displayed, including icons, markup and CSS customisation.
+description: Learn how Waymark Markers are displayed, including icons, images, markup and CSS customisation.
 ---
 
 ::video-figure{src="/assets/video/markers.mp4" poster="/assets/video/posters/markers.jpg" label="Waymark - Markers" captions="/assets/video/captions/markers.en.vtt"}
@@ -31,6 +31,16 @@ Every Marker Type can have a unique Icon associated with it, specified as either
 ```
 
 Where the URL points to your desired image. You can adjust the width, height and vertical offset by modifying the style properties as desired. You can see an example of this in the [Text Markers](/examples/text-markers/) guide.
+
+---
+
+## Images
+
+A Marker, Line or Shape can have an image, either uploaded to the Media Library or linked by URL. The image appears in the feature’s Info Window when it is clicked.
+
+Clicking the image opens an image viewer over the Map. It shows the large version of the image, the feature title (when there is one), and the image position, such as “2 of 5”. The Previous and Next buttons, or the Left and Right arrow keys, step through every image on the Map in the order the features were added; navigation wraps around. Escape, the Close button or a click outside the image closes the viewer, and “View full size” opens the original image in a new tab.
+
+With JavaScript disabled, or in a browser that does not support the native `<dialog>` element, the image remains a normal link to the original file. Middle-clicking, or holding Ctrl, Cmd or Shift while clicking, also opens the original in a new tab.
 
 ## Markup
 

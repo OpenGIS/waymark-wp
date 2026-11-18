@@ -45,6 +45,7 @@ const sourceFiles = import.meta.glob('../src/js/*.js', { eager: true, query: '?r
 // Order matters!
 const loadOrder = [
   '../src/js/Waymark_Map.js',
+  '../src/js/Waymark_Lightbox.js',
   '../src/js/Waymark_Map_Viewer.js',
   '../src/js/Waymark_Map_Editor.js',
   '../src/js/Waymark_Map_Factory.js'
@@ -57,6 +58,25 @@ loadOrder.forEach(file => {
     console.error(`Failed to load ${file}`);
   }
 });
+
+// jsdom exposes HTMLDialogElement but does not implement showModal() or close().
+// The lightbox relies on both and cleans up on the close event, so provide
+// minimal stubs. A jsdom release that implements them takes precedence.
+// jsdom never fires the cancel event, so Esc-to-close is covered by the browser suite.
+if (typeof window.HTMLDialogElement !== 'undefined') {
+  if (typeof window.HTMLDialogElement.prototype.showModal !== 'function') {
+    window.HTMLDialogElement.prototype.showModal = function () {
+      this.open = true;
+    };
+  }
+
+  if (typeof window.HTMLDialogElement.prototype.close !== 'function') {
+    window.HTMLDialogElement.prototype.close = function () {
+      this.open = false;
+      this.dispatchEvent(new window.Event('close'));
+    };
+  }
+}
 
 // Reset DOM before each test
 beforeEach(() => {
