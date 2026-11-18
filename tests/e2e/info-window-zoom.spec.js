@@ -29,9 +29,10 @@ const TRANSPARENT_PNG = Buffer.from(
   "base64",
 );
 
-// The editor clamps its Map to a 400px minimum; the wider viewport leaves the
-// meta box room to lay out at that minimum, which is the reported failing
-// configuration.
+// The editor Map now follows the configured Map Height with a 450px floor
+// (issue #88). This viewport is wide enough for the meta box to lay out at
+// that height and keeps the 341px popup within the viewport, so the
+// elementFromPoint hit tests below can reach its controls.
 test.use({ viewport: { width: 1600, height: 800 } });
 
 // ---------------------------------------------------------------------------

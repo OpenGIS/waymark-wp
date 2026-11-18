@@ -86,10 +86,9 @@ class Waymark_JS {
 
 		//Output Config
 		self::add_call('var waymark_user_config = ' . Waymark_Config::get_map_config(true) . ';');
-		self::add_call('var waymark_editor_map = document.getElementById("waymark-map");');
-		self::add_call('var waymark_editor_top = waymark_editor_map ? waymark_editor_map.getBoundingClientRect().top : 0;');
-		self::add_call('var waymark_editor_available = window.innerHeight - waymark_editor_top - 24;');
-		self::add_call('waymark_user_config.map_options.map_height = Math.max(400, Math.min(600, waymark_editor_available));');
+
+		$editor_height = max(450, absint(Waymark_Config::get_setting('misc', 'map_options', 'map_height')));
+		self::add_call('waymark_user_config.map_options.map_height = ' . wp_json_encode($editor_height) . ';');
 
 		if ($default_latlng = Waymark_Config::get_setting('misc', 'map_options', 'map_default_latlng')) {
 			// We have a valid LatLng

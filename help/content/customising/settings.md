@@ -316,7 +316,7 @@ Waymark centres the Map automatically when displaying data. These coordinates (L
 :::
 
 :::setting{title="Map Height" type="text" default="450"}
-Specify the desired height of the Map (in pixels). Pro Tip! This will affect all Maps, but you can change the height (and width) of an individual Map through the Shortcode: `[Waymark map_id="1234" map_height="640"]`
+Specify the desired height of the Map (in pixels). This applies to Maps on the front end and to the admin Map editor, which enforces a 450px minimum. Pro Tip! You can change the height (and width) of an individual Map through the Shortcode: `[Waymark map_id="1234" map_height="640"]`
 :::
 
 :::setting{title="Default Zoom" type="text" default="9"}
