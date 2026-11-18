@@ -324,7 +324,7 @@ Waymark zooms the Map automatically when displaying data. This zoom level (0-18)
 :::
 
 :::setting{title="Image Gallery" type="boolean" default="1"}
-Whether to display an image gallery for Markers that have both a thumbnail and a large image. Clicking a thumbnail zooms the Map to the Marker, opens its Info Window and opens the image in the viewer. Pro Tip! This will affect all Maps, but you can choose to show/hide the gallery of an individual Map through the shortcode: `[Waymark show_gallery="1"]`
+Whether to display an image gallery for Markers that have both a thumbnail and a large image. Clicking a thumbnail zooms the Map to the Marker, opens its Info Window and opens the image in the viewer; moving between images keeps the Map in step with the photo. Pro Tip! This will affect all Maps, but you can choose to show/hide the gallery of an individual Map through the shortcode: `[Waymark show_gallery="1"]`
 :::
 
 :::setting{title="Overlay Filter" type="boolean" default="1"}

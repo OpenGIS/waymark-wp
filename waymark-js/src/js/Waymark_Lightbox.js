@@ -39,6 +39,11 @@ function Waymark_Lightbox() {
       label_image_count: language.label_image_count || "%1$s of %2$s",
     };
 
+    this.on_navigate =
+      typeof user_config.on_navigate === "function"
+        ? user_config.on_navigate
+        : null;
+
     this.items = [];
     this.index = 0;
     this.dialog = null;
@@ -156,6 +161,10 @@ function Waymark_Lightbox() {
     }
 
     this.show_index(this.index - 1);
+
+    if (this.on_navigate) {
+      this.on_navigate(this.items[this.index], this.index);
+    }
   };
 
   this.next = function () {
@@ -164,6 +173,10 @@ function Waymark_Lightbox() {
     }
 
     this.show_index(this.index + 1);
+
+    if (this.on_navigate) {
+      this.on_navigate(this.items[this.index], this.index);
+    }
   };
 
   this.close = function () {

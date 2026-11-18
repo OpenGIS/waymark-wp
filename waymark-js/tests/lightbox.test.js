@@ -212,4 +212,58 @@ describe("Waymark_Lightbox", () => {
     );
     expect(lightbox.index).toBe(0);
   });
+
+  it("calls on_navigate with the item and index when moving next", () => {
+    const calls = [];
+    const lightbox = makeLightbox({
+      on_navigate: (item, index) => calls.push([item, index]),
+    });
+    const items = makeItems(2);
+    lightbox.open(items, 0);
+
+    lightbox.next();
+
+    expect(calls.length).toBe(1);
+    expect(calls[0][0]).toBe(items[1]);
+    expect(calls[0][1]).toBe(1);
+  });
+
+  it("calls on_navigate when moving prev and wraps backwards", () => {
+    const calls = [];
+    const lightbox = makeLightbox({
+      on_navigate: (item, index) => calls.push([item, index]),
+    });
+    const items = makeItems(3);
+    lightbox.open(items, 0);
+
+    lightbox.prev();
+
+    expect(calls.length).toBe(1);
+    expect(calls[0][0]).toBe(items[2]);
+    expect(calls[0][1]).toBe(2);
+  });
+
+  it("does not call on_navigate when opening", () => {
+    let count = 0;
+    const lightbox = makeLightbox({
+      on_navigate: () => {
+        count++;
+      },
+    });
+
+    lightbox.open(makeItems(2), 0);
+    lightbox.show_index(1);
+
+    expect(count).toBe(0);
+  });
+
+  it("works without an on_navigate callback", () => {
+    const lightbox = makeLightbox();
+    lightbox.open(makeItems(2), 0);
+
+    expect(() => {
+      lightbox.next();
+      lightbox.prev();
+    }).not.toThrow();
+  });
 });

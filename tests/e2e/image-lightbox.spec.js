@@ -159,6 +159,111 @@ async function openLightboxFromPopup(page, title) {
   return { popup, dialog };
 }
 
+/**
+ * Wait for the lightbox image to finish decoding so its intrinsic dimensions,
+ * and therefore the dialog's box, have settled before measuring.
+ *
+ * @param {import("@playwright/test").Page} page
+ */
+async function waitForLightboxImage(page) {
+  await page.waitForFunction(
+    () => {
+      const image = document.querySelector(
+        "dialog.waymark-lightbox .waymark-lightbox-image",
+      );
+      return Boolean(image && image.complete && image.naturalWidth > 0);
+    },
+    null,
+    { timeout: 15_000 },
+  );
+
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+}
+
+/**
+ * Measure the open lightbox in a single page evaluation. Returning one plain
+ * object keeps every assertion on the same snapshot, so no rounding can drift
+ * between reads.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @returns {Promise<object>}
+ */
+async function measureLightbox(page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector("dialog.waymark-lightbox");
+    const dialogRect = dialog.getBoundingClientRect();
+
+    const box = (rect) => ({
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: rect.width,
+      height: rect.height,
+    });
+
+    const control = (selector) => {
+      const element = dialog.querySelector(selector);
+      return element ? box(element.getBoundingClientRect()) : null;
+    };
+
+    const caption = dialog.querySelector(".waymark-lightbox-caption");
+
+    return {
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      dialog: box(dialogRect),
+      dialogPosition: getComputedStyle(dialog).position,
+      scrollWidth: document.documentElement.scrollWidth,
+      controls: {
+        close: control(".waymark-lightbox-close"),
+        prev: control(".waymark-lightbox-prev"),
+        next: control(".waymark-lightbox-next"),
+      },
+      captionFontSize: caption ? getComputedStyle(caption).fontSize : null,
+    };
+  });
+}
+
+/**
+ * Assert the dialog is centred on both axes within 2 CSS px, fully contained
+ * by the viewport, and leaves the page without horizontal overflow.
+ *
+ * @param {object} geometry measured by {@link measureLightbox}
+ */
+function expectLightboxCentred(geometry) {
+  const { viewport, dialog } = geometry;
+
+  // The shipped regression was a `position: relative` dialog. The centring
+  // maths alone can pass while the page sits at scroll zero, so pin the
+  // positioning scheme that anchors the viewer to the viewport.
+  expect(geometry.dialogPosition).toBe("fixed");
+
+  // Relative positioning defeated the top layer's `inset: 0; margin: auto`
+  // centring and pinned the viewer to the top of the viewport.
+  expect(
+    Math.abs(dialog.left - (viewport.width - dialog.width) / 2),
+    "Lightbox should be horizontally centred",
+  ).toBeLessThanOrEqual(2);
+
+  expect(
+    Math.abs(dialog.top - (viewport.height - dialog.height) / 2),
+    "Lightbox should be vertically centred",
+  ).toBeLessThanOrEqual(2);
+
+  expect(
+    dialog.right,
+    "Lightbox should not overflow the right edge",
+  ).toBeLessThanOrEqual(viewport.width);
+  expect(
+    dialog.bottom,
+    "Lightbox should not overflow the bottom edge",
+  ).toBeLessThanOrEqual(viewport.height);
+  expect(
+    geometry.scrollWidth,
+    "Opening the lightbox should not overflow the page horizontally",
+  ).toBeLessThanOrEqual(viewport.width);
+}
+
 test.beforeEach(async ({ page }) => {
   await stubBasemapTiles(page);
 });
@@ -271,6 +376,135 @@ test("arrow keys cycle every seeded image and wrap", async ({
   await expect(image).toHaveAttribute("src", expected[1]);
   await expect(count).toHaveText("2 of 3");
   await expect(dialog).not.toHaveClass(/waymark-lightbox-single/);
+
+  assertNoErrors();
+});
+
+// ---------------------------------------------------------------------------
+// Map sync on navigation
+// ---------------------------------------------------------------------------
+
+test("navigating the viewer pans the map to each feature and opens its popup", async ({
+  page,
+  waymark,
+}) => {
+  test.setTimeout(90_000);
+  const assertNoErrors = startErrorGate(page);
+  await openViewer(page, waymark);
+
+  // The LineString is item one of three, so the viewer opens without panning
+  // and leaves the map at its initial bounds — the recorded baseline.
+  const { dialog } = await openLightboxFromPopup(page, LINE_TITLE);
+  const count = dialog.locator(".waymark-lightbox-count");
+  const next = dialog.locator(".waymark-lightbox-next");
+
+  await expect(count).toHaveText("1 of 3");
+
+  const readCentre = () =>
+    page.evaluate(() => {
+      const centre = window.Waymark.map.getCenter();
+      return { lat: centre.lat, lng: centre.lng };
+    });
+
+  const readPoint = (title) =>
+    page.evaluate((targetTitle) => {
+      let point = null;
+      window.Waymark.map_data.eachLayer((layer) => {
+        const properties = layer.feature && layer.feature.properties;
+        if (
+          properties &&
+          properties.title === targetTitle &&
+          typeof layer.getLatLng === "function"
+        ) {
+          const latlng = layer.getLatLng();
+          point = { lat: latlng.lat, lng: latlng.lng };
+        }
+      });
+      return point;
+    }, title);
+
+  const startCentre = await readCentre();
+  const markerLatLng = await readPoint(POPUP_TITLE);
+  expect(
+    markerLatLng,
+    `No seeded marker titled "${POPUP_TITLE}"`,
+  ).not.toBeNull();
+
+  await next.click();
+  await expect(count).toHaveText("2 of 3");
+
+  // Both the pan and the popup's auto-pan are animated, so poll until the map
+  // has both moved from the baseline and settled on the marker.
+  await expect
+    .poll(
+      async () => {
+        const centre = await readCentre();
+        return {
+          moved:
+            Math.abs(centre.lat - startCentre.lat) > 1e-6 ||
+            Math.abs(centre.lng - startCentre.lng) > 1e-6,
+          near:
+            Math.abs(centre.lat - markerLatLng.lat) < 1e-3 &&
+            Math.abs(centre.lng - markerLatLng.lng) < 1e-3,
+        };
+      },
+      {
+        timeout: 10_000,
+        message: `Map centre should settle within 1e-3° of "${POPUP_TITLE}"`,
+      },
+    )
+    .toEqual({ moved: true, near: true });
+
+  await expect
+    .poll(
+      () =>
+        page.evaluate((title) => {
+          let open = false;
+          window.Waymark.map_data.eachLayer((layer) => {
+            const properties = layer.feature && layer.feature.properties;
+            if (
+              properties &&
+              properties.title === title &&
+              typeof layer.isPopupOpen === "function"
+            ) {
+              open = layer.isPopupOpen();
+            }
+          });
+          return open;
+        }, POPUP_TITLE),
+      { timeout: 5_000 },
+    )
+    .toBe(true);
+
+  const sanJosefCentre = await readCentre();
+  const ericLatLng = await readPoint(GALLERY_TITLE);
+  expect(
+    ericLatLng,
+    `No seeded marker titled "${GALLERY_TITLE}"`,
+  ).not.toBeNull();
+
+  await next.click();
+  await expect(count).toHaveText("3 of 3");
+
+  await expect
+    .poll(
+      async () => {
+        const centre = await readCentre();
+        return {
+          moved:
+            Math.abs(centre.lat - sanJosefCentre.lat) > 1e-6 ||
+            Math.abs(centre.lng - sanJosefCentre.lng) > 1e-6,
+          near:
+            Math.abs(centre.lat - ericLatLng.lat) < 1e-3 &&
+            Math.abs(centre.lng - ericLatLng.lng) < 1e-3,
+        };
+      },
+      {
+        timeout: 10_000,
+        message: `Map centre should settle within 1e-3° of "${GALLERY_TITLE}"`,
+      },
+    )
+    .toEqual({ moved: true, near: true });
 
   assertNoErrors();
 });
@@ -419,4 +653,81 @@ test("a single-image set hides prev/next", async ({ page, waymark }) => {
   await expect(dialog.locator(".waymark-lightbox-count")).toHaveText("1 of 1");
 
   assertNoErrors();
+});
+
+// ---------------------------------------------------------------------------
+// Layout regression: the viewer is centred, not pinned to the top
+// ---------------------------------------------------------------------------
+//
+// The dialog once used `position: relative`, which defeated the top layer's
+// `inset: 0; margin: auto` centring and pinned the viewer to the top of the
+// viewport. These positional assertions would have caught that before release.
+
+test.describe("layout: the viewer is centred in the default viewport", () => {
+  test("the open viewer is centred on both axes and fully contained", async ({
+    page,
+    waymark,
+  }) => {
+    test.setTimeout(90_000);
+    const assertNoErrors = startErrorGate(page);
+    await openViewer(page, waymark);
+
+    const { dialog } = await openLightboxFromPopup(page, POPUP_TITLE);
+    await expect(dialog).toBeVisible();
+    await waitForLightboxImage(page);
+
+    const geometry = await measureLightbox(page);
+    expectLightboxCentred(geometry);
+
+    assertNoErrors();
+  });
+});
+
+test.describe("layout: the viewer is centred on a phone viewport", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("the viewer stays centred with 44px controls and a 14px caption", async ({
+    page,
+    waymark,
+  }) => {
+    test.setTimeout(90_000);
+    const assertNoErrors = startErrorGate(page);
+    await openViewer(page, waymark);
+
+    const { dialog } = await openLightboxFromPopup(page, POPUP_TITLE);
+    await expect(dialog).toBeVisible();
+    await waitForLightboxImage(page);
+
+    const geometry = await measureLightbox(page);
+    expectLightboxCentred(geometry);
+
+    for (const [name, control] of Object.entries(geometry.controls)) {
+      expect(control, `The ${name} control should exist`).not.toBeNull();
+
+      if (!control) {
+        continue;
+      }
+
+      expect(
+        Math.abs(control.width - 44),
+        `The ${name} control should be 44px wide`,
+      ).toBeLessThanOrEqual(0.5);
+      expect(
+        Math.abs(control.height - 44),
+        `The ${name} control should be 44px tall`,
+      ).toBeLessThanOrEqual(0.5);
+
+      expect(
+        control.left,
+        `The ${name} control should sit inside the dialog`,
+      ).toBeGreaterThanOrEqual(geometry.dialog.left);
+      expect(control.top).toBeGreaterThanOrEqual(geometry.dialog.top);
+      expect(control.right).toBeLessThanOrEqual(geometry.dialog.right);
+      expect(control.bottom).toBeLessThanOrEqual(geometry.dialog.bottom);
+    }
+
+    expect(geometry.captionFontSize).toBe("14px");
+
+    assertNoErrors();
+  });
 });

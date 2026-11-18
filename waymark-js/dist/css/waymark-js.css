@@ -546,7 +546,12 @@ html.waymark-lightbox-open {
   overflow: hidden;
 }
 .waymark-lightbox {
-  position: relative;
+  /* Fixed positioning plus inset 0 and auto margins centre the dialog on both
+     axes; the modal top layer otherwise leaves it at the top of the viewport. */
+  position: fixed;
+  inset: 0;
+  width: fit-content;
+  height: fit-content;
   margin: auto;
   padding: 0;
   border: 0;
@@ -556,7 +561,7 @@ html.waymark-lightbox-open {
   overflow: visible;
 }
 .waymark-lightbox::backdrop {
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.45);
 }
 .waymark-lightbox:focus,
 .waymark-lightbox:focus-visible {
@@ -582,8 +587,10 @@ html.waymark-lightbox-open {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  margin-top: 10px;
-  padding: 0 12px;
+  margin-top: 0;
+  padding: 6px 12px;
+  background: #000b00;
+  border-radius: 0;
   font-size: 13px;
   color: #f1f1f1;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
@@ -652,12 +659,15 @@ html.waymark-lightbox-open {
   .waymark-lightbox-image {
     max-height: 70vh;
   }
+  .waymark-lightbox-caption {
+    font-size: 14px;
+  }
   .waymark-lightbox-close,
   .waymark-lightbox-prev,
   .waymark-lightbox-next {
-    width: 36px;
-    height: 36px;
-    font-size: 26px;
+    width: 44px;
+    height: 44px;
+    font-size: 32px;
   }
 }
 

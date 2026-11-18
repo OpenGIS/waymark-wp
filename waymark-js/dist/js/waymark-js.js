@@ -9949,6 +9949,11 @@ function Waymark_Lightbox() {
       label_image_count: language.label_image_count || "%1$s of %2$s",
     };
 
+    this.on_navigate =
+      typeof user_config.on_navigate === "function"
+        ? user_config.on_navigate
+        : null;
+
     this.items = [];
     this.index = 0;
     this.dialog = null;
@@ -10066,6 +10071,10 @@ function Waymark_Lightbox() {
     }
 
     this.show_index(this.index - 1);
+
+    if (this.on_navigate) {
+      this.on_navigate(this.items[this.index], this.index);
+    }
   };
 
   this.next = function () {
@@ -10074,6 +10083,10 @@ function Waymark_Lightbox() {
     }
 
     this.show_index(this.index + 1);
+
+    if (this.on_navigate) {
+      this.on_navigate(this.items[this.index], this.index);
+    }
   };
 
   this.close = function () {
@@ -10217,7 +10230,12 @@ function Waymark_Map_Viewer() {
 
     // One lightbox per viewer so maps on the same page stay independent.
     Waymark.lightbox = new Waymark_Lightbox();
-    Waymark.lightbox.init({ language: Waymark.config.language });
+    Waymark.lightbox.init({
+      language: Waymark.config.language,
+      on_navigate: function (item) {
+        Waymark.sync_map_to_lightbox(item);
+      },
+    });
   };
 
   this.init_done = function () {
@@ -10639,6 +10657,43 @@ function Waymark_Map_Viewer() {
     });
 
     return items;
+  };
+
+  // Recentre the map on the feature whose photo is showing, so navigation in the
+  // image viewer keeps the map in step with the image.
+  this.sync_map_to_lightbox = function (item) {
+    Waymark = this;
+
+    if (
+      !item ||
+      !item.layer ||
+      typeof Waymark.map === "undefined" ||
+      !Waymark.map
+    ) {
+      return;
+    }
+
+    var layer = item.layer;
+
+    // Move without animating: the popup's auto-pan stops any running pan, so an
+    // animated pan would be cancelled before reaching the feature.
+    if (typeof layer.getLatLng === "function") {
+      Waymark.map.panTo(layer.getLatLng(), { animate: false });
+    } else if (typeof layer.getBounds === "function") {
+      var bounds = layer.getBounds();
+
+      if (bounds && bounds.isValid()) {
+        // Cap at the current zoom so a short line does not zoom in further.
+        Waymark.map.fitBounds(bounds, {
+          animate: false,
+          maxZoom: Waymark.map.getZoom(),
+        });
+      }
+    }
+
+    if (typeof layer.openPopup === "function" && Waymark.map.hasLayer(layer)) {
+      layer.openPopup();
+    }
   };
 
   // Prefer the exact layer, then the feature; an unmatched lookup returns -1

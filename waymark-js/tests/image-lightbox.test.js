@@ -451,6 +451,65 @@ describe("Gallery lightbox", () => {
     expect(dialog === null || dialog.open === false).toBe(true);
   });
 
+  it("pans to a marker and opens its popup", () => {
+    const viewer = makeViewer();
+    viewer.init();
+
+    const marker = window.L.marker([49.46, -85.04]);
+    marker.bindPopup("Popup");
+    marker.addTo(viewer.map);
+
+    const panTo = vi.spyOn(viewer.map, "panTo");
+    const openPopup = vi.spyOn(marker, "openPopup");
+
+    viewer.sync_map_to_lightbox({ layer: marker });
+
+    expect(panTo).toHaveBeenCalledWith(marker.getLatLng(), {
+      animate: false,
+    });
+    expect(openPopup).toHaveBeenCalled();
+  });
+
+  it("fits the map to a polyline's bounds", () => {
+    const viewer = makeViewer();
+    viewer.init();
+
+    const line = window.L.polyline([
+      [49.46, -85.04],
+      [49.47, -85.03],
+    ]);
+    line.addTo(viewer.map);
+
+    const fitBounds = vi.spyOn(viewer.map, "fitBounds");
+    const zoom = viewer.map.getZoom();
+
+    viewer.sync_map_to_lightbox({ layer: line });
+
+    expect(fitBounds).toHaveBeenCalledWith(
+      line.getBounds(),
+      expect.objectContaining({
+        animate: false,
+        maxZoom: zoom,
+      }),
+    );
+  });
+
+  it("does nothing without an item or layer", () => {
+    const viewer = makeViewer();
+    viewer.init();
+
+    const panTo = vi.spyOn(viewer.map, "panTo");
+    const fitBounds = vi.spyOn(viewer.map, "fitBounds");
+
+    expect(() => {
+      viewer.sync_map_to_lightbox(undefined);
+      viewer.sync_map_to_lightbox({});
+    }).not.toThrow();
+
+    expect(panTo).not.toHaveBeenCalled();
+    expect(fitBounds).not.toHaveBeenCalled();
+  });
+
   it("uses the feature title as the thumbnail alt text", () => {
     const viewer = makeGalleryViewer();
 

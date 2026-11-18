@@ -194,7 +194,10 @@ Overlay images open in a viewer built on the native `<dialog>` element. The view
 - `html.waymark-lightbox-open` is added while the viewer is open and locks page scrolling.
 - `.waymark-lightbox-single` is added when there is only one image, hiding the Previous and Next buttons.
 - `.waymark-lightbox-no-full` is added when the full-size link is unavailable, hiding it.
-- Style the backdrop with `.waymark-lightbox::backdrop`.
+- The `<dialog>` is centred on both axes at every viewport size with `position: fixed`, `inset: 0`, `width: fit-content`, `height: fit-content` and `margin: auto`, capped by `max-width: 90vw` and `max-height: 90vh`. The image is capped at `max-height: 80vh`. Style them with `.waymark-lightbox` and `.waymark-lightbox-image`.
+- The dialog is modal, so the page behind it is inert. The default backdrop is a light `rgba(0, 0, 0, 0.45)`, keeping the Map clearly visible; style it with `.waymark-lightbox::backdrop`.
+- The caption is a full-width bar flush with the bottom of the photo: an opaque `#000b00` background (the dark brand surface), `6px 12px` padding, `13px` text in `#f1f1f1`, and no gap or rounded corners. Style it with `.waymark-lightbox-caption`.
+- The Close, Previous and Next controls are `44 × 44` circular buttons, including on narrow screens. At `600px` and narrower the caption uses `14px` and the image is capped at `70vh`.
 
 ```css
 /* Darker backdrop */
