@@ -111,7 +111,7 @@ class Test_I18n extends WP_UnitTestCase {
 			remove_filter( 'gettext', [ $this, 'filter_all_translations' ], 20 );
 		}
 
-		$this->assertCount( 68, $lang );
+		$this->assertCount( 70, $lang );
 
 		foreach ( $lang as $key => $value ) {
 			$this->assertSame( $this->raw_translation, $value, $key );

@@ -30,7 +30,7 @@ describe("i18n output escaping", () => {
         object_title_placeholder_marker: "Marker title",
         object_description_placeholder_marker: "Marker description",
         object_image_placeholder: "Image URL",
-        action_upload_image: "Upload Image",
+        action_upload_image: "Add Image",
         action_edit_marker: "Edit Marker",
         action_edit_done: "Finish editing",
         action_duplicate_marker: "Duplicate Marker",

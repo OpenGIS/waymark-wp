@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Waymark 1.8.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-11-16 17:48:06+00:00\n"
+"POT-Creation-Date: 2026-11-17 15:12:56+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -196,19 +196,19 @@ msgid "Overlays"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:35 inc/Admin/Waymark_Settings.php:148
-#: inc/Helpers/Waymark_Helper.php:1791 inc/Helpers/Waymark_Lang.php:68
+#: inc/Helpers/Waymark_Helper.php:1791 inc/Helpers/Waymark_Lang.php:70
 #. translators: The name of the tab for customising Markers
 msgid "Markers"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:36 inc/Admin/Waymark_Settings.php:328
-#: inc/Helpers/Waymark_Lang.php:69
+#: inc/Helpers/Waymark_Lang.php:71
 #. translators: The name of the tab for customising Lines
 msgid "Lines"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:37 inc/Admin/Waymark_Settings.php:450
-#: inc/Helpers/Waymark_Lang.php:70
+#: inc/Helpers/Waymark_Lang.php:72
 #. translators: The name of the tab for customising Shapes
 msgid "Shapes"
 msgstr ""
@@ -410,7 +410,7 @@ msgid ""
 "specified location, Markers point down to that location."
 msgstr ""
 
-#: inc/Admin/Waymark_Settings.php:199 inc/Helpers/Waymark_Lang.php:65
+#: inc/Admin/Waymark_Settings.php:199 inc/Helpers/Waymark_Lang.php:67
 msgid "Marker"
 msgstr ""
 
@@ -1877,7 +1877,8 @@ msgid "Draw a Line"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:32 inc/Helpers/Waymark_Lang.php:51
-msgid "Upload Image"
+#: inc/Helpers/Waymark_Lang.php:52
+msgid "Add Image"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:33
@@ -1954,108 +1955,112 @@ msgstr ""
 msgid "Are you sure you want to delete this Shape?"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:52
-msgid "Marker type:"
-msgstr ""
-
 #: inc/Helpers/Waymark_Lang.php:53
-msgid "Line type:"
+msgid "Use Image"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:54
-msgid "Shape type:"
+msgid "Marker type:"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:55
-msgid "Marker title"
+msgid "Line type:"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:56
-msgid "Line title"
+msgid "Shape type:"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:57
-msgid "Shape title"
+msgid "Marker title"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:58
-msgid "Image URL"
+msgid "Line title"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:59
-msgid "Marker description"
+msgid "Shape title"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:60
-msgid "Line description"
+msgid "Image URL"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:61
-msgid "Shape description"
+msgid "Marker description"
+msgstr ""
+
+#: inc/Helpers/Waymark_Lang.php:62
+msgid "Line description"
 msgstr ""
 
 #: inc/Helpers/Waymark_Lang.php:63
+msgid "Shape description"
+msgstr ""
+
+#: inc/Helpers/Waymark_Lang.php:65
 #. translators: Abbreviation for latitude and longitude.
 msgid "Lat,Lng"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:64
+#: inc/Helpers/Waymark_Lang.php:66
 msgid "Search..."
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:66
+#: inc/Helpers/Waymark_Lang.php:68
 msgid "Line"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:67
+#: inc/Helpers/Waymark_Lang.php:69
 msgid "Shape"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:71
+#: inc/Helpers/Waymark_Lang.php:73
 msgid "Waymark Error"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:72
+#: inc/Helpers/Waymark_Lang.php:74
 msgid "Waymark Info"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:73
+#: inc/Helpers/Waymark_Lang.php:75
 msgid "Waymark Debug"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:74
+#: inc/Helpers/Waymark_Lang.php:76
 msgid "This file type is not supported."
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:75
+#: inc/Helpers/Waymark_Lang.php:77
 msgid "Could not convert this file to GeoJSON."
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:76
+#: inc/Helpers/Waymark_Lang.php:78
 msgid "File upload error."
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:77
+#: inc/Helpers/Waymark_Lang.php:79
 msgid "Could not retrieve Image metadata."
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:78
+#: inc/Helpers/Waymark_Lang.php:80
 msgid "Image location metadata (EXIF) detected!"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:79
+#: inc/Helpers/Waymark_Lang.php:81
 msgid "Image location metadata (EXIF) NOT detected."
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:80
+#: inc/Helpers/Waymark_Lang.php:82
 msgid "No Direction"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:81
+#: inc/Helpers/Waymark_Lang.php:83
 msgid "Show Direction"
 msgstr ""
 
-#: inc/Helpers/Waymark_Lang.php:82
+#: inc/Helpers/Waymark_Lang.php:84
 msgid "Reverse Direction"
 msgstr ""
 
