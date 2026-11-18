@@ -43,7 +43,7 @@ class Waymark_Lang {
 
 			//Editor
 			'add_line_title' => __('Draw a Line', 'waymark'),
-			'add_photo_title' => __('Upload Image', 'waymark'),
+			'add_photo_title' => __('Add Marker from Image', 'waymark'),
 			'add_marker_title' => __('Place a Marker', 'waymark'),
 			'add_rectangle_title' => __('Draw a Rectangle', 'waymark'),
 			'add_polygon_title' => __('Draw a Polygon', 'waymark'),
@@ -62,7 +62,9 @@ class Waymark_Lang {
 			'action_delete_confirm_marker' => __('Are you sure you want to delete this Marker?', 'waymark'),
 			'action_delete_confirm_line' => __('Are you sure you want to delete this Line?', 'waymark'),
 			'action_delete_confirm_shape' => __('Are you sure you want to delete this Shape?', 'waymark'),
-			'action_upload_image' => __('Upload Image', 'waymark'),
+			'action_upload_image' => __('Add Image', 'waymark'),
+			'media_frame_title' => __('Add Image', 'waymark'),
+			'media_frame_button' => __('Use Image', 'waymark'),
 			'object_type_label_marker' => __('Marker type:', 'waymark'),
 			'object_type_label_line' => __('Line type:', 'waymark'),
 			'object_type_label_shape' => __('Shape type:', 'waymark'),

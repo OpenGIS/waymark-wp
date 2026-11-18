@@ -182,7 +182,7 @@ function Waymark_Map() {
         label_image_count: "%1$s of %2$s",
         //Editor
         add_line_title: "Draw a Line",
-        add_photo_title: "Upload Image",
+        add_photo_title: "Add Marker from Image",
         add_marker_title: "Place a Marker",
         add_rectangle_title: "Draw a Rectangle",
         add_polygon_title: "Draw a Polygon",
@@ -205,7 +205,9 @@ function Waymark_Map() {
           "Are you sure you want to delete this Line?",
         action_delete_confirm_shape:
           "Are you sure you want to delete this Shape?",
-        action_upload_image: "Upload Image",
+        action_upload_image: "Add Image",
+        media_frame_title: "Add Image",
+        media_frame_button: "Use Image",
         object_type_label_marker: "Marker type:",
         object_type_label_line: "Line type:",
         object_type_label_shape: "Shape type:",

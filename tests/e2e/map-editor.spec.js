@@ -211,3 +211,88 @@ test("creates a Map with a linked marker description and renders it on the front
     `jQuery Migrate warnings:\n${jqueryWarnings.join("\n")}`,
   ).toEqual([]);
 });
+
+// The marker popup's image control opens a dedicated WordPress media frame.
+// Assert its custom heading and confirm label, then close it so the test leaves
+// no modal state behind. The frame renders its own chrome whether or not the
+// media library holds attachments, so nothing has to be uploaded or selected.
+test("marker image button opens a media frame titled Add Image", async ({
+  page,
+}) => {
+  // Login and editor start-up dominate; opening the frame adds its asset loads.
+  test.setTimeout(90_000);
+
+  // 1. Log in.
+  await page.goto("/wp-login.php");
+  // WordPress's wp_attempt_focus() focuses and selects #user_login 200ms after
+  // load; wait for it so it cannot interrupt the password fill.
+  await page.waitForFunction(
+    () => document.activeElement === document.getElementById("user_login"),
+    null,
+    { timeout: 10_000 },
+  );
+  await page.fill("#user_login", "admin");
+  await page.fill("#user_pass", "password");
+  await page.click("#wp-submit");
+  await expect(page.locator("#wpadminbar")).toBeVisible();
+
+  // 2. Open the classic Map editor and drop a marker at the map centre.
+  await page.goto("/wp-admin/post-new.php?post_type=waymark_map");
+  const addMarkerButton = page.locator(
+    "a.waymark-edit-button.waymark-edit-marker",
+  );
+  await expect(addMarkerButton).toBeVisible();
+  await addMarkerButton.click();
+  const markerIcons = page.locator(MARKER_ICON);
+  if ((await markerIcons.count()) === 0) {
+    // Leaflet occasionally swallows synthetic clicks; fall back to jQuery.
+    await page.evaluate(() =>
+      window
+        .jQuery("a.waymark-edit-button.waymark-edit-marker")
+        .trigger("click"),
+    );
+  }
+  await expect(markerIcons).toHaveCount(1);
+
+  // 3. Open the marker popup. Its image control is revealed on `popupopen`.
+  await markerIcons.first().click();
+  if ((await page.locator(".leaflet-popup").count()) === 0) {
+    await page.evaluate(() =>
+      window.Waymark.map_data.eachLayer(
+        (layer) => layer.openPopup && layer.openPopup(),
+      ),
+    );
+  }
+
+  const imageButton = page.locator(".waymark-info-image_large_url .button");
+  await expect(imageButton).toBeVisible();
+
+  // 4. The click must open the dedicated frame, not wp.media.editor's default
+  // "Insert Media" flow.
+  await imageButton.click();
+
+  const mediaModal = page.locator(".media-modal:visible");
+  await expect(mediaModal).toBeVisible();
+  await expect(page.locator(".media-frame-title h1")).toHaveText("Add Image");
+  await expect(
+    page.locator(".media-frame-toolbar .media-button-select"),
+  ).toHaveText("Use Image");
+  await expect(
+    page.locator(".media-toolbar-primary .button-primary"),
+  ).toHaveText("Use Image");
+
+  // 5. The frame must open on the Media Library tab. WordPress 7.1 restores the
+  // per-user `libraryContent` tab (often "Upload files") when a frame opens, so
+  // the explicit content-mode switch has to win. Assert tab state only, never
+  // attachment counts or grid contents, so the check holds on an empty library.
+  const mediaLibraryTab = mediaModal.locator(".media-router #menu-item-browse");
+  const uploadTab = mediaModal.locator(".media-router #menu-item-upload");
+  await expect(mediaLibraryTab).toHaveClass(/\bactive\b/);
+  await expect(mediaLibraryTab).toHaveAttribute("aria-selected", "true");
+  await expect(uploadTab).not.toHaveClass(/\bactive\b/);
+  await expect(uploadTab).toHaveAttribute("aria-selected", "false");
+
+  // 6. Close the frame; nothing may linger over the editor.
+  await page.locator(".media-modal-close").click();
+  await expect(mediaModal).toHaveCount(0);
+});

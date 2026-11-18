@@ -59,11 +59,11 @@ With the Marker added we will now attach an image to it.
 The image we will use first needs to be downloaded onto your computer. Click [this link](https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Tower_Bridge_at_Dawn.jpg/1024px-Tower_Bridge_at_Dawn.jpg?20140924042649=&download=) to download it from [Wikimedia](https://commons.wikimedia.org/wiki/File:Tower_Bridge_at_Dawn.jpg), the file is called “1024px-Tower_Bridge_at_Dawn.jpg”. We can use this image as long as we provide attribution, which we will do in the next step.
 
 ::docs-figure{src="/assets/img/first-map-step-8-1-1024x658.png" srcset="/assets/img/first-map-step-8-1-1024x658.png 1024w, /assets/img/first-map-step-8-1-700x450.png 700w, /assets/img/first-map-step-8-1-768x494.png 768w, /assets/img/first-map-step-8-1-1536x988.png 1536w, /assets/img/first-map-step-8-1.png 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}
-**4.1** In the popup editor click the “Upload Image” button. This will open the standard WordPress Media Library dialog.
+**4.1** In the popup editor click the “Add Image” button. This will open the standard WordPress Media Library dialog.
 ::
 
 ::docs-figure{src="/assets/img/first-map-step-9-1024x658.png" srcset="/assets/img/first-map-step-9-1024x658.png 1024w, /assets/img/first-map-step-9-700x450.png 700w, /assets/img/first-map-step-9-768x494.png 768w, /assets/img/first-map-step-9-1536x988.png 1536w, /assets/img/first-map-step-9.png 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}
-**4.2** Click on the “Select Files” button to upload an Image.
+**4.2** Click on the “Upload files” tab at the top of the dialog, then click the “Select Files” button to upload an Image.
 ::
 
 ::docs-figure{src="/assets/img/first-map-step-10-1024x658.jpg" srcset="/assets/img/first-map-step-10-1024x658.jpg 1024w, /assets/img/first-map-step-10-700x450.jpg 700w, /assets/img/first-map-step-10-768x494.jpg 768w, /assets/img/first-map-step-10-1536x988.jpg 1536w, /assets/img/first-map-step-10.jpg 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}
@@ -71,7 +71,7 @@ The image we will use first needs to be downloaded onto your computer. Click [th
 ::
 
 ::docs-figure{src="/assets/img/first-map-step-11-1024x658.png" srcset="/assets/img/first-map-step-11-1024x658.png 1024w, /assets/img/first-map-step-11-700x450.png 700w, /assets/img/first-map-step-11-768x494.png 768w, /assets/img/first-map-step-11-1536x988.png 1536w, /assets/img/first-map-step-11.png 2000w" alt="" sizes="auto, (max-width: 1024px) 100vw, 1024px" :width="1024" :height="658"}
-**4.4** Once the image has finished uploading, you will see a thumbnail appear in the Media Library. Click on the “Insert into post” button.
+**4.4** Once the image has finished uploading, you will see a thumbnail appear in the Media Library. Click on the “Use Image” button.
 ::
 
 ## 5. Adding a Description

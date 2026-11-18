@@ -42,10 +42,19 @@ function waymark_setup_map_editor(waymark_editor = {}) {
       e.preventDefault();
 
       //Thanks to: https://mycyberuniverse.com/integration-wordpress-media-uploader-plugin-options-page.html
-      wp.media.editor.send.attachment = function (props, attachment) {
+      const frame = wp.media({
+        title: waymark_js.lang.media_frame_title,
+        button: { text: waymark_js.lang.media_frame_button },
+        library: { type: "image" },
+        multiple: false,
+      });
+
+      frame.on("select", function () {
+        const attachment = frame.state().get("selection").first().toJSON();
+
         //Ensure we have the data we want
         if (typeof attachment.url === "undefined") {
-          return false;
+          return;
         }
 
         //Get Image EXIF
@@ -100,8 +109,10 @@ function waymark_setup_map_editor(waymark_editor = {}) {
             Waymark.map_was_edited();
           },
         });
-      };
-      wp.media.editor.open();
+      });
+
+      frame.open();
+      frame.content.mode("browse");
 
       return false;
     });
@@ -129,10 +140,19 @@ function waymark_setup_map_editor(waymark_editor = {}) {
         e.preventDefault();
 
         //Thanks to: https://mycyberuniverse.com/integration-wordpress-media-uploader-plugin-options-page.html
-        wp.media.editor.send.attachment = function (props, attachment) {
+        const frame = wp.media({
+          title: waymark_js.lang.media_frame_title,
+          button: { text: waymark_js.lang.media_frame_button },
+          library: { type: "image" },
+          multiple: false,
+        });
+
+        frame.on("select", function () {
+          const attachment = frame.state().get("selection").first().toJSON();
+
           //Ensure we have the data we want
           if (typeof attachment.url === "undefined") {
-            return false;
+            return;
           }
 
           //Get Image URLs
@@ -173,8 +193,10 @@ function waymark_setup_map_editor(waymark_editor = {}) {
 
           //Save
           waymark_editor.map_was_edited();
-        };
-        wp.media.editor.open();
+        });
+
+        frame.open();
+        frame.content.mode("browse");
 
         return false;
       }); // End click
