@@ -54,7 +54,7 @@ Settings are available for user submissions and public submissions separately.
 Display using the Waymark Shortcode.
 
 ```
-Waymark content="submission"
+[Waymark content="submission"]
 ```
 
 ## Feedback
