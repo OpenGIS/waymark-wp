@@ -564,22 +564,21 @@ function Waymark_Map_Viewer() {
   };
 
   this.line_has_elevation_data = function (feature) {
-    if (feature.geometry.type == "MultiLineString") {
-      //Each line
-      for (var i in feature.geometry.coordinates) {
-        //Each point
-        for (var j in feature.geometry.coordinates[i]) {
-          //If has elevation data
-          if (feature.geometry.coordinates[i][j].length == 3) {
-            return true;
-          }
-        }
-      }
-    } else {
+    //A MultiLineString nests an extra level of coordinates
+    var lines =
+      feature.geometry.type == "MultiLineString"
+        ? feature.geometry.coordinates
+        : [feature.geometry.coordinates];
+
+    //Each line
+    for (var i in lines) {
       //Each point
-      for (var j in feature.geometry.coordinates) {
-        //If has elevation data
-        if (feature.geometry.coordinates[j].length == 3) {
+      for (var j in lines[i]) {
+        var elevation = parseFloat(lines[i][j][2]);
+
+        //Exporters write 0 when they have no elevation data, so an all-zero
+        //track is treated as having no elevation data
+        if (isFinite(elevation) && elevation != 0) {
           return true;
         }
       }

@@ -531,6 +531,39 @@ $empty_map = [
 	'features' => [],
 ];
 
+// Deliberate regression fixture for issue #87. Exporters write plain zeroes
+// when they have no elevation source, so an all-zero track means "no elevation
+// data" and the viewer must not render a profile for it. This fixture
+// intentionally carries third ordinates (all 0), which is why
+// waymark_demo_assert_no_invented_elevation() must NOT be applied to it.
+$flat_elevation = [
+	'type'     => 'FeatureCollection',
+	'features' => [
+		[
+			'type'       => 'Feature',
+			'properties' => [
+				'type'  => 'blue',
+				'title' => 'Flat Elevation Track',
+			],
+			'geometry'   => [
+				'type'        => 'LineString',
+				'coordinates' => [
+					[-121.0580, 48.4670, 0],
+					[-121.0555, 48.4692, 0],
+					[-121.0570, 48.4715, 0],
+					[-121.0540, 48.4740, 0],
+					[-121.0518, 48.4765, 0],
+					[-121.0530, 48.4790, 0],
+					[-121.0505, 48.4815, 0],
+					[-121.0480, 48.4840, 0],
+					[-121.0455, 48.4860, 0],
+					[-121.0435, 48.4885, 0],
+				],
+			],
+		],
+	],
+];
+
 waymark_demo_assert_no_invented_elevation($circle_only, 'Circle Only');
 
 $demo_maps = [
@@ -587,6 +620,16 @@ $demo_maps = [
 		'journal'     => '<p>Regression fixture: the Map must fall back to the configured default view.</p>',
 		'date'        => '2026-06-20',
 		'distance'    => '0.0',
+	],
+	[
+		'id'          => 105,
+		'slug'        => 'flat-elevation',
+		'title'       => 'Flat Elevation',
+		'data'        => json_encode($flat_elevation, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+		'description' => '<p>A Line whose elevation values are all zero, meaning it has no real elevation source.</p>',
+		'journal'     => '<p>Regression fixture for issue #87: an all-zero track must not show an elevation profile.</p>',
+		'date'        => '2026-06-21',
+		'distance'    => '2.8',
 	],
 ];
 

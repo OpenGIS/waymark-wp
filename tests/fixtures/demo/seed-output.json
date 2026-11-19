@@ -29,6 +29,12 @@
             "slug": "empty-map",
             "title": "Empty Map",
             "permalink": "http://localhost:8889/map/empty-map/"
+        },
+        {
+            "id": 105,
+            "slug": "flat-elevation",
+            "title": "Flat Elevation",
+            "permalink": "http://localhost:8889/map/flat-elevation/"
         }
     ],
     "page": {
