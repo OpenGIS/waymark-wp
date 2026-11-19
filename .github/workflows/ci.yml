@@ -20,6 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # The ubuntu-latest image no longer ships the svn client, so install it
+      # before probing the WordPress.org SVN tag.
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends subversion
+
       # Gate the deploy on the actual SVN state rather than the local readme.
       # A readme synced to the new version in the same commit would otherwise
       # match Waymark.php and skip a deploy WordPress.org has not received.
@@ -160,6 +165,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # The ubuntu-latest image no longer ships the svn client, so install it
+      # before probing the WordPress.org SVN tag.
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends subversion
 
       # WordPress.org serves the readme from the stable tag directory, so never
       # let trunk advertise a stable tag that does not exist in SVN.
