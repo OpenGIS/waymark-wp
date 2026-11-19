@@ -10,6 +10,8 @@ Guides, tutorials and examples for building maps with Waymark.
 :::map-demo{demo="home-demo" height="450"}
 :::
 
+Download the example data: [GeoJSON](assets/geo/port-hardy-to-cape-scott.geojson) or [GPX](assets/geo/port-hardy-to-cape-scott.gpx).
+
 ## Getting Started
 
 ::video-grid

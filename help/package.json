@@ -6,7 +6,8 @@
     "dev": "nuxt dev --port 11003",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "sync-assets": "node scripts/sync-waymark-assets.mjs"
+    "sync-assets": "node scripts/sync-waymark-assets.mjs",
+    "geo:gpx": "node scripts/geojson-to-gpx.mjs"
   },
   "dependencies": {
     "@nuxt/content": "3.16.2",

@@ -32,7 +32,8 @@ interface TypeVisibility {
 }
 
 interface DemoEntry {
-  geojson: Record<string, any>;
+  geojson?: Record<string, any>;
+  geojsonUrl?: string;
   viewerOptions?: Record<string, any>;
   mapOptions?: Record<string, any>;
   mapId?: string;
@@ -188,6 +189,29 @@ function waitForFactory(): Promise<Record<string, any>> {
   });
 }
 
+async function loadDemoGeoJson(
+  demo: DemoEntry,
+  name: string,
+): Promise<Record<string, any>> {
+  if (demo.geojsonUrl) {
+    const response = await fetch(demo.geojsonUrl);
+
+    if (!response.ok) {
+      throw new Error(
+        `Could not load map data for "${name}" from ${demo.geojsonUrl}: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    return resolveMapAssetStrings(await response.json(), baseURL);
+  }
+
+  if (demo.geojson) {
+    return demo.geojson;
+  }
+
+  throw new Error(`No map data was provided for "${name}".`);
+}
+
 onMounted(async () => {
   await nextTick();
 
@@ -202,6 +226,12 @@ onMounted(async () => {
 
     if (!demo) {
       throw new Error(`Unknown map demo: ${props.demo}`);
+    }
+
+    const geojson = await loadDemoGeoJson(demo, props.demo);
+
+    if (disposed) {
+      return;
     }
 
     const config = resolveMapAssetStrings(
@@ -234,7 +264,7 @@ onMounted(async () => {
       (window as any).waymark_loaded_callback = demo.globalCallback;
     }
 
-    instance.load_json(JSON.parse(JSON.stringify(demo.geojson)));
+    instance.load_json(JSON.parse(JSON.stringify(geojson)));
     instance.load_done();
     demo.onReady?.(instance);
 
