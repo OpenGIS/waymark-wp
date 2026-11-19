@@ -98,8 +98,8 @@ jobs:
           fi
 
       # GitHub's generated notes list commits and PR authors, not the people who
-      # reported the issues. Append this version's changelog section so reporter
-      # credits and the user-facing summary reach the Release too.
+      # reported the issues. Prepend this version's changelog section so reporter
+      # credits and the user-facing summary lead the Release notes.
       - name: Extract changelog for release notes
         id: changelog
         if: steps.release_check.outputs.deploy == 'true'
@@ -124,7 +124,9 @@ jobs:
           target_commitish: master
           files: ${{ runner.temp }}/waymark-${{ steps.release_check.outputs.version }}.zip
           generate_release_notes: true
-          append_body: ${{ steps.changelog.outputs.body }}
+          # The API pre-pends `body` to the generated notes. `append_body` takes
+          # a boolean and silently swallows the text, leaving the notes bare.
+          body: ${{ steps.changelog.outputs.body }}
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

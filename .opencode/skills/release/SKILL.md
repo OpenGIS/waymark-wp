@@ -105,7 +105,7 @@ Add an `== Upgrade Notice ==` entry when the release changes requirements or car
 
 - **Never add anyone to `Contributors:` in `readme.txt` to credit them.** That header is the WordPress.org commit-access list, not a credits list — adding a name there grants that account SVN commit rights to the plugin. Credits belong in the changelog.
 - **No WordPress.org profile.** Credit the GitHub handle and describe the contribution; do not invent a profile link.
-- **Reach.** `readme.md` is regenerated from `readme.txt`, and CI appends the version's changelog section to the GitHub Release body, so one changelog entry carries the credit to the WordPress.org listing, the generated `readme.md` and the GitHub Release.
+- **Reach.** `readme.md` is regenerated from `readme.txt`, and CI pre-pends the version's changelog section to the generated GitHub Release notes via the `body` input, so one changelog entry carries the credit to the WordPress.org listing, the generated `readme.md` and the GitHub Release.
 
 ## WordPress.org assets
 
