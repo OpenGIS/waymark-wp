@@ -216,6 +216,15 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 
 == Changelog ==
 
+= 1.8.3 =
+* Feature: Images on Markers, Lines and Shapes open in an in-page viewer with previous/next navigation, instead of a new browser tab.
+* Feature: Moving through the viewer pans the Map to the photo's location and opens its Info Window. The viewer is centred on screen and uses larger touch targets on phones.
+* Feature: The Map Editor image controls are labelled "Add Image", and the Media Library dialog carries its own "Add Image" and "Use Image" labels.
+* Fix: New Maps no longer fail to load when no Shortcode sets a centre or zoom.
+* Fix: The Map Editor keeps its height after saving, so the corner controls are no longer crushed by the "Post updated" notice.
+* Developer: test and build scratch output now writes to the gitignored `temp/` directory.
+* Thanks to [@JoshJourney](https://github.com/JoshJourney) ([ljosh](https://profiles.wordpress.org/ljosh/)) for reporting issues #86, #88 and #90.
+
 = 1.8.2 =
 * Fix: Multi-select Meta values display as line breaks instead of visible break markup.
 * Fix: Info windows stay in view when zooming out.

@@ -97,6 +97,24 @@ jobs:
             git push
           fi
 
+      # GitHub's generated notes list commits and PR authors, not the people who
+      # reported the issues. Append this version's changelog section so reporter
+      # credits and the user-facing summary reach the Release too.
+      - name: Extract changelog for release notes
+        id: changelog
+        if: steps.release_check.outputs.deploy == 'true'
+        run: |
+          BODY=$(awk -v version="${{ steps.release_check.outputs.version }}" '
+            $0 == "= " version " =" { found = 1; next }
+            found && /^= / { exit }
+            found { print }
+          ' readme.txt | sed -e 's/[[:space:]]*$//' -e '/./,$!d')
+          {
+            echo "body<<CHANGELOG_EOF"
+            echo "$BODY"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create tag and release
         if: steps.release_check.outputs.deploy == 'true'
         uses: softprops/action-gh-release@v2
@@ -106,6 +124,7 @@ jobs:
           target_commitish: master
           files: ${{ runner.temp }}/waymark-${{ steps.release_check.outputs.version }}.zip
           generate_release_notes: true
+          append_body: ${{ steps.changelog.outputs.body }}
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
