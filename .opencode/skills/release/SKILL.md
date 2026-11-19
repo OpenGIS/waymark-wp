@@ -32,7 +32,10 @@ npm test
 ```
 
 > [!NOTE]
-> `npm test` is the pre-release gate — run it and confirm the full suite is green; no release ships with any test failing.
+> `npm test` is the pre-release gate — run it and confirm the full suite is green; no release ships with any test failing. The PHP suite also asserts the release version metadata, so a header bump without a matching `= X.Y.Z =` changelog entry in `readme.txt`, or a `readme.md` that has not been regenerated, fails the gate — run `npx grunt build_wp_md` after editing the changelog.
+
+> [!WARNING]
+> `package.json` and `Stable tag` are expected to lag the header before CI runs; `grunt sync_version` derives both from the header. Leave the skew in place — it is not a failed sync. `package-lock.json` is not touched by `sync_version`, and the tests do not assert it.
 
 ## Release workflow
 
