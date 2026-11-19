@@ -29,13 +29,30 @@ jobs:
           VERSION=$(grep -m1 'Version:' Waymark.php | awk '{print $NF}')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-          if svn ls "$SVN_URL/tags/$VERSION/" > /dev/null 2>&1; then
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-            echo "Tag $VERSION already exists in SVN, skipping deploy."
-          else
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-            echo "Tag $VERSION does not exist in SVN, deploying version $VERSION."
-          fi
+          # Retry the lookup so a transient network or DNS failure is never
+          # mistaken for a missing tag, which would republish a released tag.
+          for attempt in 1 2 3 4 5; do
+            if OUTPUT=$(svn ls "$SVN_URL/tags/$VERSION/" 2>&1); then
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              echo "Tag $VERSION already exists in SVN, skipping deploy."
+              exit 0
+            fi
+
+            if printf '%s' "$OUTPUT" | grep -qE 'W160013|path not found|E200009'; then
+              echo "deploy=true" >> "$GITHUB_OUTPUT"
+              echo "Tag $VERSION does not exist in SVN, deploying version $VERSION."
+              exit 0
+            fi
+
+            echo "SVN lookup for tag $VERSION failed (attempt $attempt/5):" >&2
+            printf '%s\n' "$OUTPUT" >&2
+            if [ "$attempt" -lt 5 ]; then
+              sleep $((attempt * 5))
+            fi
+          done
+
+          echo "::error::Could not determine whether tag $VERSION exists in SVN."
+          exit 1
 
       - name: Set up Node
         if: steps.release_check.outputs.deploy == 'true'

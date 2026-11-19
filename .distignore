@@ -6,6 +6,7 @@
 .gitmodules
 .DS_Store
 .agents
+.opencode
 .env.example
 skills-lock.json
 temp
