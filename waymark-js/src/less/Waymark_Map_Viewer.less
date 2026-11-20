@@ -7,104 +7,113 @@
 */
 
 .waymark-map-container {
-	&.waymark-is-viewer {
-		/* Info Window */
-		ul.waymark-info {
-			padding: 0;
-			margin: 0;
-			position: relative;
-			width: 260px;
-			list-style-type: none;
-			/* No Title */
-			&.waymark-no-title {
-				.waymark-info-title {
-					display: none;
-				}
-			}
+  &.waymark-is-viewer {
+    /* A flat elevation profile is drawn far outside the elevation pane.
+		   Leaflet's top-left transform origin then scales it into the Map,
+		   so restore the default centred origin for all-zero tracks. */
+    &.zero-elevation
+      .leaflet-pane.leaflet-elevation-pane
+      .leaflet-zoom-animated {
+      transform-origin: unset !important;
+    }
 
-			/* No Image*/
-			&.waymark-no-image {
-				width: 200px;
-				min-height: 60px;
-				.waymark-info-title,
-				.waymark-info-description {
-					position: relative;
-				}
-				.waymark-info-description {
-					height: auto;
-					float: none;
-					width: 100%;
-				}
-			}
-			li {
-				width: 100%;
-				padding: 0;
-				margin: 0;
-				margin-bottom: 7px;
-				list-style: none;
-				&.waymark-info-type {
-					margin-top: -8px;
-					small {
-						border-radius: 3px;
-						padding: 2px 5px;
-						line-height: 0;
-						color: #666;
-						// 						background: #ccc;
-					}
-				}
-				&.waymark-info-title {
-					font-size: 14px;
-				}
-				&.waymark-info-description {
-					max-height: 72px;
-					overflow: auto;
-					p {
-						margin: 0;
-					}
-				}
-				&.waymark-info-image_large_url {
-					margin-right: 10px;
-					width: 260px;
-					height: 200px;
-					a {
-						display: block;
-						width: inherit;
-						height: inherit;
-						margin: 0;
-						padding: 0;
-						border-bottom: none;
-						overflow: hidden;
-						img {
-							display: block;
-							width: 100%;
-							height: 100%;
-							object-fit: cover;
-						}
-					}
-				}
-			}
-		}
+    /* Info Window */
+    ul.waymark-info {
+      padding: 0;
+      margin: 0;
+      position: relative;
+      width: 260px;
+      list-style-type: none;
+      /* No Title */
+      &.waymark-no-title {
+        .waymark-info-title {
+          display: none;
+        }
+      }
 
-		&.waymark-has-cluster {
-			.waymark-cluster {
-				.waymark-marker {
-					position: absolute;
+      /* No Image*/
+      &.waymark-no-image {
+        width: 200px;
+        min-height: 60px;
+        .waymark-info-title,
+        .waymark-info-description {
+          position: relative;
+        }
+        .waymark-info-description {
+          height: auto;
+          float: none;
+          width: 100%;
+        }
+      }
+      li {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        margin-bottom: 7px;
+        list-style: none;
+        &.waymark-info-type {
+          margin-top: -8px;
+          small {
+            border-radius: 3px;
+            padding: 2px 5px;
+            line-height: 0;
+            color: #666;
+            // 						background: #ccc;
+          }
+        }
+        &.waymark-info-title {
+          font-size: 14px;
+        }
+        &.waymark-info-description {
+          max-height: 72px;
+          overflow: auto;
+          p {
+            margin: 0;
+          }
+        }
+        &.waymark-info-image_large_url {
+          margin-right: 10px;
+          width: 260px;
+          height: 200px;
+          a {
+            display: block;
+            width: inherit;
+            height: inherit;
+            margin: 0;
+            padding: 0;
+            border-bottom: none;
+            overflow: hidden;
+            img {
+              display: block;
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+          }
+        }
+      }
+    }
 
-					.waymark-cluster-count {
-						position: absolute;
-						top: -3px;
-						right: -3px;
-						padding: 1px 3px;
-						font-size: 8px;
-						color: black;
-						border: 1px solid #333;
-						border-radius: 3px;
-						background: rgba(255, 255, 255, 0.7);
-					}
-				}
-			}
-		}
-	}
+    &.waymark-has-cluster {
+      .waymark-cluster {
+        .waymark-marker {
+          position: absolute;
+
+          .waymark-cluster-count {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            padding: 1px 3px;
+            font-size: 8px;
+            color: black;
+            border: 1px solid #333;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.7);
+          }
+        }
+      }
+    }
+  }
 }
 
 /*
@@ -114,68 +123,68 @@
 */
 
 .waymark-map-container {
-	.circle-lower {
-		fill: white;
-	}
+  .circle-lower {
+    fill: white;
+  }
 
-	.elevation-polyline {
-		stroke: @waymark-primary;
-		stroke-opacity: 0.7;
-	}
+  .elevation-polyline {
+    stroke: @waymark-primary;
+    stroke-opacity: 0.7;
+  }
 
-	// Nested Elevation
-	.waymark-elevation-container {
-		position: absolute;
-		bottom: 10px;
-		left: 10px;
-		z-index: 2000;
-		width: 50%;
-		max-height: 33.33%;
+  // Nested Elevation
+  .waymark-elevation-container {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 2000;
+    width: 50%;
+    max-height: 33.33%;
 
-		.elevation-control {
-			background: rgba(255, 255, 255, 0.47);
+    .elevation-control {
+      background: rgba(255, 255, 255, 0.47);
 
-			.background {
-				background: none;
-			}
-		}
-	}
+      .background {
+        background: none;
+      }
+    }
+  }
 
-	&.waymark-has-gallery {
-		.waymark-elevation-container {
-			bottom: 90px;
-		}
-	}
+  &.waymark-has-gallery {
+    .waymark-elevation-container {
+      bottom: 90px;
+    }
+  }
 }
 
 .waymark-elevation-container {
-	.elevation-control.elevation {
-		* {
-			max-width: 100%;
-		}
-		.elevation-summary {
-			margin: 0;
-			text-align: center;
-			padding: 0 10px;
-		}
-		.legend-altitude {
-			display: none;
-		}
-		.area {
-			fill: @waymark-primary;
-			stroke: hsla(60, 0%, 0%, 0.85);
-			stroke-width: 2.8;
-		}
-	}
-	.waymark-elevation-close {
-		position: absolute;
-		top: 5px;
-		right: 14px;
-		padding: 5px 10px;
-		font-weight: bold;
-		font-size: 14px;
-		background: @waymark-grey;
-		cursor: pointer;
-		color: #333;
-	}
+  .elevation-control.elevation {
+    * {
+      max-width: 100%;
+    }
+    .elevation-summary {
+      margin: 0;
+      text-align: center;
+      padding: 0 10px;
+    }
+    .legend-altitude {
+      display: none;
+    }
+    .area {
+      fill: @waymark-primary;
+      stroke: hsla(60, 0%, 0%, 0.85);
+      stroke-width: 2.8;
+    }
+  }
+  .waymark-elevation-close {
+    position: absolute;
+    top: 5px;
+    right: 14px;
+    padding: 5px 10px;
+    font-weight: bold;
+    font-size: 14px;
+    background: @waymark-grey;
+    cursor: pointer;
+    color: #333;
+  }
 }

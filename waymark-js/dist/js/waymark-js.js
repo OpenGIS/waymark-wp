@@ -3740,7 +3740,12 @@ Copyright (c) 2016 Dominik Moritz */
         opts.hoverNumber.decimalsX,
       );
 
-      let normalizedAlt = (this._height() / this._maxElevation) * item.z;
+      //A flat profile has no vertical scale to measure against
+      let maxElevation = this._maxElevation;
+      let normalizedAlt =
+        isFinite(maxElevation) && maxElevation != 0
+          ? (this._height() / maxElevation) * item.z
+          : 0;
       let normalizedY = item.y - normalizedAlt;
 
       this._mouseHeightFocus
@@ -10736,8 +10741,7 @@ function Waymark_Map_Viewer() {
         !Waymark.elevation_container.is(":visible")
       ) {
         //Show it!
-        Waymark.elevation_container.show();
-        Waymark.elevation_control.loadData(feature);
+        Waymark.load_elevation(feature);
       }
 
       jQuery(layer).on("click", { W: Waymark }, function (e) {
@@ -10754,10 +10758,9 @@ function Waymark_Map_Viewer() {
 
         //Feature has elevation data
         W.elevation_container.hide();
+        W.jq_map_container.removeClass("zero-elevation");
         if (W.line_has_elevation_data(feature)) {
-          W.elevation_container.show();
-
-          W.elevation_control.loadData(feature);
+          W.load_elevation(feature);
         }
       });
     }
@@ -10779,12 +10782,19 @@ function Waymark_Map_Viewer() {
     layer.bindPopup(content.get(0), { autoPanPadding: [20, 20] }).openPopup();
   };
 
-  this.line_has_elevation_data = function (feature) {
+  //Summarise the third ordinate of every point on a Line
+  this.line_elevation_state = function (feature) {
     //A MultiLineString nests an extra level of coordinates
     var lines =
       feature.geometry.type == "MultiLineString"
         ? feature.geometry.coordinates
         : [feature.geometry.coordinates];
+
+    var state = {
+      has_elevation: false,
+      has_relief: false,
+      complete: true,
+    };
 
     //Each line
     for (var i in lines) {
@@ -10792,15 +10802,49 @@ function Waymark_Map_Viewer() {
       for (var j in lines[i]) {
         var elevation = parseFloat(lines[i][j][2]);
 
-        //Exporters write 0 when they have no elevation data, so an all-zero
-        //track is treated as having no elevation data
-        if (isFinite(elevation) && elevation != 0) {
-          return true;
+        if (isFinite(elevation)) {
+          state.has_elevation = true;
+
+          if (elevation != 0) {
+            state.has_relief = true;
+          }
+        } else {
+          state.complete = false;
         }
       }
     }
 
-    return false;
+    return state;
+  };
+
+  this.line_has_elevation_data = function (feature) {
+    var state = this.line_elevation_state(feature);
+
+    //Exporters write 0 when they have no elevation source. An all-zero track
+    //is still drawable when every point carried a value, but a Line with
+    //missing values has no reliable profile.
+    return state.has_elevation && (state.has_relief || state.complete);
+  };
+
+  //An all-zero track is flat rather than elevation-less
+  this.line_is_flat = function (feature) {
+    var state = this.line_elevation_state(feature);
+
+    return state.has_elevation && !state.has_relief && state.complete;
+  };
+
+  this.load_elevation = function (feature) {
+    Waymark = this;
+
+    //A flat profile renders far outside the Map pane, so it needs a centred
+    //transform origin rather than Leaflet's top-left default
+    Waymark.jq_map_container.toggleClass(
+      "zero-elevation",
+      Waymark.line_is_flat(feature),
+    );
+
+    Waymark.elevation_container.show();
+    Waymark.elevation_control.loadData(feature);
   };
 
   this.setup_elevation = function () {
@@ -10900,6 +10944,7 @@ function Waymark_Map_Viewer() {
           }
 
           W.elevation_container.hide();
+          W.jq_map_container.removeClass("zero-elevation");
         });
       Waymark.elevation_container.append(elevation_close);
     }
@@ -10949,6 +10994,7 @@ function Waymark_Map_Viewer() {
                 Waymark.elevation_control.clear();
                 Waymark.elevation_control.layer.removeFrom(Waymark.map);
                 Waymark.elevation_container.hide();
+                Waymark.jq_map_container.removeClass("zero-elevation");
               }
             }
           });

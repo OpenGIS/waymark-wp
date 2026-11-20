@@ -29,9 +29,9 @@ Elevation is never synthesised. Only the hero route carries a real elevation
 profile; the other hand-written Lines are 2-ordinate. The deliberate
 `flat-elevation` fixture is the exception: its Line carries third ordinates
 that are all zero — the shape an exporter writes when it has no elevation
-source — so it acts as the regression fixture for tracks with no real
-elevation data. The seeder copies coordinates verbatim and asserts the other
-inline Lines stay 2-ordinate, so a fabricated profile cannot creep back in.
+source — so it acts as the regression fixture for flat all-zero profiles. The
+seeder copies coordinates verbatim and asserts the other inline Lines stay
+2-ordinate, so a fabricated profile cannot creep back in.
 
 Every feature `properties.type` matches a Type seeded in Settings.
 

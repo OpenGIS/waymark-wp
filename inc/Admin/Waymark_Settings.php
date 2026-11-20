@@ -1361,7 +1361,7 @@ class Waymark_Settings {
 							'title' => esc_html__('Elevation Profile', 'waymark'),
 							'default' => Waymark_Config::get_setting('misc', 'elevation_options', 'show_elevation'),
 							/* translators: %s: example Waymark shortcode for showing the elevation profile. Do not translate the shortcode attribute names. */
-							'tip' => sprintf(esc_attr__('Display an interactive elevation profile graph below the Map for Lines that have elevation data. Lines without real elevation data, including tracks where every elevation value is zero, do not get a profile. Pro Tip! You can choose to show/hide the elevation graph of an individual Map through the shortcode: %s.', 'waymark'), '[' . Waymark_Config::get_item('shortcode') . ' map_id=&quot;1234&quot; show_elevation=&quot;1&quot;]'),
+							'tip' => sprintf(esc_attr__('Display an interactive elevation profile graph below the Map for Lines that have elevation data. A track whose elevation values are all zero gets a flat profile; Lines without usable elevation values get no profile. Pro Tip! You can choose to show/hide the elevation graph of an individual Map through the shortcode: %s.', 'waymark'), '[' . Waymark_Config::get_item('shortcode') . ' map_id=&quot;1234&quot; show_elevation=&quot;1&quot;]'),
 							'options' => [
 								// translators: The option to show the elevation profile
 								'2' => esc_html__('Show on Map Details', 'waymark'),
