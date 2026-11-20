@@ -219,9 +219,10 @@ Please! Waymark is localization ready, <a href="https://translate.wordpress.org/
 
 = 1.8.4 =
 * Fix: Lines with all-zero elevation data no longer show a broken elevation profile that could push the Info Window out of view.
+* Fix: The Map Editor's Marker image placeholder no longer enlarges on hover when there is no image URL, non-square images crop to fill instead of stretching, and the 60px to 240px growth animates over 0.4s with a reduced-motion opt-out.
 * Help: the homepage demo now offers its example route as GeoJSON and GPX downloads.
 * Developer: a released tag is no longer republished after a transient WordPress.org SVN failure, and the changelog is included in the GitHub release notes.
-* Thanks to [@JoshJourney](https://github.com/JoshJourney) ([ljosh](https://profiles.wordpress.org/ljosh/)) for reporting issue #87.
+* Thanks to [@JoshJourney](https://github.com/JoshJourney) ([ljosh](https://profiles.wordpress.org/ljosh/)) for reporting issues #87 and #89.
 
 = 1.8.3 =
 * Feature: Images on Markers, Lines and Shapes open in an in-page viewer with previous/next navigation, instead of a new browser tab.

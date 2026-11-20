@@ -850,20 +850,24 @@ html.waymark-lightbox-open {
   background-color: #f9f9f9;
   border-radius: 4px;
   overflow: hidden;
+  transition: width 0.4s linear, height 0.4s linear, left 0.4s linear;
 }
-.waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-image_large_url a.waymark-hover {
+@media (prefers-reduced-motion: reduce) {
+  .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-image_large_url a {
+    transition: none;
+  }
+}
+.waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-image_large_url a[href]:not([href=""]).waymark-hover {
   left: -2px;
   width: 240px;
   height: 240px;
   z-index: 1000;
 }
-.waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-image_large_url a.waymark-hover img {
-  width: inherit;
-  height: inherit;
-}
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-image_large_url a img {
+  display: block;
   width: inherit;
   height: inherit;
+  object-fit: cover;
   border: none;
 }
 .waymark-map-container.waymark-is-editor ul.waymark-info li.waymark-info-image_large_url input,
