@@ -639,10 +639,11 @@ $empty_map = [
 ];
 
 // Deliberate regression fixture for issue #87. Exporters write plain zeroes
-// when they have no elevation source, so an all-zero track means "no elevation
-// data" and the viewer must not render a profile for it. This fixture
-// intentionally carries third ordinates (all 0), which is why
-// waymark_demo_assert_no_invented_elevation() must NOT be applied to it.
+// when they have no elevation source, so a fully 3D all-zero track is flat
+// elevation data: the viewer keeps its profile and renders it with a centred
+// transform origin. This fixture intentionally carries third ordinates (all 0),
+// which is why waymark_demo_assert_no_invented_elevation() must NOT be applied
+// to it.
 $flat_elevation = [
 	'type'     => 'FeatureCollection',
 	'features' => [
@@ -733,8 +734,8 @@ $demo_maps = [
 		'slug'        => 'flat-elevation',
 		'title'       => 'Flat Elevation',
 		'data'        => json_encode($flat_elevation, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
-		'description' => '<p>A Line whose elevation values are all zero, meaning it has no real elevation source.</p>',
-		'journal'     => '<p>Regression fixture for issue #87: an all-zero track must not show an elevation profile.</p>',
+		'description' => '<p>A Line whose elevation values are all zero, rendering a flat elevation profile.</p>',
+		'journal'     => '<p>Regression fixture for issue #87: an all-zero track must keep its elevation profile and render it correctly.</p>',
 		'date'        => '2026-06-21',
 		'distance'    => '2.8',
 	],

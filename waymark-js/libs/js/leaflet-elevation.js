@@ -1975,7 +1975,12 @@
         opts.hoverNumber.decimalsX,
       );
 
-      let normalizedAlt = (this._height() / this._maxElevation) * item.z;
+      //A flat profile has no vertical scale to measure against
+      let maxElevation = this._maxElevation;
+      let normalizedAlt =
+        isFinite(maxElevation) && maxElevation != 0
+          ? (this._height() / maxElevation) * item.z
+          : 0;
       let normalizedY = item.y - normalizedAlt;
 
       this._mouseHeightFocus

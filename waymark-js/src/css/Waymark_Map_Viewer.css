@@ -4,7 +4,13 @@
 	==================================
 */
 .waymark-map-container.waymark-is-viewer {
+  /* A flat elevation profile is drawn far outside the elevation pane.
+		   Leaflet's top-left transform origin then scales it into the Map,
+		   so restore the default centred origin for all-zero tracks. */
   /* Info Window */
+}
+.waymark-map-container.waymark-is-viewer.zero-elevation .leaflet-pane.leaflet-elevation-pane .leaflet-zoom-animated {
+  transform-origin: unset !important;
 }
 .waymark-map-container.waymark-is-viewer ul.waymark-info {
   padding: 0;

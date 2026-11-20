@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Waymark 1.8.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-11-20 10:30:36+00:00\n"
+"POT-Creation-Date: 2026-11-20 21:37:24+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -88,7 +88,7 @@ msgid "Select Colour"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:20 inc/Admin/Waymark_Settings.php:26
-#: inc/Waymark_Admin.php:185 inc/Waymark_Install.php:54
+#: inc/Waymark_Admin.php:185 inc/Waymark_Install.php:56
 #: inc/Waymark_Types.php:17 inc/Waymark_Types.php:19
 msgid "Maps"
 msgstr ""
@@ -110,7 +110,7 @@ msgid "Help"
 msgstr ""
 
 #: inc/Admin/Waymark_Menu.php:30 inc/Helpers/Waymark_Helper.php:15
-#: inc/Waymark_Install.php:55
+#: inc/Waymark_Install.php:57
 msgid "Settings"
 msgstr ""
 
@@ -1449,10 +1449,10 @@ msgstr ""
 #. profile. Do not translate the shortcode attribute names.
 msgid ""
 "Display an interactive elevation profile graph below the Map for Lines that "
-"have elevation data. Lines without real elevation data, including tracks "
-"where every elevation value is zero, do not get a profile. Pro Tip! You can "
-"choose to show/hide the elevation graph of an individual Map through the "
-"shortcode: %s."
+"have elevation data. A track whose elevation values are all zero gets a "
+"flat profile; Lines without usable elevation values get no profile. Pro "
+"Tip! You can choose to show/hide the elevation graph of an individual Map "
+"through the shortcode: %s."
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:1367
