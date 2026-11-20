@@ -57,7 +57,8 @@ Compiled files are committed. Edit the sources and rebuild; never hand-edit
 ## Development
 
 ```sh
-npm run dev      # wp-env on 8888 + grunt watch
+npm run dev      # wp-env on 8888, demo seed when untouched, + grunt watch
+npm run seed:dev # seed the dev instance with demo data (untouched only)
 npm run grunt    # rebuild CSS, JS bundles and the translation template
 npm test         # Vitest, PHPUnit and Playwright
 ```

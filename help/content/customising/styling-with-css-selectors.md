@@ -185,6 +185,9 @@ Overlay images open in a viewer built on the native `<dialog>` element. The view
         rel="noopener noreferrer"
         >View full size</a
       >
+      <span class="waymark-lightbox-description" tabindex="0"
+        >The bridge seen from the north bank…</span
+      >
     </figcaption>
   </figure>
   <button class="waymark-lightbox-next" aria-label="Next image">›</button>
@@ -197,6 +200,7 @@ Overlay images open in a viewer built on the native `<dialog>` element. The view
 - The `<dialog>` is centred on both axes at every viewport size with `position: fixed`, `inset: 0`, `width: fit-content`, `height: fit-content` and `margin: auto`, capped by `max-width: 90vw` and `max-height: 90vh`. The image is capped at `max-height: 80vh`. Style them with `.waymark-lightbox` and `.waymark-lightbox-image`.
 - The dialog is modal, so the page behind it is inert. The default backdrop is a light `rgba(0, 0, 0, 0.45)`, keeping the Map clearly visible; style it with `.waymark-lightbox::backdrop`.
 - The caption is a full-width bar flush with the bottom of the photo: an opaque `#000b00` background (the dark brand surface), `6px 12px` padding, `13px` text in `#f1f1f1`, and no gap or rounded corners. Style it with `.waymark-lightbox-caption`.
+- The description line shows the feature description as plain text — markup is stripped, entities are decoded and block boundaries become spaces, so nothing in it is rendered as HTML. It occupies its own full-width row after the title, count and full-size link, and scrolls once it exceeds `65px` in height. It carries `tabindex="0"` so keyboard users can focus and scroll it, and the element is hidden when there is no description. Style it with `.waymark-lightbox-description`.
 - The Close, Previous and Next controls are `44 × 44` circular buttons, including on narrow screens. At `600px` and narrower the caption uses `14px` and the image is capped at `70vh`.
 
 ```css

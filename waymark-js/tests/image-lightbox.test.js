@@ -173,6 +173,32 @@ describe("Popup image lightbox", () => {
     ]);
   });
 
+  it("carries a plain-text description on each lightbox item", () => {
+    const viewer = makeViewer();
+    viewer.init();
+
+    viewer.load_json({
+      type: "FeatureCollection",
+      features: [
+        makeFeature({
+          title: "Marker",
+          image_large_url: "https://example.com/marker.jpg",
+          description: "<p>Tidal <b>crossing</b> &amp; sea stacks.</p>",
+        }),
+        makeFeature({
+          title: "No description",
+          image_large_url: "https://example.com/plain.jpg",
+        }),
+      ],
+    });
+
+    const items = viewer.get_lightbox_images();
+
+    expect(items.length).toBe(2);
+    expect(items[0].description).toBe("Tidal crossing & sea stacks.");
+    expect(items[1].description).toBe("");
+  });
+
   it("returns no items without map data", () => {
     const viewer = makeViewer();
     viewer.init();
@@ -327,6 +353,67 @@ describe("Popup image lightbox", () => {
 
     expect(dialog.classList.contains("waymark-lightbox-no-full")).toBe(true);
     expect(full.hasAttribute("href")).toBe(false);
+  });
+});
+
+describe("Description to text", () => {
+  beforeEach(() => {
+    document.body.innerHTML =
+      '<div id="waymark-map" style="height: 500px; width: 500px;"></div>';
+
+    const container = document.getElementById("waymark-map");
+    Object.defineProperty(container, "clientWidth", { value: 500 });
+    Object.defineProperty(container, "clientHeight", { value: 500 });
+  });
+
+  function makeInitialisedViewer() {
+    const viewer = makeViewer();
+    viewer.init();
+    return viewer;
+  }
+
+  it("separates paragraphs and decodes entities", () => {
+    const viewer = makeInitialisedViewer();
+
+    expect(
+      viewer.description_to_text(
+        "<p>First paragraph.</p><p>Second &amp; third.</p>",
+      ),
+    ).toBe("First paragraph. Second & third.");
+  });
+
+  it("turns line breaks into spaces", () => {
+    const viewer = makeInitialisedViewer();
+
+    expect(viewer.description_to_text("<p>Line one<br>Line two</p>")).toBe(
+      "Line one Line two",
+    );
+  });
+
+  it("passes plain text through with whitespace collapsed and trimmed", () => {
+    const viewer = makeInitialisedViewer();
+
+    expect(
+      viewer.description_to_text("  Plain \n text\t with   spaces  "),
+    ).toBe("Plain text with spaces");
+  });
+
+  it("returns an empty string for missing input", () => {
+    const viewer = makeInitialisedViewer();
+
+    expect(viewer.description_to_text(undefined)).toBe("");
+    expect(viewer.description_to_text(null)).toBe("");
+    expect(viewer.description_to_text("")).toBe("");
+  });
+
+  it("strips an allowed link down to its text", () => {
+    const viewer = makeInitialisedViewer();
+    const text = viewer.description_to_text(
+      '<a href="https://example.com">Link</a>',
+    );
+
+    expect(text).toBe("Link");
+    expect(text).not.toMatch(/[<>]/);
   });
 });
 

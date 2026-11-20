@@ -1,20 +1,23 @@
 # Demo fixtures
 
-A small, deterministic demo dataset for the disposable wp-env tests instance.
-It gives the plugin's documentation screenshots a realistic, reproducible set
-of Maps, Collections, Media, Meta and Settings.
+A small, deterministic demo dataset for disposable wp-env instances. It gives
+the plugin's documentation screenshots a realistic, reproducible set of Maps,
+Collections, Media, Meta and Settings.
 
-The dataset is recreated from scratch on every seed, so it can be regenerated at
-any time without leaving stale content behind.
+The seeder has two modes. Tests mode recreates the dataset from scratch on the
+disposable tests instance. Dev mode seeds the development instance once, when it
+is still untouched.
 
 ## Contents
 
-| Path                            | Purpose                                                                                                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `maps/cape-scott-trail.geojson` | Canonical GeoJSON template for the hero Map, derived from `tests/fixtures/route.geojson`.                                                               |
-| `images/`                       | The photos referenced by the template.                                                                                                                  |
-| `seed.php`                      | Idempotent seeder, run with `wp eval-file`.                                                                                                             |
-| `seed-output.json`              | Generated output (IDs, slugs, permalinks, collection terms and image URLs). Regenerated on every run; output is deterministic and stays byte-identical. |
+| Path                            | Purpose                                                                                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maps/cape-scott-trail.geojson` | Canonical GeoJSON template for the hero Map, derived from `tests/fixtures/route.geojson`.                                                                 |
+| `image-metadata.json`           | Manifest for the demo photos: titles, alt text, camera, capture time, GPS and altitude.                                                                   |
+| `images/`                       | The photos referenced by the template and described by `image-metadata.json`.                                                                             |
+| `seed.php`                      | Seeder, run with `wp eval-file`; reads `image-metadata.json`. Tests mode resets and rewrites the fixture; dev mode seeds only an untouched instance.      |
+| `seed-guard.php`                | Read-only freshness helpers used by dev mode; including it has no side effects.                                                                           |
+| `seed-output.json`              | Generated output (IDs, slugs, permalinks, collection terms and image URLs), written by tests mode only. Output is deterministic and stays byte-identical. |
 
 The template is a normal GeoJSON `FeatureCollection`. On top of the source route
 it:
@@ -22,8 +25,8 @@ it:
 - replaces the broken relative image URLs with `%%IMG:<key>:<size>%%` tokens;
 - keeps the hero route's authentic elevation (the third ordinate) verbatim from
   `tests/fixtures/route.geojson`, so the elevation chart shows the real profile;
-- adds one `Polygon` shape and one circle (`Point` with a `radius`), so Shapes
-  are covered.
+- adds two `Polygon` shapes, so Shapes are covered; the Circle lives in the
+  separate `circle-only` Map (103).
 
 Elevation is never synthesised. Only the hero route carries a real elevation
 profile; the other hand-written Lines are 2-ordinate. The deliberate
@@ -52,26 +55,112 @@ Image URL fields use tokens of the form:
 - `<size>` is one of `thumbnail`, `medium` or `large`.
 
 The seeder sideloads each photo, captures the WordPress-generated URLs and
-resolves the tokens (via `strtr`) before writing the Map data. The resolved
-`seed-output.json` records the same key to URL mapping.
+resolves the tokens (via `strtr`) before writing the Map data. In tests mode,
+the resolved `seed-output.json` records the same key to URL mapping.
 
 Attachment IDs are non-deterministic and are deliberately excluded from
 `seed-output.json`.
 
+## Image metadata
+
+`image-metadata.json` is the single source of truth for the demo photos. Each
+entry records the stable image key, file name, title and alt text, camera make
+and model, EXIF capture timestamp, UTC offset, GPS latitude and longitude, and
+altitude. The GPS coordinates follow each image's feature location in the demo
+Maps.
+
+The checked-in files are authored from that manifest:
+
+```sh
+npm run fixtures:exif
+```
+
+That runs [`scripts/fixtures/demo-exif.mjs`](../../../scripts/fixtures/demo-exif.mjs),
+which uses the pinned `exiftool-vendored` dev dependency to write the metadata
+without re-encoding the pixels. Pixels, dimensions, file names and orientation
+stay identical; only the metadata bytes change. Orientation is written as
+`Orientation#=1`.
+
+This is a manual authoring step, not part of install, tests or CI. Run it after
+editing the manifest, and always after any resize: tools such as `sips` strip
+metadata when they re-encode a file, so resize first and write EXIF second.
+
+The seeder reads the same manifest. Because `wp eval-file` is not an admin
+request, it registers `Waymark_Admin::add_gps_exif` before sideloading, then
+asserts each attachment's `image_meta` has GPS coordinates matching the
+manifest, the manifest's camera model, and a capture timestamp. The PHPUnit
+fixture test in
+[`tests/phpunit/test-demo-image-exif.php`](../../phpunit/test-demo-image-exif.php)
+verifies the checked-in files carry the manifest's EXIF, including the GPS
+conversion and orientation.
+
+WordPress derives `created_timestamp` from each file's EXIF local time as if it
+were UTC. The checked-in files store local time plus `OffsetTimeOriginal`, so
+the derived timestamp is not the actual UTC capture time; the plugin does not
+consume `created_timestamp`.
+
 ## Running the seeder
 
-The seeder is intended for the tests instance (port 8889) only. It refuses to
-run against the development instance.
+The seeder has two modes. Tests mode always resets and rewrites the fixture; dev
+mode seeds an untouched instance once and never writes the fixture.
+
+### Tests mode
+
+Tests mode is used for the disposable tests instance (port 8889). It always
+force-deletes the previous demo content before recreating it, and it rewrites
+`seed-output.json` with URLs built from the target instance's home URL.
 
 ```sh
 npx wp-env run tests-cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php
 ```
 
 The Playwright global setup (`tests/e2e/global.setup.js`) runs it automatically
-before every e2e suite.
+before every e2e suite. Each run also asserts the stored GPS, camera and
+capture-date metadata. Tests mode refuses the development instance (8888); only
+dev mode accepts it.
+
+### Dev mode
+
+`npm run dev` runs `seed:dev` after `wp-env start`. The script targets the
+development container (`cli`, port 8888):
+
+```sh
+npm run seed:dev
+# wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev
+```
+
+Dev mode seeds only when the instance is untouched. It stops before the first
+write and logs `Skipping demo seed: <reason>.` when any of these is true:
+
+- the `waymark_demo_dev_seeded` marker is set;
+- `Waymark_Settings` exists;
+- any Map exists, in any status;
+- any Collection exists;
+- a Page with the `waymark-demo` slug exists;
+- demo media (`waymark-demo/` attachments) exists;
+- the `waymark-demo` uploads directory is not empty;
+- any post occupies a reserved demo ID from 100 to 119.
+
+On success it sets `waymark_demo_dev_seeded` and never writes
+`seed-output.json`. The plugin uninstall clears the marker, but it does not
+delete the demo content; reset the instance to reseed.
+
+A bare `npx wp-env start` does not seed. To reseed an instance that has been
+touched, destroy and recreate it:
+
+```sh
+npx wp-env destroy
+npm run dev
+```
+
+The read-only helpers live in [`seed-guard.php`](seed-guard.php):
+`waymark_demo_state()` returns the state flags, and
+`waymark_demo_reason_for_state()` returns the first reason the instance is not
+untouched, or `null`.
 
 ## Licence
 
 The route photos are derived from the repository's existing fixture images in
-`assets/img/` and are normalised with `sips -Z 1920` to keep the committed
-fixtures small.
+`assets/img/` and are normalised with `sips -Z 1920` before
+`npm run fixtures:exif` writes their metadata, to keep the committed fixtures
+small.

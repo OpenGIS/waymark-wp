@@ -8040,6 +8040,26 @@ function Waymark_Map() {
     });
   };
 
+  //Convert user-authored description HTML to plain text for the image viewer
+  this.description_to_text = function (html) {
+    if (!html) {
+      return "";
+    }
+
+    var text = this.sanitize_description(html);
+
+    //Separate block elements and line breaks so paragraphs do not run together
+    text = String(text).replace(
+      /<\/(p|div|li|blockquote|h[1-6])\s*>|<br\s*\/?>/gi,
+      " ",
+    );
+
+    //Parsing as HTML strips remaining tags and decodes entities
+    text = jQuery("<div />").html(text).text();
+
+    return text.replace(/\s+/g, " ").trim();
+  };
+
   //Allow only http(s) URLs
   this.is_safe_url = function (url) {
     return /^https?:\/\//i.test(url);
@@ -10047,6 +10067,12 @@ function Waymark_Lightbox() {
     this.dialog.querySelector(".waymark-lightbox-title").textContent =
       item.title || "";
 
+    var description = this.dialog.querySelector(
+      ".waymark-lightbox-description",
+    );
+    description.textContent = item.description || "";
+    description.hidden = !description.textContent;
+
     this.dialog.querySelector(".waymark-lightbox-count").textContent =
       this.format_count(next_index + 1, count);
 
@@ -10141,6 +10167,10 @@ function Waymark_Lightbox() {
     var title = document.createElement("span");
     title.className = "waymark-lightbox-title";
 
+    var description = document.createElement("span");
+    description.className = "waymark-lightbox-description";
+    description.tabIndex = 0;
+
     var count = document.createElement("span");
     count.className = "waymark-lightbox-count";
 
@@ -10153,6 +10183,7 @@ function Waymark_Lightbox() {
     caption.appendChild(title);
     caption.appendChild(count);
     caption.appendChild(full);
+    caption.appendChild(description);
 
     figure.appendChild(image);
     figure.appendChild(caption);
@@ -10651,6 +10682,7 @@ function Waymark_Map_Viewer() {
         href: properties.image_large_url,
         alt: properties.title || "",
         title: properties.title || "",
+        description: Waymark.description_to_text(properties.description),
         layer: layer,
         feature: layer.feature,
       });

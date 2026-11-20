@@ -247,10 +247,10 @@ After an anonymous `goto` to a same-origin URL outside `/wp-admin`, the recorder
 
 ## Ports
 
-The video instance runs on **11000**. Ports **8888** and **8889** are the project's development and tests instances respectively. They must never be used for recording or seeding. `record.mjs` and `doctor.mjs` refuse a `WP_BASE_URL` on either port; the Playwright config and the demo seeder also guard 8888. The 8889 tests instance is off-limits by policy, not just by code.
+The video instance runs on **11000**. Ports **8888** and **8889** are the project's development and tests instances respectively. Video recording and seeding never target them. `record.mjs` and `doctor.mjs` refuse a `WP_BASE_URL` on either port; the Playwright config and the demo seeder's tests mode also guard 8888. Dev mode (`npm run seed:dev`) may seed an untouched development instance during `npm run dev`; that is separate from video work. The 8889 tests instance is off-limits to video work by policy, not just by code.
 
 > [!WARNING]
-> Never start, seed or record against 8888 or 8889. Recording mutates seed data and authentication state, and the demo seeder rewrites a fixture used by the test suite. Always pass `--config=scripts/video/wp-env.video.json`, which pins the video instance to port 11000.
+> For video work, never start, seed or record against 8888 or 8889. Recording mutates seed data and authentication state, and a tests-mode seed rewrites the `seed-output.json` fixture used by the test suite. Dev mode never writes that fixture, but it belongs to the development instance, not the video pipeline. Always pass `--config=scripts/video/wp-env.video.json`, which pins the video instance to port 11000.
 
 ## Bringing up the instance
 
@@ -274,18 +274,18 @@ npx wp-env --config=scripts/video/wp-env.video.json run cli \
 ```
 
 > [!WARNING]
-> The demo seeder writes `tests/fixtures/demo/seed-output.json` with URLs built from the target instance's home URL. Running it against the video instance overwrites the fixture used by the tests instance. Restore the file from version control or reseed the tests instance afterwards.
+> The command above runs the demo seeder in tests mode, which writes `tests/fixtures/demo/seed-output.json` with URLs built from the target instance's home URL. Running it against the video instance overwrites the fixture used by the tests instance. Restore the file from version control or reseed the tests instance afterwards. Dev mode — `npm run seed:dev` for the development instance, or the `dev` argument to a manual `wp eval-file` run — never writes `seed-output.json`, but it seeds only an untouched instance.
 
 ### Seeded content
 
 The demo seeder provides:
 
-| Item        | Value                                                                                                                     |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Maps        | Cape Scott Trail (#100), San Josef Bay (#101), North Coast Trail (#102)                                                   |
-| Page        | Waymark Demo (#110, slug `waymark-demo`)                                                                                  |
-| Collections | Vancouver Island (parent), with Day Hikes and Backpacking beneath it                                                      |
-| Settings    | Marker Types tab at `/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers` |
+| Item        | Value                                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Maps        | Cape Scott Trail (#100), San Josef Bay (#101), North Coast Trail (#102), Circle Only (#103), Empty Map (#104), Flat Elevation (#105) |
+| Page        | Waymark Demo (#110, slug `waymark-demo`)                                                                                             |
+| Collections | Vancouver Island (parent), with Day Hikes and Backpacking beneath it                                                                 |
+| Settings    | Marker Types tab at `/wp-admin/edit.php?post_type=waymark_map&page=waymark-settings&content=waymark-settings-tab-markers`            |
 
 Every video uses `cape-scott-trail` except `settings`, which uses `san-josef-bay`. `{{baseURL}}` and `{{mapId}}` are resolved at run time; do not hard-code a host or a map id. The seed fixture's permalinks may point at the tests instance, so build URLs against the video base URL rather than reusing `.permalink`.
 
@@ -807,7 +807,7 @@ The delivered set should be:
 
 Operational constraints:
 
-- **Use port 11000.** Recording and seeding run against the dedicated wp-env instance in `scripts/video/wp-env.video.json`. Never use 8888 or 8889; see [Ports](#ports).
+- **Use port 11000.** Video recording and seeding run against the dedicated wp-env instance in `scripts/video/wp-env.video.json`. Never record or seed video work against 8888 or 8889; the development instance may seed itself during `npm run dev` when untouched. See [Ports](#ports).
 - **Generate locally.** Recording needs a disposable WordPress instance, a pinned browser, a narration provider and ffmpeg. CI validates committed metadata and assets only; it never records, synthesises or encodes.
 - **Keep intermediates out of version control.** Raw WebM, TTS audio, timelines and ffmpeg intermediates belong in `scripts/video/work/`, which is gitignored. Nothing there is a deliverable.
 - **Commit the delivery files.** The MP4s live in the repository rather than on external hosting.

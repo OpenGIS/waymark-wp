@@ -65,6 +65,12 @@ html.waymark-lightbox-open {
 .waymark-lightbox-caption .waymark-lightbox-full:focus {
   text-decoration-thickness: 2px;
 }
+.waymark-lightbox-description {
+  flex-basis: 100%;
+  max-height: 65px;
+  overflow-y: auto;
+  text-align: center;
+}
 .waymark-lightbox-no-full .waymark-lightbox-full {
   display: none;
 }

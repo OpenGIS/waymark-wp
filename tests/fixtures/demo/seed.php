@@ -3,16 +3,21 @@
  * Deterministic demo-data seeder for the Waymark README screenshots.
  *
  * Creates a small, realistic dataset (Maps, Collections, a demo Page, Media
- * and Settings) on the disposable wp-env tests instance so that browser tests
- * can capture reproducible screenshots.
+ * and Settings) on a disposable wp-env instance so that browser tests can
+ * capture reproducible screenshots.
  *
- * Run against the tests instance only:
+ * Tests mode (tests instance only; always resets and writes the fixture):
  *
  *   npx wp-env run tests-cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php
  *
- * The seeder is idempotent. Every run force-deletes the previous demo content
- * (Maps, Page, Collections, demo attachments and their files) before recreating
- * it, so repeated runs produce byte-identical output (see seed-output.json).
+ * Dev mode (seeds only an untouched instance and never writes the fixture):
+ *
+ *   npx wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev
+ *
+ * Tests mode force-deletes the previous demo content (Maps, Page, Collections,
+ * demo attachments and their files) before recreating it, so repeated runs
+ * produce byte-identical output (see seed-output.json). Dev mode stops before
+ * the first write when the instance is not untouched.
  *
  * Waymark_Map::create_post()/save_meta() are POST/nonce driven and write
  * nothing from the CLI, so post meta is written directly here.
@@ -22,8 +27,13 @@
 // Bootstrap
 // ---------------------------------------------------------------------------
 
+// WP-CLI passes positional eval-file arguments through $args.
+$waymark_demo_args     = isset($args) && is_array($args) ? $args : [];
+$waymark_demo_dev_mode = in_array('dev', $waymark_demo_args, true);
+
 $plugin_dir = dirname(__DIR__, 3);
 
+require_once __DIR__ . '/seed-guard.php';
 require_once $plugin_dir . '/inc/Waymark_Config.php';
 require_once $plugin_dir . '/inc/Helpers/Waymark_Helper.php';
 
@@ -39,9 +49,21 @@ if (! class_exists('Waymark_Taxonomies')) {
 
 Waymark_Config::init();
 
-// The development instance (8888) is off-limits to automation. Refuse politely.
-if (strpos((string) get_site_url(), ':8888') !== false) {
-	fwrite(STDERR, 'Refusing to seed the development instance (' . get_site_url() . "). Use the tests instance (8889).\n");
+// Register the demo post type and taxonomy before the instance checks so the
+// freshness helpers can query them reliably.
+if (! post_type_exists('waymark_map')) {
+	$waymark_types = new Waymark_Types();
+	$waymark_types->register_types();
+}
+if (! taxonomy_exists('waymark_collection')) {
+	$waymark_taxonomies = new Waymark_Taxonomies();
+	$waymark_taxonomies->register_taxonomies();
+}
+
+// The development instance (8888) is off-limits to automation unless dev mode
+// explicitly opts in. Tests mode must stay on the tests instance (8889).
+if (! $waymark_demo_dev_mode && strpos((string) get_site_url(), ':8888') !== false) {
+	fwrite(STDERR, 'Refusing to seed the development instance (' . get_site_url() . "). Use the tests instance (8889), or pass the dev token to seed an untouched development instance.\n");
 	exit(1);
 }
 
@@ -123,6 +145,55 @@ function waymark_demo_assert_no_invented_elevation($data, $label) {
 			}
 		}
 	}
+}
+
+/**
+ * Assert that WordPress stored the demo image's EXIF GPS and camera metadata.
+ *
+ * @param int    $attachment_id Attachment ID.
+ * @param array  $image         Manifest entry.
+ * @param string $file          Source file name, for error messages.
+ */
+function waymark_demo_assert_image_meta($attachment_id, $image, $file) {
+	$metadata   = wp_get_attachment_metadata($attachment_id);
+	$image_meta = (is_array($metadata) && isset($metadata['image_meta']) && is_array($metadata['image_meta'])) ? $metadata['image_meta'] : [];
+
+	foreach (['GPSLatitudeNum' => 'latitude', 'GPSLongitudeNum' => 'longitude'] as $meta_key => $manifest_key) {
+		if (! array_key_exists($meta_key, $image_meta)) {
+			waymark_demo_fail('Missing ' . $meta_key . ' for ' . $file . ' in attachment image_meta.');
+		}
+
+		if (abs((float) $image_meta[$meta_key] - (float) $image[$manifest_key]) > 1e-5) {
+			waymark_demo_fail(
+				'Unexpected ' . $meta_key . ' for ' . $file . ': got ' . $image_meta[$meta_key] . ', expected ' . $image[$manifest_key] . '.'
+			);
+		}
+	}
+
+	if (! isset($image_meta['camera']) || $image_meta['camera'] !== $image['camera_model']) {
+		$camera = isset($image_meta['camera']) ? $image_meta['camera'] : 'missing';
+		waymark_demo_fail('Unexpected camera for ' . $file . ': got ' . $camera . ', expected ' . $image['camera_model'] . '.');
+	}
+
+	if (empty($image_meta['created_timestamp'])) {
+		waymark_demo_fail('Missing created_timestamp for ' . $file . '.');
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Dev-mode freshness gate: stop before the first write unless this instance is
+// untouched. Tests mode always proceeds to the reset below.
+// ---------------------------------------------------------------------------
+
+if ($waymark_demo_dev_mode) {
+	$untouched_reason = waymark_demo_untouched_reason(null, $upload_subdir);
+
+	if ($untouched_reason !== null) {
+		waymark_demo_log('Skipping demo seed: ' . $untouched_reason . '.');
+		exit(0);
+	}
+
+	waymark_demo_log('Seeding demo data on ' . get_site_url() . ' (dev mode).');
 }
 
 // ---------------------------------------------------------------------------
@@ -237,16 +308,8 @@ if ($wp_rewrite instanceof WP_Rewrite) {
 	$wp_rewrite->set_permalink_structure('/%postname%/');
 }
 
-// PHPUnit can leave the plugin inactive. Register the demo post type and
-// taxonomy explicitly so permalinks and collection terms are available.
-if (! post_type_exists('waymark_map')) {
-	$waymark_types = new Waymark_Types();
-	$waymark_types->register_types();
-}
-if (! taxonomy_exists('waymark_collection')) {
-	$waymark_taxonomies = new Waymark_Taxonomies();
-	$waymark_taxonomies->register_taxonomies();
-}
+// PHPUnit can leave the plugin inactive. The demo post type and taxonomy were
+// registered during bootstrap so permalinks and collection terms are available.
 
 flush_rewrite_rules();
 
@@ -344,24 +407,65 @@ if (! is_dir($tmp_dir)) {
 	wp_mkdir_p($tmp_dir);
 }
 
-// key => [file, title, alt].
-$demo_images = [
-	'holberg-road'          => ['holberg-road.jpg', 'Holberg Road', 'Gravel forestry road near Holberg.'],
-	'scarlet-ibis'          => ['scarlet-ibis.jpeg', 'The Scarlet Ibis', 'The Scarlet Ibis pub.'],
-	'nahwitti-lake-camp'    => ['nahwitti-lake-camp.jpg', 'Nahwitti Lake Recreation Site', 'Camping at Nahwitti Lake.'],
-	'shoe-tree'             => ['shoe-tree.jpg', 'The Shoe Tree', 'The Shoe Tree near Holberg.'],
-	'san-josef-bay'         => ['san-josef-bay.jpg', 'San Josef Bay', 'Sea stacks at San Josef Bay.'],
-	'cape-scott-lighthouse' => ['cape-scott-lighthouse.jpeg', 'Cape Scott Lighthouse', 'Cape Scott Lighthouse at the trail end.'],
-	'cape-scott-coast'      => ['cape-scott-coast.jpeg', 'Cape Scott Coast', 'The rugged Cape Scott coastline.'],
-	'nahwitti-lake'         => ['nahwitti-lake.jpg', 'Nahwitti Lake', 'Nahwitti Lake on the Holberg road.'],
-	'port-hardy-cape-scott' => ['port-hardy-cape-scott.jpg', 'Port Hardy to Cape Scott', 'The route from Port Hardy to Cape Scott.'],
+// The manifest is the single source of truth for the demo images. JSON array
+// order is the seeding order, so the output stays deterministic.
+$manifest_path = __DIR__ . '/image-metadata.json';
+$manifest_json = file_get_contents($manifest_path);
+if ($manifest_json === false) {
+	waymark_demo_fail('Missing demo image manifest: ' . $manifest_path);
+}
+$manifest = json_decode($manifest_json, true);
+if (! is_array($manifest)) {
+	waymark_demo_fail('Invalid demo image manifest: ' . $manifest_path);
+}
+
+$required_image_keys = [
+	'key',
+	'file',
+	'title',
+	'alt',
+	'camera_make',
+	'camera_model',
+	'taken_at',
+	'utc_offset',
+	'latitude',
+	'longitude',
+	'altitude',
 ];
+
+// key => entry.
+$demo_images = [];
+foreach ($manifest as $entry) {
+	if (! is_array($entry)) {
+		waymark_demo_fail('Invalid demo image manifest entry in ' . $manifest_path);
+	}
+
+	foreach ($required_image_keys as $required_key) {
+		if (! array_key_exists($required_key, $entry)) {
+			waymark_demo_fail('Demo image manifest entry is missing "' . $required_key . '" in ' . $manifest_path);
+		}
+	}
+
+	if (isset($demo_images[$entry['key']])) {
+		waymark_demo_fail('Duplicate demo image key "' . $entry['key'] . '" in ' . $manifest_path);
+	}
+
+	$demo_images[$entry['key']] = $entry;
+}
+
+// wp_read_image_metadata() only attaches the plugin's GPS filter during admin
+// uploads. wp eval-file is a CLI request, so register the filter explicitly.
+require_once $plugin_dir . '/inc/Waymark_Admin.php';
+$waymark_admin = new Waymark_Admin();
+add_filter('wp_read_image_metadata', [$waymark_admin, 'add_gps_exif'], 10, 3);
 
 $image_urls = [];
 $image_ids  = [];
 
 foreach ($demo_images as $key => $image) {
-	list($file, $title, $alt) = $image;
+	$file  = $image['file'];
+	$title = $image['title'];
+	$alt   = $image['alt'];
 
 	$source = $demo_image_dir . '/' . $file;
 	if (! file_exists($source)) {
@@ -384,6 +488,8 @@ foreach ($demo_images as $key => $image) {
 
 	wp_update_post(['ID' => $attachment_id, 'post_title' => $title]);
 	update_post_meta($attachment_id, '_wp_attachment_image_alt', $alt);
+
+	waymark_demo_assert_image_meta($attachment_id, $image, $file);
 
 	$sizes = [];
 	foreach (['thumbnail', 'medium', 'large'] as $size) {
@@ -452,6 +558,7 @@ $san_josef = [
 				'image_thumbnail_url' => '%%IMG:san-josef-bay:thumbnail%%',
 				'image_medium_url'    => '%%IMG:san-josef-bay:medium%%',
 				'image_large_url'     => '%%IMG:san-josef-bay:large%%',
+				'description'         => 'Sea stacks, sea caves and wide sand on this long, open beach.',
 			],
 			'geometry'   => ['type' => 'Point', 'coordinates' => [-128.277, 50.673]],
 		],
@@ -488,12 +595,12 @@ $north_coast = [
 		],
 		[
 			'type'       => 'Feature',
-			'properties' => ['type' => 'information', 'title' => 'Nissen Bight'],
+			'properties' => ['type' => 'information', 'title' => 'Nissen Bight', 'description' => 'A wide, sheltered bay with camping behind the beach.'],
 			'geometry'   => ['type' => 'Point', 'coordinates' => [-128.152, 50.690]],
 		],
 		[
 			'type'       => 'Feature',
-			'properties' => ['type' => 'camp', 'title' => 'Nels Bight'],
+			'properties' => ['type' => 'camp', 'title' => 'Nels Bight', 'description' => 'A huge sandy campsite behind the dunes, with driftwood for shelter.'],
 			'geometry'   => ['type' => 'Point', 'coordinates' => [-128.350, 50.782]],
 		],
 		[
@@ -754,27 +861,33 @@ if (is_wp_error($page_id)) {
 }
 
 // ---------------------------------------------------------------------------
-// 8. Emit seed-output.json (deterministic; no attachment IDs)
+// 8. Emit seed-output.json (tests mode only; no attachment IDs)
 // ---------------------------------------------------------------------------
 
-$seed_output = [
-	'maps'         => array_values($map_permalinks),
-	'page'         => [
-		'id'    => (int) $page_id,
-		'slug'  => get_post_field('post_name', $page_id),
-		'title' => get_the_title($page_id),
-		'url'   => get_permalink($page_id),
-	],
-	'collections'  => $collection_output,
-	'images'       => $image_urls,
-	'settings_url' => $settings_url,
-];
+if ($waymark_demo_dev_mode) {
+	update_option('waymark_demo_dev_seeded', '1');
+	$output_label = 'not written (dev mode)';
+} else {
+	$seed_output = [
+		'maps'         => array_values($map_permalinks),
+		'page'         => [
+			'id'    => (int) $page_id,
+			'slug'  => get_post_field('post_name', $page_id),
+			'title' => get_the_title($page_id),
+			'url'   => get_permalink($page_id),
+		],
+		'collections'  => $collection_output,
+		'images'       => $image_urls,
+		'settings_url' => $settings_url,
+	];
 
-$output_path = __DIR__ . '/seed-output.json';
-file_put_contents(
-	$output_path,
-	json_encode($seed_output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n"
-);
+	$output_path = __DIR__ . '/seed-output.json';
+	file_put_contents(
+		$output_path,
+		json_encode($seed_output, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n"
+	);
+	$output_label = $output_path;
+}
 
 // ---------------------------------------------------------------------------
 // 9. Summary
@@ -792,5 +905,5 @@ foreach ($collection_output as $collection) {
 	waymark_demo_log('    #' . $collection['term_id'] . '  ' . $collection['name'] . '  (parent ' . $collection['parent'] . ')');
 }
 waymark_demo_log('  Images: ' . count($image_urls) . ' sideloaded to ' . $uploads['baseurl'] . '/' . $upload_subdir . '/');
-waymark_demo_log('  Output: ' . $output_path);
+waymark_demo_log('  Output: ' . $output_label);
 waymark_demo_log('');

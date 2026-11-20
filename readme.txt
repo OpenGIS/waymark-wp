@@ -98,7 +98,8 @@ cd waymark-wp
 # Install the dependencies (or pnpm/yarn install)
 npm install
 
-# Start WordPress at http://localhost:8888 and rebuild assets on change
+# Start WordPress at http://localhost:8888, seed an untouched instance with demo data
+# and rebuild assets on change
 npm run dev
 ~~~
 
@@ -138,7 +139,7 @@ Waymark uses the `waymark` text domain, with the translation template at `langua
 
 ### Testing
 
-Three suites cover the plugin — JavaScript unit tests (Vitest), PHP integration tests (PHPUnit) and browser end-to-end tests (Playwright). The PHP and browser suites run against the disposable wp-env tests instance at **http://localhost:8889**; the development instance is never touched. The wp-env environment (`npm run dev`) must be running first.
+Three suites cover the plugin — JavaScript unit tests (Vitest), PHP integration tests (PHPUnit) and browser end-to-end tests (Playwright). The PHP and browser suites run against the disposable wp-env tests instance at **http://localhost:8889** and never touch the development instance on 8888; `npm run dev` may seed that instance with demo data when it is untouched. The wp-env environment (`npm run dev`) must be running first.
 
 ~~~bash
 # JavaScript unit tests (Vitest, jsdom) — Viewer, Editor and description sanitisation

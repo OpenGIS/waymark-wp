@@ -169,6 +169,77 @@ describe("Waymark_Lightbox", () => {
     expect(image.getAttribute("alt")).toBe(payload);
   });
 
+  it("renders an item description as literal text, not HTML", () => {
+    const lightbox = makeLightbox();
+    const payload = "<b>bold</b> & <i>italic</i>";
+
+    lightbox.open(
+      [
+        {
+          url: "https://example.com/a.jpg",
+          alt: "Image",
+          title: "Title",
+          description: payload,
+        },
+      ],
+      0,
+    );
+
+    const description = getDialog().querySelector(
+      ".waymark-lightbox-description",
+    );
+
+    expect(description.textContent).toBe(payload);
+    expect(description.children.length).toBe(0);
+    expect(description.hidden).toBe(false);
+
+    lightbox.close();
+    expect(getDialog().open).toBe(false);
+  });
+
+  it("updates the description when stepping through items", () => {
+    const lightbox = makeLightbox();
+    const items = makeItems(2);
+    items[0].description = "First description";
+    items[1].description = "Second description";
+
+    lightbox.open(items, 0);
+
+    const description = () =>
+      getDialog().querySelector(".waymark-lightbox-description").textContent;
+
+    expect(description()).toBe("First description");
+
+    lightbox.next();
+    expect(description()).toBe("Second description");
+
+    lightbox.prev();
+    expect(description()).toBe("First description");
+
+    lightbox.close();
+  });
+
+  it("hides the description when an item has none", () => {
+    const lightbox = makeLightbox();
+    const items = makeItems(2);
+    items[1].description = "A description";
+
+    lightbox.open(items, 0);
+
+    const description = () =>
+      getDialog().querySelector(".waymark-lightbox-description");
+
+    expect(description().textContent).toBe("");
+    expect(description().hidden).toBe(true);
+
+    lightbox.next();
+
+    expect(description().textContent).toBe("A description");
+    expect(description().hidden).toBe(false);
+
+    lightbox.close();
+  });
+
   it("closes when the backdrop is clicked", () => {
     const lightbox = makeLightbox();
     lightbox.open(makeItems(1), 0);

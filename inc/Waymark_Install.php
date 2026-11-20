@@ -45,6 +45,8 @@ class Waymark_Install {
 		delete_option('Waymark_Version');			
 		delete_option('Waymark_Key_Aliases');
 		delete_option('Waymark_Key_Migration');
+		//Clear the dev-mode demo seed marker so a fresh install can seed again
+		delete_option('waymark_demo_dev_seeded');
 	}
 
 	static function add_action_links($links) {

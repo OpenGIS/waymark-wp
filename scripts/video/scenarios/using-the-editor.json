@@ -90,7 +90,7 @@
         "selector": "#waymark-map .waymark-info-title input",
         "value": "San Josef Bay"
       },
-      "notes": "The title input is 282,249.6, 215x40. The fill changes the input only; the change handler fires on blur, so `#waymark-data` still holds 'San Josep Bay' at the end of this scene. Both titles are 13 characters, so the data length stays 60032. Nothing is sent to WordPress."
+      "notes": "The title input is 282,249.6, 215x40. The fill changes the input only; the change handler fires on blur, so `#waymark-data` still holds 'San Josep Bay' at the end of this scene. Both titles are the same length, so the title edit does not change the data length. Nothing is sent to WordPress."
     },
     {
       "id": "update-map",

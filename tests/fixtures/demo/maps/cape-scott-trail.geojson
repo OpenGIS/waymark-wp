@@ -5,7 +5,8 @@
       "type": "Feature",
       "properties": {
         "title": "Pub Name",
-        "type": "beer"
+        "type": "beer",
+        "description": "A proper local pub with cold beer and a warm welcome."
       },
       "geometry": {
         "type": "Point",
@@ -19,7 +20,8 @@
       "type": "Feature",
       "properties": {
         "title": "Burger King",
-        "type": "food"
+        "type": "food",
+        "description": "Fast food and a quick coffee before the gravel road starts."
       },
       "geometry": {
         "type": "Point",
@@ -72,7 +74,8 @@
         "type": "camp",
         "image_thumbnail_url": "%%IMG:nahwitti-lake-camp:thumbnail%%",
         "image_medium_url": "%%IMG:nahwitti-lake-camp:medium%%",
-        "image_large_url": "%%IMG:nahwitti-lake-camp:large%%"
+        "image_large_url": "%%IMG:nahwitti-lake-camp:large%%",
+        "description": "A lakeside campsite with room for tents and an easy walk to the water."
       },
       "geometry": {
         "type": "Point",
@@ -89,7 +92,8 @@
         "type": "photo",
         "image_thumbnail_url": "%%IMG:shoe-tree:thumbnail%%",
         "image_medium_url": "%%IMG:shoe-tree:medium%%",
-        "image_large_url": "%%IMG:shoe-tree:large%%"
+        "image_large_url": "%%IMG:shoe-tree:large%%",
+        "description": "A roadside tree hung with decades of worn boots and old shoes."
       },
       "geometry": {
         "type": "Point",
@@ -191,7 +195,8 @@
         "type": "photo",
         "image_thumbnail_url": "%%IMG:cape-scott-lighthouse:thumbnail%%",
         "image_medium_url": "%%IMG:cape-scott-lighthouse:medium%%",
-        "image_large_url": "%%IMG:cape-scott-lighthouse:large%%"
+        "image_large_url": "%%IMG:cape-scott-lighthouse:large%%",
+        "description": "The lighthouse standing at the wild northern tip of the island."
       },
       "geometry": {
         "type": "Point",
@@ -224,7 +229,8 @@
         "type": "photo",
         "image_thumbnail_url": "%%IMG:nahwitti-lake:thumbnail%%",
         "image_medium_url": "%%IMG:nahwitti-lake:medium%%",
-        "image_large_url": "%%IMG:nahwitti-lake:large%%"
+        "image_large_url": "%%IMG:nahwitti-lake:large%%",
+        "description": "Still water and forested shore beside the road to Holberg."
       },
       "geometry": {
         "type": "Point",

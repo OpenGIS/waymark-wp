@@ -357,6 +357,26 @@ function Waymark_Map() {
     });
   };
 
+  //Convert user-authored description HTML to plain text for the image viewer
+  this.description_to_text = function (html) {
+    if (!html) {
+      return "";
+    }
+
+    var text = this.sanitize_description(html);
+
+    //Separate block elements and line breaks so paragraphs do not run together
+    text = String(text).replace(
+      /<\/(p|div|li|blockquote|h[1-6])\s*>|<br\s*\/?>/gi,
+      " ",
+    );
+
+    //Parsing as HTML strips remaining tags and decodes entities
+    text = jQuery("<div />").html(text).text();
+
+    return text.replace(/\s+/g, " ").trim();
+  };
+
   //Allow only http(s) URLs
   this.is_safe_url = function (url) {
     return /^https?:\/\//i.test(url);

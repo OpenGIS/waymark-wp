@@ -7,7 +7,7 @@
         "coordinates": [-127.497046, 50.720265]
       },
       "type": "Feature",
-      "properties": { "title": "Pub Name", "type": "beer" }
+      "properties": { "title": "Pub Name", "type": "beer", "description": "A proper local pub with cold beer and a warm welcome." }
     },
     {
       "geometry": {
@@ -15,7 +15,7 @@
         "coordinates": [-127.490137, 50.722642]
       },
       "type": "Feature",
-      "properties": { "title": "Burger King", "type": "food" }
+      "properties": { "title": "Burger King", "type": "food", "description": "Fast food and a quick coffee before the gravel road starts." }
     },
     {
       "geometry": { "type": "Point", "coordinates": [-127.49136, 50.703742] },
@@ -55,7 +55,8 @@
         "type": "camp",
         "image_thumbnail_url": "assets/img/UNADJUSTEDNONRAW_thumb_14db-150x150.jpg",
         "image_medium_url": "assets/img/UNADJUSTEDNONRAW_thumb_14db-300x224.jpg",
-        "image_large_url": "assets/img/UNADJUSTEDNONRAW_thumb_14db-1024x766.jpg"
+        "image_large_url": "assets/img/UNADJUSTEDNONRAW_thumb_14db-1024x766.jpg",
+        "description": "A lakeside campsite with room for tents and an easy walk to the water."
       }
     },
     {
@@ -66,7 +67,8 @@
         "type": "photo",
         "image_thumbnail_url": "assets/img/UNADJUSTEDNONRAW_thumb_15a3-150x150.jpg",
         "image_medium_url": "assets/img/UNADJUSTEDNONRAW_thumb_15a3-300x200.jpg",
-        "image_large_url": "assets/img/UNADJUSTEDNONRAW_thumb_15a3-1024x683.jpg"
+        "image_large_url": "assets/img/UNADJUSTEDNONRAW_thumb_15a3-1024x683.jpg",
+        "description": "A roadside tree hung with decades of worn boots and old shoes."
       }
     },
     {
@@ -138,7 +140,8 @@
         "type": "photo",
         "image_thumbnail_url": "assets/img/BF4ECCB4-10AD-4B31-80B2-FED86215FB85_1_105_c-450x450.jpeg",
         "image_medium_url": "assets/img/BF4ECCB4-10AD-4B31-80B2-FED86215FB85_1_105_c-300x225.jpeg",
-        "image_large_url": "assets/img/BF4ECCB4-10AD-4B31-80B2-FED86215FB85_1_105_c.jpeg"
+        "image_large_url": "assets/img/BF4ECCB4-10AD-4B31-80B2-FED86215FB85_1_105_c.jpeg",
+        "description": "The lighthouse standing at the wild northern tip of the island."
       }
     },
     {
@@ -162,7 +165,8 @@
         "type": "photo",
         "image_thumbnail_url": "assets/img/UNADJUSTEDNONRAW_thumb_16e9-150x150.jpg",
         "image_medium_url": "assets/img/UNADJUSTEDNONRAW_thumb_16e9-300x200.jpg",
-        "image_large_url": "assets/img/UNADJUSTEDNONRAW_thumb_16e9-1024x683.jpg"
+        "image_large_url": "assets/img/UNADJUSTEDNONRAW_thumb_16e9-1024x683.jpg",
+        "description": "Still water and forested shore beside the road to Holberg."
       }
     },
     {

@@ -392,6 +392,12 @@ test("navigating the viewer pans the map to each feature and opens its popup", a
   const assertNoErrors = startErrorGate(page);
   await openViewer(page, waymark);
 
+  // Popup auto-pan shifts the final centre by the popup's height, so disable
+  // it here; the viewer's own pan to each feature is what this test asserts.
+  await page.evaluate(() => {
+    window.L.Popup.prototype.options.autoPan = false;
+  });
+
   // The LineString is item one of three, so the viewer opens without panning
   // and leaves the map at its initial bounds — the recorded baseline.
   const { dialog } = await openLightboxFromPopup(page, LINE_TITLE);
@@ -505,6 +511,109 @@ test("navigating the viewer pans the map to each feature and opens its popup", a
       },
     )
     .toEqual({ moved: true, near: true });
+
+  assertNoErrors();
+});
+
+// ---------------------------------------------------------------------------
+// Feature description in the caption
+// ---------------------------------------------------------------------------
+
+test("the caption shows each feature's description as plain text", async ({
+  page,
+  waymark,
+}) => {
+  test.setTimeout(90_000);
+  const assertNoErrors = startErrorGate(page);
+  await openViewer(page, waymark);
+
+  // Give one seeded feature HTML-marked description text. The viewer must strip
+  // the markup and decode the entity before rendering it as text.
+  const updated = await page.evaluate((targetTitle) => {
+    let count = 0;
+
+    window.Waymark.map_data.eachLayer((layer) => {
+      const properties = layer.feature && layer.feature.properties;
+      if (properties && properties.title === targetTitle) {
+        properties.description = "<p>Tidal crossing &amp; sea stacks.</p>";
+        count++;
+      }
+    });
+
+    return count;
+  }, POPUP_TITLE);
+  expect(updated, `No seeded layer titled "${POPUP_TITLE}"`).toBe(1);
+
+  const { dialog } = await openLightboxFromPopup(page, POPUP_TITLE);
+  const description = dialog.locator(".waymark-lightbox-description");
+
+  await expect(description).toBeVisible();
+  await expect(description).toHaveText("Tidal crossing & sea stacks.");
+  expect(
+    await description.evaluate((element) => element.children.length),
+    "Description should be rendered as text, not markup",
+  ).toBe(0);
+
+  const styles = await description.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return {
+      flexBasis: computed.flexBasis,
+      textAlign: computed.textAlign,
+      maxHeight: computed.maxHeight,
+      overflowY: computed.overflowY,
+    };
+  });
+
+  expect(styles).toEqual({
+    flexBasis: "100%",
+    textAlign: "center",
+    maxHeight: "65px",
+    overflowY: "auto",
+  });
+
+  // The next seeded image (Eric Lake Camp) has no description, so the caption
+  // should hide the description element rather than leave a blank row.
+  await dialog.locator(".waymark-lightbox-next").click();
+  await expect(dialog.locator(".waymark-lightbox-count")).toHaveText("3 of 3");
+  await expect(description).toBeHidden();
+
+  // Stepping back restores the text.
+  await dialog.locator(".waymark-lightbox-prev").click();
+  await expect(dialog.locator(".waymark-lightbox-count")).toHaveText("2 of 3");
+  await expect(description).toBeVisible();
+  await expect(description).toHaveText("Tidal crossing & sea stacks.");
+
+  await dialog.locator(".waymark-lightbox-close").click();
+  await expect(dialog).toBeHidden();
+
+  // A description longer than the cap should scroll instead of growing the
+  // dialog, proving max-height and overflow-y work together.
+  const longDescription = "Long description sentence. ".repeat(60).trim();
+
+  await page.evaluate(
+    ({ targetTitle, descriptionText }) => {
+      window.Waymark.map_data.eachLayer((layer) => {
+        const properties = layer.feature && layer.feature.properties;
+        if (properties && properties.title === targetTitle) {
+          properties.description = `<p>${descriptionText}</p>`;
+        }
+      });
+    },
+    { targetTitle: POPUP_TITLE, descriptionText: longDescription },
+  );
+
+  await openLightboxFromPopup(page, POPUP_TITLE);
+  await expect(description).toBeVisible();
+
+  expect(
+    await description.evaluate(
+      (element) => element.scrollHeight > element.clientHeight,
+    ),
+    "A long description should scroll within the 65px cap",
+  ).toBe(true);
+
+  await dialog.locator(".waymark-lightbox-close").click();
+  await expect(dialog).toBeHidden();
 
   assertNoErrors();
 });

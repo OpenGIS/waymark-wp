@@ -38,7 +38,7 @@ Where the URL points to your desired image. You can adjust the width, height and
 
 A Marker, Line or Shape can have an image, either uploaded to the Media Library or linked by URL. The image appears in the feature’s Info Window when it is clicked.
 
-Clicking the image opens an image viewer over the Map. The page stays visible behind a lightly dimmed backdrop, and the caption — the feature title (when there is one), the image position such as “2 of 5”, and the “View full size” link — sits in a solid bar flush with the bottom of the photo. The Previous and Next buttons, or the Left and Right arrow keys, step through every image on the Map in the order the features were added; navigation wraps around.
+Clicking the image opens an image viewer over the Map. The page stays visible behind a lightly dimmed backdrop, and the caption — the feature title (when there is one), the image position such as “2 of 5”, the “View full size” link, and the feature’s description as plain text when there is one — sits in a solid bar flush with the bottom of the photo. The Previous and Next buttons, or the Left and Right arrow keys, step through every image on the Map in the order the features were added; navigation wraps around.
 
 Moving between images also keeps the Map in step: the Map pans to a Marker or circular Shape, or fits the bounds of a Line or polygon Shape, then opens that feature’s Info Window when it is on the Map. When the viewer is closed, the Map is already showing the last image’s feature. Opening the viewer itself does not move the Map.
 

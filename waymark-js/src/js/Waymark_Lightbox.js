@@ -137,6 +137,12 @@ function Waymark_Lightbox() {
     this.dialog.querySelector(".waymark-lightbox-title").textContent =
       item.title || "";
 
+    var description = this.dialog.querySelector(
+      ".waymark-lightbox-description",
+    );
+    description.textContent = item.description || "";
+    description.hidden = !description.textContent;
+
     this.dialog.querySelector(".waymark-lightbox-count").textContent =
       this.format_count(next_index + 1, count);
 
@@ -231,6 +237,10 @@ function Waymark_Lightbox() {
     var title = document.createElement("span");
     title.className = "waymark-lightbox-title";
 
+    var description = document.createElement("span");
+    description.className = "waymark-lightbox-description";
+    description.tabIndex = 0;
+
     var count = document.createElement("span");
     count.className = "waymark-lightbox-count";
 
@@ -243,6 +253,7 @@ function Waymark_Lightbox() {
     caption.appendChild(title);
     caption.appendChild(count);
     caption.appendChild(full);
+    caption.appendChild(description);
 
     figure.appendChild(image);
     figure.appendChild(caption);

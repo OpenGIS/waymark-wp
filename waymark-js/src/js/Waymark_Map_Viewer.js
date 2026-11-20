@@ -435,6 +435,7 @@ function Waymark_Map_Viewer() {
         href: properties.image_large_url,
         alt: properties.title || "",
         title: properties.title || "",
+        description: Waymark.description_to_text(properties.description),
         layer: layer,
         feature: layer.feature,
       });
