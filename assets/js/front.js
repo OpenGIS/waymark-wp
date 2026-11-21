@@ -24,6 +24,93 @@ function waymark_setup_map_editor(waymark_editor = {}) {
 		image_button.on("click", function (e) {
 			e.preventDefault();
 
+			//Media Library
+			if (
+				typeof wp !== "undefined" &&
+				wp.media &&
+				typeof waymark_js !== "undefined" &&
+				waymark_js.media_library
+			) {
+				const frame = wp.media({
+					title: waymark_js.lang.media_frame_title,
+					button: { text: waymark_js.lang.media_frame_button },
+					library: { type: "image" },
+					multiple: false,
+				});
+
+				frame.on("select", function () {
+					const attachment = frame.state().get("selection").first().toJSON();
+
+					//Ensure we have the data we want
+					if (typeof attachment.url === "undefined") {
+						return;
+					}
+
+					//Get Image EXIF
+					var form_data = new FormData();
+					form_data.append("waymark_security", waymark_security);
+					form_data.append("action", "waymark_get_attatchment_meta");
+					form_data.append("attachment_id", attachment.id);
+
+					jQuery.ajax({
+						type: "POST",
+						url: waymark_js.ajaxurl,
+						data: form_data,
+						dataType: "json",
+						processData: false,
+						contentType: false,
+						success: function (response) {
+							Waymark.debug("waymark_get_attatchment_meta");
+
+							if (response === null) {
+								Waymark.message(
+									Waymark.config.language.error_photo_meta,
+									"error",
+								);
+
+								return;
+							}
+
+							//Default centre
+							var marker_latlng = Waymark.map.getCenter();
+
+							//Extract EXIF location
+							var exif_latlng = Waymark.get_exif_latlng(response);
+
+							if (exif_latlng) {
+								marker_latlng = exif_latlng;
+
+								//Center on it
+								Waymark.map.setView(marker_latlng);
+							}
+
+							//Get Image URLs
+							var image_sizes = Waymark.get_image_sizes(
+								attachment.sizes,
+								attachment.url,
+							);
+
+							//Create JSON
+							var marker_json = Waymark.create_marker_json(
+								marker_latlng,
+								image_sizes,
+							);
+
+							//Add Marker
+							Waymark.map_data.addData(marker_json);
+
+							//Save
+							Waymark.map_was_edited();
+						},
+					});
+				});
+
+				frame.open();
+				frame.content.mode("browse");
+
+				return false;
+			}
+
 			// button.onclick = function () {
 			// 	//Thanks to: https://stackoverflow.com/a/24939229
 			var photo_input = jQuery("<input />")
@@ -36,7 +123,7 @@ function waymark_setup_map_editor(waymark_editor = {}) {
 					waymark_editor.handle_file_upload(jQuery(this));
 				});
 
-			jQuery("#waymark-edit-toolbar").append(photo_input);
+			jQuery(".waymark-edit-toolbar").append(photo_input);
 
 			//Fire the form
 			photo_input.trigger("click");
@@ -63,6 +150,73 @@ function waymark_setup_map_editor(waymark_editor = {}) {
 
 			image_button.on("click", function (e) {
 				e.preventDefault();
+
+				//Media Library
+				if (
+					typeof wp !== "undefined" &&
+					wp.media &&
+					typeof waymark_js !== "undefined" &&
+					waymark_js.media_library
+				) {
+					const frame = wp.media({
+						title: waymark_js.lang.media_frame_title,
+						button: { text: waymark_js.lang.media_frame_button },
+						library: { type: "image" },
+						multiple: false,
+					});
+
+					frame.on("select", function () {
+						const attachment = frame.state().get("selection").first().toJSON();
+
+						//Ensure we have the data we want
+						if (typeof attachment.url === "undefined") {
+							return;
+						}
+
+						//Get Image URLs
+						var image_sizes = Waymark.get_image_sizes(
+							attachment.sizes,
+							attachment.url,
+						);
+
+						//Update data
+						feature.properties = Object.assign(
+							{},
+							feature.properties,
+							image_sizes,
+						);
+
+						//Update preview
+						var image_large_url =
+							feature.properties.image_large_url &&
+							/^https?:\/\//i.test(feature.properties.image_large_url)
+								? feature.properties.image_large_url
+								: false;
+						var image_thumbnail_url =
+							feature.properties.image_thumbnail_url &&
+							/^https?:\/\//i.test(feature.properties.image_thumbnail_url)
+								? feature.properties.image_thumbnail_url
+								: false;
+
+						jQuery(".waymark-info-image_large_url", info_container)
+							.find("a")
+							.attr("href", image_large_url || null)
+							.end()
+							.find("img")
+							.attr("src", image_thumbnail_url || null)
+							.end()
+							.find("input")
+							.val(feature.properties.image_large_url);
+
+						//Save
+						Waymark.map_was_edited();
+					});
+
+					frame.open();
+					frame.content.mode("browse");
+
+					return false;
+				}
 
 				//Thanks to: https://stackoverflow.com/a/24939229
 				var photo_input = jQuery("<input />")

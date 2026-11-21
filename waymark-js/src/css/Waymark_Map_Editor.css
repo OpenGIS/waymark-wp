@@ -290,6 +290,7 @@
   display: none !important;
 }
 .waymark-map-container.waymark-is-editor.waymark-disable-photo .waymark-edit-image,
+.waymark-map-container.waymark-is-editor.waymark-disable-photo .waymark-info-image_large_url .button,
 .waymark-map-container.waymark-is-editor.waymark-disable-photo button#add_photo {
   display: none !important;
 }

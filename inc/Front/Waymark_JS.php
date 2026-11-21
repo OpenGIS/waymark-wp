@@ -10,14 +10,33 @@ class Waymark_JS {
 		add_action('wp_enqueue_scripts', ['Waymark_JS', 'enqueue_scripts']);
 	}
 
+	static function media_library_enabled() {
+		return is_user_logged_in() && current_user_can('upload_files');
+	}
+
 	static function enqueue_scripts() {
 		wp_register_style('waymark-js', Waymark_Helper::plugin_url('waymark-js/dist/css/waymark-js.min.css'), [], Waymark_Config::get_version());
 		wp_enqueue_style('waymark-js');
 		wp_register_script('waymark-js', Waymark_Helper::plugin_url('waymark-js/dist/js/waymark-js.min.js'), ['jquery'], Waymark_Config::get_version(), true);
-		wp_localize_script('waymark-js', 'waymark_js', [
+
+		$waymark_js = [
 			//AJAX
 			'ajaxurl' => admin_url('admin-ajax.php'),
-		]);
+		];
+
+		//Media Library
+		if (self::media_library_enabled()) {
+			$lang = Waymark_Lang::get_js_lang();
+
+			$waymark_js['media_library'] = true;
+
+			$waymark_js['lang'] = [
+				'media_frame_title' => $lang['media_frame_title'],
+				'media_frame_button' => $lang['media_frame_button'],
+			];
+		}
+
+		wp_localize_script('waymark-js', 'waymark_js', $waymark_js);
 		wp_enqueue_script('waymark-js');
 
 		wp_register_script('waymark_front_js', Waymark_Helper::asset_url('js/front.min.js'), ['jquery'], Waymark_Config::get_version(), true);

@@ -149,6 +149,11 @@ class Waymark_Submission {
 			return $content;
 		}
 
+		//WordPress Media Library (users who can upload)
+		if (Waymark_JS::media_library_enabled()) {
+			wp_enqueue_media();
+		}
+
 		global $post;
 
 		$get_data = wp_unslash($_GET);

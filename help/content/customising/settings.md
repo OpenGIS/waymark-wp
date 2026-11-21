@@ -262,7 +262,7 @@ Users with the selected roles will be able to make Submissions through the front
 :::
 
 :::setting{title="Editor Features" type="select_multi"}
-What features to offer in the Editor. Important! Uploaded images are added to the Media Library, reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Meta.
+What features to offer in the Editor. Important! Images are added to the Media Library: signed-in users who can upload files choose an existing image, while everyone else uploads one directly. Reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Meta.
 :::
 
 :::setting{title="Default Status" type="select"}
@@ -286,7 +286,7 @@ Allow _anyone_ to submit Maps to your site, without registration.
 :::
 
 :::setting{title="Editor Features" type="select_multi"}
-What features to offer in the Editor. Important! Uploaded images are added to the Media Library (see Upload Location below), reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Meta.
+What features to offer in the Editor. Important! Images are added to the Media Library: signed-in users who can upload files choose an existing image, while everyone else uploads one directly (see Upload Location below). Reading from file does not keep a copy of the file on the server. Whether an individual Meta input is displayed can be set in the Settings &gt; Meta.
 :::
 
 :::setting{title="Upload Location" type="select" default="waymark_submission"}

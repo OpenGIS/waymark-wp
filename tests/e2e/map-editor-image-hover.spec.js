@@ -215,6 +215,8 @@ async function readImageControl(anchor) {
       transitionTimingFunction: anchorStyle.transitionTimingFunction,
       objectFit: imgStyle.objectFit,
       anchorRect: {
+        left: Math.round(anchorRect.left),
+        top: Math.round(anchorRect.top),
         width: Math.round(anchorRect.width),
         height: Math.round(anchorRect.height),
       },
@@ -239,8 +241,14 @@ function splitCssList(value) {
 }
 
 /**
- * Wait until the scoped image control's box has stopped changing. The helper
- * needs the anchor locator so it reads the same element the test hovers.
+ * Wait until the scoped image control's box has stopped changing on screen.
+ * The helper needs the anchor locator so it reads the same element the test
+ * hovers.
+ *
+ * Position is part of the measured box because opening a popup makes Leaflet
+ * auto-pan the map to reveal it. Hovering mid-pan adds the hover class and then
+ * removes it again when the moving popup slides out from under the stationary
+ * pointer, so the control must be settled before it is hovered.
  *
  * @param {import("@playwright/test").Locator} anchor
  * @param {{ quietMs?: number, timeoutMs?: number }} [options]
@@ -251,6 +259,8 @@ async function waitForImageControlStable(anchor, options = {}) {
       const metrics = await readImageControl(anchor);
       return metrics
         ? {
+            left: metrics.anchorRect.left,
+            top: metrics.anchorRect.top,
             width: metrics.anchorRect.width,
             height: metrics.anchorRect.height,
           }
@@ -279,6 +289,11 @@ test("marker without an image keeps its 60px placeholder on hover", async ({
   const anchor = popup.locator(POPUP_ANCHOR_SELECTOR);
   await expect(anchor).toHaveCount(1);
   await expect(anchor).toBeVisible();
+
+  // Opening the popup auto-pans the map to reveal it. Let that pan finish
+  // before hovering: a popup still in motion slides out from under the pointer
+  // and fires mouseleave, removing the hover class the test is about to read.
+  await waitForImageControlStable(anchor);
 
   const initial = await readImageControl(anchor);
   expect(initial, "the image control is missing").not.toBeNull();
@@ -371,6 +386,10 @@ test("image marker crops to fill during a 0.4s hover transition", async ({
   const anchor = popup.locator(POPUP_ANCHOR_SELECTOR);
   await expect(anchor).toHaveCount(1);
   await expect(anchor).toBeVisible();
+
+  // Let the popup's auto-pan settle before the image work and hover, so the
+  // box cannot move out from under the pointer once the hover class is set.
+  await waitForImageControlStable(anchor);
 
   const img = anchor.locator("img");
   await expect(img).toHaveCount(1);

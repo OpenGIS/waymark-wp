@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Waymark 1.8.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/waymark\n"
-"POT-Creation-Date: 2026-11-20 21:37:24+00:00\n"
+"POT-Creation-Date: 2026-11-20 22:44:06+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -1037,7 +1037,7 @@ msgid "Read from File"
 msgstr ""
 
 #: inc/Admin/Waymark_Settings.php:924 inc/Admin/Waymark_Settings.php:995
-#: inc/Admin/Waymark_Settings.php:1552 inc/Front/Waymark_Submission.php:222
+#: inc/Admin/Waymark_Settings.php:1552 inc/Front/Waymark_Submission.php:227
 #. translators: The option for a title input
 #. translators: The option to enable the title
 msgid "Title"
@@ -1716,36 +1716,36 @@ msgstr ""
 msgid "Details"
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:168
+#: inc/Front/Waymark_Submission.php:173
 msgid "There was an error with your submission."
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:176
+#: inc/Front/Waymark_Submission.php:181
 msgid "Your submission has been received and is awaiting moderation."
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:186
+#: inc/Front/Waymark_Submission.php:191
 #. translators: %s: link to the published map
 msgid "Your submission has been <a href=\"%s\">published</a>."
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:188
+#: inc/Front/Waymark_Submission.php:193
 msgid "Your submission has been published."
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:233
+#: inc/Front/Waymark_Submission.php:238
 msgid "Submit"
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:252
+#: inc/Front/Waymark_Submission.php:257
 msgid "Your Map was empty."
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:261
+#: inc/Front/Waymark_Submission.php:266
 msgid "Your Map did not contain valid features."
 msgstr ""
 
-#: inc/Front/Waymark_Submission.php:268
+#: inc/Front/Waymark_Submission.php:273
 msgid "Submission"
 msgstr ""
 

@@ -56,6 +56,18 @@ The specs in this directory include:
   saves the Settings form, then proves every rendered input stays indexed and
   both column values persist. It restores the option afterwards. It imports the
   harness.
+- `front-submission-image.spec.js` — front-end submission editor image
+  controls. A signed-in user who can upload files gets the WordPress Media
+  Library from both the toolbar and the marker popup; selecting an attachment
+  from the popup updates the Marker; a toolbar selection creates a Marker whose
+  saved GeoJSON carries the chosen image's large and thumbnail URLs; and closing
+  the frame leaves no Marker behind. Guests and signed-in users without
+  `upload_files` keep the native file chooser (`add_photo` and `marker_photo`)
+  with no Media Library modal; the no-upload case also proves the fallback
+  toolbar input sits inside `.waymark-edit-toolbar`. The spec creates a
+  disposable submission Page and a subscriber, restores the settings and
+  deletes both afterwards, and stubs every basemap tile from memory. It imports
+  the harness.
 - `map-editor.spec.js` — the legacy smoke test. It intentionally exercises live
   OSM tiles, so it deliberately does **not** import the harness and is not
   pack-backed. Leave it standalone.

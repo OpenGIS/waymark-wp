@@ -336,7 +336,7 @@ function Waymark_Map_Editor() {
             Waymark.handle_file_upload(jQuery(this));
           });
 
-        jQuery("#waymark-edit-toolbar").append(file_input);
+        jQuery(".waymark-edit-toolbar").append(file_input);
 
         button.onclick = function () {
           //Fire the form

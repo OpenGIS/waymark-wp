@@ -17,7 +17,9 @@ Types can be enabled for Submissions individually in <em>Settings &gt; [Markers/
 
 ### Image Upload
 
-Uploaded images are added to the WordPress Media Library and location meta data will be used if detected (EXIF).
+Images are stored in the WordPress Media Library, and location meta data will be used if detected (EXIF).
+
+Signed-in users who can upload files choose images from the Media Library, the same as when editing a Map in the admin. Guests, and users without upload permission, upload images directly instead.
 
 Images uploaded by guests can be stored separately from other Media Library uploads, to aid with moderation. If enabled, images uploaded by guests will be stored in a single directory found in the upload root (i.e. uploads/waymark_submission).
 
