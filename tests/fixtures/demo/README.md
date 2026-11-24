@@ -4,20 +4,21 @@ A small, deterministic demo dataset for disposable wp-env instances. It gives
 the plugin's documentation screenshots a realistic, reproducible set of Maps,
 Collections, Media, Meta and Settings.
 
-The seeder has two modes. Tests mode recreates the dataset from scratch on the
+The seeder has three modes. Tests mode recreates the dataset from scratch on the
 disposable tests instance. Dev mode seeds the development instance once, when it
-is still untouched.
+is still untouched. Dev force mode resets the demo artefacts on the development
+instance and reseeds it, preserving unrelated content.
 
 ## Contents
 
-| Path                            | Purpose                                                                                                                                                   |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `maps/cape-scott-trail.geojson` | Canonical GeoJSON template for the hero Map, derived from `tests/fixtures/route.geojson`.                                                                 |
-| `image-metadata.json`           | Manifest for the demo photos: titles, alt text, camera, capture time, GPS and altitude.                                                                   |
-| `images/`                       | The photos referenced by the template and described by `image-metadata.json`.                                                                             |
-| `seed.php`                      | Seeder, run with `wp eval-file`; reads `image-metadata.json`. Tests mode resets and rewrites the fixture; dev mode seeds only an untouched instance.      |
-| `seed-guard.php`                | Read-only freshness helpers used by dev mode; including it has no side effects.                                                                           |
-| `seed-output.json`              | Generated output (IDs, slugs, permalinks, collection terms and image URLs), written by tests mode only. Output is deterministic and stays byte-identical. |
+| Path                            | Purpose                                                                                                                                                                                                    |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `maps/cape-scott-trail.geojson` | Canonical GeoJSON template for the hero Map, derived from `tests/fixtures/route.geojson`.                                                                                                                  |
+| `image-metadata.json`           | Manifest for the demo photos: titles, alt text, camera, capture time, GPS and altitude.                                                                                                                    |
+| `images/`                       | The photos referenced by the template and described by `image-metadata.json`.                                                                                                                              |
+| `seed.php`                      | Seeder, run with `wp eval-file`; reads `image-metadata.json`. Tests mode resets and rewrites the fixture; dev mode seeds only an untouched instance; dev force mode resets the demo artefacts and reseeds. |
+| `seed-guard.php`                | Read-only freshness checks and demo-artefact selection for dev and dev force modes; including it has no side effects.                                                                                      |
+| `seed-output.json`              | Generated output (IDs, slugs, permalinks, collection terms and image URLs), written by tests mode only. Output is deterministic and stays byte-identical.                                                  |
 
 The template is a normal GeoJSON `FeatureCollection`. On top of the source route
 it:
@@ -101,14 +102,24 @@ consume `created_timestamp`.
 
 ## Running the seeder
 
-The seeder has two modes. Tests mode always resets and rewrites the fixture; dev
-mode seeds an untouched instance once and never writes the fixture.
+The seeder has three modes:
+
+| Mode           | Instance           | Behaviour                                                               |
+| -------------- | ------------------ | ----------------------------------------------------------------------- |
+| Tests fixture  | tests (8889)       | Always resets the disposable instance and rewrites `seed-output.json`.  |
+| Dev fresh-only | development (8888) | Seeds only an untouched instance and never writes `seed-output.json`.   |
+| Dev force      | development (8888) | Resets the demo artefacts and reseeds; never writes `seed-output.json`. |
+
+Tests mode is the fixture the test suite depends on. The two dev modes are
+development helpers; neither is used by CI or the video pipeline.
 
 ### Tests mode
 
-Tests mode is used for the disposable tests instance (port 8889). It always
-force-deletes the previous demo content before recreating it, and it rewrites
-`seed-output.json` with URLs built from the target instance's home URL.
+Tests mode is used for the disposable tests instance (port 8889). Because that
+instance is disposable, it force-deletes every Map and every Collection, the
+demo Page by slug, demo attachments and the `waymark-demo` uploads directory,
+and anything occupying reserved IDs 100–119. It then recreates the dataset and
+rewrites `seed-output.json` with URLs built from the target instance's home URL.
 
 ```sh
 npx wp-env run tests-cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php
@@ -116,8 +127,8 @@ npx wp-env run tests-cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtur
 
 The Playwright global setup (`tests/e2e/global.setup.js`) runs it automatically
 before every e2e suite. Each run also asserts the stored GPS, camera and
-capture-date metadata. Tests mode refuses the development instance (8888); only
-dev mode accepts it.
+capture-date metadata. Tests mode refuses the development instance (8888); the
+two dev modes accept it.
 
 ### Dev mode
 
@@ -143,10 +154,65 @@ write and logs `Skipping demo seed: <reason>.` when any of these is true:
 
 On success it sets `waymark_demo_dev_seeded` and never writes
 `seed-output.json`. The plugin uninstall clears the marker, but it does not
-delete the demo content; reset the instance to reseed.
+delete the demo content.
 
-A bare `npx wp-env start` does not seed. To reseed an instance that has been
-touched, destroy and recreate it:
+When the gate trips, the seeder logs `Skipping demo seed: <reason>.` followed by
+a hint to run `npm run seed:dev:force`. A bare `npx wp-env start` does not seed.
+
+### Dev force mode
+
+Dev force mode resets the demo artefacts on an already-used development instance
+and reseeds it. It is development tooling, not a test or video entry point:
+
+```sh
+npm run seed:dev:force
+# wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev force
+```
+
+`force` is a positional token. WP-CLI `eval-file` rejects an undeclared
+`--force` flag and `wp-env run` consumes a `--` separator, so `dev --force` is
+not the documented interface; pass `dev force`. The parser accepts `--force`
+only as an alias for a direct in-container run, which the npm script never uses.
+
+> [!WARNING]
+> Dev force mode is destructive. It permanently deletes the demo Maps, Page,
+> Collections and attachments on the current development instance, removes the
+> demo uploads directory, and overwrites the demo settings and site options. Run
+> it only against an instance whose demo content and site options you can lose.
+> It never deletes unrelated content.
+
+Safety gates are checked before the first write:
+
+- `force` requires `dev`; `force` alone is a usage error.
+- `wp_get_environment_type()` must be `local` or `development`.
+- The site URL must not contain `:8889`; the tests instance keeps its broad
+  reset in tests mode.
+- Reserved demo IDs 100–105 (Maps) and 110 (Page) must be free or hold demo
+  content, identified by slug. If non-demo content occupies any of them, the
+  seeder aborts, lists the IDs and titles, and deletes nothing. Move or delete
+  that content and retry; it never deletes unknown content at those IDs.
+
+The reset removes only the following demo artefacts and plugin state:
+
+- demo Maps selected by slug, including the `__trashed` variants;
+- the demo Page selected by slug, including the `__trashed` variant;
+- demo attachments whose `_wp_attached_file` starts with `waymark-demo/`, then
+  the `uploads/waymark-demo/` directory that remains;
+- demo Collection terms selected by slug only, children before parents;
+- the `waymark_demo_dev_seeded` and `waymark_activation_redirect` options.
+
+It then reseeds settings, site options (title, tagline, timezone, date and time
+formats, permalink structure), media, Maps, Collections and the demo Page, and
+sets `waymark_demo_dev_seeded` again, so a later `npm run seed:dev` skips.
+Unrelated posts, pages, terms and media are preserved. Repeated runs reset and
+reseed cleanly, so the Maps stay on IDs 100–105 and the Page on 110. Force mode
+logs a warning and the demo item counts before deleting, and it never writes
+`seed-output.json`; only tests mode writes that fixture.
+
+#### Clean slate
+
+Force mode keeps unrelated content. Destroy and recreate the instance only when
+you need a completely clean slate:
 
 ```sh
 npx wp-env destroy
@@ -154,9 +220,10 @@ npm run dev
 ```
 
 The read-only helpers live in [`seed-guard.php`](seed-guard.php):
-`waymark_demo_state()` returns the state flags, and
+`waymark_demo_state()` returns the state flags,
 `waymark_demo_reason_for_state()` returns the first reason the instance is not
-untouched, or `null`.
+untouched, and the `waymark_demo_*` selection helpers describe exactly which
+content dev force mode may delete. They all read without writing.
 
 ## Licence
 

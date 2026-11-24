@@ -57,10 +57,11 @@ Compiled files are committed. Edit the sources and rebuild; never hand-edit
 ## Development
 
 ```sh
-npm run dev      # wp-env on 8888, demo seed when untouched, + grunt watch
-npm run seed:dev # seed the dev instance with demo data (untouched only)
-npm run grunt    # rebuild CSS, JS bundles and the translation template
-npm test         # Vitest, PHPUnit and Playwright
+npm run dev            # wp-env on 8888, demo seed when untouched, + grunt watch
+npm run seed:dev       # seed the dev instance with demo data (untouched only)
+npm run seed:dev:force # reset demo artefacts on the dev instance (destructive; unrelated content kept)
+npm run grunt          # rebuild CSS, JS bundles and the translation template
+npm test               # Vitest, PHPUnit and Playwright
 ```
 
 The help site is separate:

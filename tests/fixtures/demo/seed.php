@@ -14,10 +14,18 @@
  *
  *   npx wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev
  *
+ * Dev force mode (resets and reseeds demo artefacts on a local or development
+ * instance; never writes the fixture):
+ *
+ *   npm run seed:dev:force
+ *   npx wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev force
+ *
  * Tests mode force-deletes the previous demo content (Maps, Page, Collections,
  * demo attachments and their files) before recreating it, so repeated runs
  * produce byte-identical output (see seed-output.json). Dev mode stops before
- * the first write when the instance is not untouched.
+ * the first write when the instance is not untouched. Dev force mode keeps
+ * unrelated content: it removes only the demo artefacts described by the
+ * selection helpers in seed-guard.php.
  *
  * Waymark_Map::create_post()/save_meta() are POST/nonce driven and write
  * nothing from the CLI, so post meta is written directly here.
@@ -27,9 +35,9 @@
 // Bootstrap
 // ---------------------------------------------------------------------------
 
-// WP-CLI passes positional eval-file arguments through $args.
-$waymark_demo_args     = isset($args) && is_array($args) ? $args : [];
-$waymark_demo_dev_mode = in_array('dev', $waymark_demo_args, true);
+// WP-CLI passes positional eval-file arguments through $args. They are
+// validated after the logging helpers are defined, before any write.
+$waymark_demo_args = isset($args) && is_array($args) ? $args : [];
 
 $plugin_dir = dirname(__DIR__, 3);
 
@@ -58,13 +66,6 @@ if (! post_type_exists('waymark_map')) {
 if (! taxonomy_exists('waymark_collection')) {
 	$waymark_taxonomies = new Waymark_Taxonomies();
 	$waymark_taxonomies->register_taxonomies();
-}
-
-// The development instance (8888) is off-limits to automation unless dev mode
-// explicitly opts in. Tests mode must stay on the tests instance (8889).
-if (! $waymark_demo_dev_mode && strpos((string) get_site_url(), ':8888') !== false) {
-	fwrite(STDERR, 'Refusing to seed the development instance (' . get_site_url() . "). Use the tests instance (8889), or pass the dev token to seed an untouched development instance.\n");
-	exit(1);
 }
 
 global $wpdb;
@@ -181,15 +182,58 @@ function waymark_demo_assert_image_meta($attachment_id, $image, $file) {
 }
 
 // ---------------------------------------------------------------------------
-// Dev-mode freshness gate: stop before the first write unless this instance is
-// untouched. Tests mode always proceeds to the reset below.
+// Argument contract: validate before any write. Unknown tokens and force
+// without dev are usage errors.
 // ---------------------------------------------------------------------------
 
-if ($waymark_demo_dev_mode) {
+try {
+	$waymark_demo_tokens = waymark_demo_parse_args($waymark_demo_args);
+} catch (InvalidArgumentException $exception) {
+	waymark_demo_fail($exception->getMessage());
+}
+
+$waymark_demo_dev_mode   = $waymark_demo_tokens['dev'];
+$waymark_demo_force_mode = $waymark_demo_tokens['force'];
+
+// ---------------------------------------------------------------------------
+// Instance safety gates.
+// ---------------------------------------------------------------------------
+
+// Force is a development tool. It must never run against the tests instance,
+// and only local or development installations may be reset. This runs before
+// the development-instance gate so force without dev reports the usage error
+// first.
+if ($waymark_demo_force_mode) {
+	$waymark_demo_force_reason = waymark_demo_force_refusal_reason(
+		$waymark_demo_tokens,
+		(string) wp_get_environment_type(),
+		(string) get_site_url()
+	);
+
+	if ($waymark_demo_force_reason !== null) {
+		waymark_demo_fail($waymark_demo_force_reason);
+	}
+}
+
+// The development instance (8888) is off-limits to automation unless dev mode
+// explicitly opts in. Tests mode must stay on the tests instance (8889).
+if (! $waymark_demo_dev_mode && strpos((string) get_site_url(), ':8888') !== false) {
+	fwrite(STDERR, 'Refusing to seed the development instance (' . get_site_url() . "). Use the tests instance (8889), or pass the dev token to seed an untouched development instance.\n");
+	exit(1);
+}
+
+// ---------------------------------------------------------------------------
+// Dev-mode freshness gate: stop before the first write unless this instance is
+// untouched. Force mode skips this because it resets the demo artefacts first.
+// Tests mode always proceeds to the broad reset below.
+// ---------------------------------------------------------------------------
+
+if ($waymark_demo_dev_mode && ! $waymark_demo_force_mode) {
 	$untouched_reason = waymark_demo_untouched_reason(null, $upload_subdir);
 
 	if ($untouched_reason !== null) {
 		waymark_demo_log('Skipping demo seed: ' . $untouched_reason . '.');
+		waymark_demo_log('Run `npm run seed:dev:force` to reset the demo data on this instance.');
 		exit(0);
 	}
 
@@ -197,7 +241,163 @@ if ($waymark_demo_dev_mode) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Settings: curated Types, Meta (inputs + groups), a second Basemap and
+// 1. Reset: this runs before settings and site-option writes.
+//
+// Tests mode force-deletes all Maps, the demo Page, every Collection, demo
+// attachments and their files, plus whatever holds IDs 100-119. Dev force mode
+// removes only demo artefacts, so unrelated content survives.
+// ---------------------------------------------------------------------------
+
+if ($waymark_demo_force_mode) {
+	// Preflight: the seeder inserts Maps 100-105 and Page 110 by import_id. If
+	// any of those IDs holds content that is not demo content, stop before
+	// deleting anything.
+	$id_conflicts = waymark_demo_required_id_conflicts();
+	if (! empty($id_conflicts)) {
+		$conflict_labels = [];
+		foreach ($id_conflicts as $conflict) {
+			$conflict_labels[] = '#' . $conflict['id'] . ' (' . $conflict['title'] . ')';
+		}
+
+		waymark_demo_fail(
+			'Refusing to force-reset demo data: reserved demo IDs are held by non-demo content: '
+			. implode(', ', $conflict_labels)
+			. '. Move or delete that content, then retry.'
+		);
+	}
+
+	$force_map_ids = get_posts([
+		'post_type'     => 'waymark_map',
+		'post_status'   => array_values(get_post_stati()),
+		'numberposts'   => -1,
+		'fields'        => 'ids',
+		'post_name__in' => waymark_demo_map_slugs_with_trashed(),
+	]);
+	$force_page_ids = get_posts([
+		'post_type'     => 'page',
+		'post_status'   => array_values(get_post_stati()),
+		'numberposts'   => -1,
+		'fields'        => 'ids',
+		'post_name__in' => waymark_demo_page_slugs(),
+	]);
+	$force_attachment_ids   = waymark_demo_attachment_ids();
+	$force_collection_terms = waymark_demo_collection_terms();
+
+	waymark_demo_log('WARNING: force-resetting demo data on ' . get_site_url() . '.');
+	waymark_demo_log(
+		'  Before deletion: '
+		. count($force_map_ids) . ' demo Maps, '
+		. count($force_page_ids) . ' demo Pages, '
+		. count($force_attachment_ids) . ' demo attachments, '
+		. count($force_collection_terms) . ' demo Collections.'
+	);
+
+	// Demo Maps, including trashed variants.
+	foreach ($force_map_ids as $map_id) {
+		wp_delete_post($map_id, true);
+	}
+
+	// Demo Page(s), including the trashed variant.
+	foreach ($force_page_ids as $page_id) {
+		wp_delete_post($page_id, true);
+	}
+
+	// Demo attachments and their files.
+	foreach ($force_attachment_ids as $attachment_id) {
+		wp_delete_attachment((int) $attachment_id, true);
+	}
+
+	// Any leftover files in the fixed subdir.
+	$uploads = wp_upload_dir();
+	waymark_demo_rrmdir($uploads['basedir'] . '/' . $upload_subdir);
+
+	// Demo Collections, children first. Selection is by slug only.
+	foreach (waymark_demo_sort_terms_children_first($force_collection_terms) as $term) {
+		wp_delete_term((int) $term->term_id, 'waymark_collection');
+	}
+
+	delete_option('waymark_demo_dev_seeded');
+	delete_option('waymark_activation_redirect');
+
+	// The import_id inserts below require free IDs. Abort rather than let them
+	// collide with something the reset could not remove.
+	$remaining_ids = [];
+	foreach (waymark_demo_required_ids() as $required_id) {
+		if (get_post($required_id)) {
+			$remaining_ids[] = $required_id;
+		}
+	}
+
+	if (! empty($remaining_ids)) {
+		waymark_demo_fail('Force reset did not free reserved demo IDs: ' . implode(', ', $remaining_ids) . '.');
+	}
+
+	waymark_demo_log('Force reset complete; reseeding.');
+} else {
+	// Waymark Maps (including trashed).
+	$map_ids = get_posts([
+		'post_type'      => 'waymark_map',
+		'post_status'    => array_values(get_post_stati()),
+		'numberposts'    => -1,
+		'fields'         => 'ids',
+	]);
+	foreach ($map_ids as $map_id) {
+		wp_delete_post($map_id, true);
+	}
+
+	// Demo Page(s).
+	$page_ids = get_posts([
+		'post_type'   => 'page',
+		'post_status' => array_values(get_post_stati()),
+		'numberposts' => -1,
+		'fields'      => 'ids',
+		'name'        => $demo_page_slug,
+	]);
+	foreach ($page_ids as $page_id) {
+		wp_delete_post($page_id, true);
+	}
+
+	// Collections.
+	$collection_terms = get_terms([
+		'taxonomy'   => 'waymark_collection',
+		'hide_empty' => false,
+	]);
+	if (! is_wp_error($collection_terms)) {
+		foreach ($collection_terms as $term) {
+			wp_delete_term($term->term_id, 'waymark_collection');
+		}
+	}
+
+	// Demo attachments (identified by their fixed upload subdir) and their files.
+	$attachment_ids = $wpdb->get_col($wpdb->prepare(
+		"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value LIKE %s",
+		$wpdb->esc_like($upload_subdir . '/') . '%'
+	));
+	foreach ($attachment_ids as $attachment_id) {
+		wp_delete_attachment((int) $attachment_id, true);
+	}
+
+	// Any leftover files in the fixed subdir.
+	$uploads = wp_upload_dir();
+	waymark_demo_rrmdir($uploads['basedir'] . '/' . $upload_subdir);
+
+	// Free the reserved demo post IDs so import_id inserts are safe. The tests
+	// instance is disposable, so it is fine to force-delete whatever holds them.
+	for ($id = 100; $id <= 119; $id++) {
+		if (get_post($id)) {
+			wp_delete_post($id, true);
+		}
+	}
+
+	// Deterministic admin screens: the activation redirect is the only persistent
+	// plugin state that disturbs the admin UI, so drop it. Waymark's other notices
+	// are either transient (the "Settings Updated" notice only renders on
+	// ?settings-updated=true) or non-dismissible informational cards.
+	delete_option('waymark_activation_redirect');
+}
+
+// ---------------------------------------------------------------------------
+// 2. Settings: curated Types, Meta (inputs + groups), a second Basemap and
 //    map options. Everything else falls back to the code defaults.
 // ---------------------------------------------------------------------------
 
@@ -287,7 +487,7 @@ update_option('Waymark_Settings', $settings);
 Waymark_Config::init();
 
 // ---------------------------------------------------------------------------
-// 2. Site settings
+// 3. Site settings
 // ---------------------------------------------------------------------------
 
 update_option('timezone_string', 'America/Vancouver');
@@ -321,71 +521,6 @@ if (function_exists('insert_with_markers') && $wp_rewrite instanceof WP_Rewrite)
 	$htaccess_file = get_home_path() . '.htaccess';
 	insert_with_markers($htaccess_file, 'WordPress', explode("\n", $wp_rewrite->mod_rewrite_rules()));
 }
-
-// ---------------------------------------------------------------------------
-// 3. Idempotent reset
-// ---------------------------------------------------------------------------
-
-// Waymark Maps (including trashed).
-$map_ids = get_posts([
-	'post_type'      => 'waymark_map',
-	'post_status'    => array_values(get_post_stati()),
-	'numberposts'    => -1,
-	'fields'         => 'ids',
-]);
-foreach ($map_ids as $map_id) {
-	wp_delete_post($map_id, true);
-}
-
-// Demo Page(s).
-$page_ids = get_posts([
-	'post_type'   => 'page',
-	'post_status' => array_values(get_post_stati()),
-	'numberposts' => -1,
-	'fields'      => 'ids',
-	'name'        => $demo_page_slug,
-]);
-foreach ($page_ids as $page_id) {
-	wp_delete_post($page_id, true);
-}
-
-// Collections.
-$collection_terms = get_terms([
-	'taxonomy'   => 'waymark_collection',
-	'hide_empty' => false,
-]);
-if (! is_wp_error($collection_terms)) {
-	foreach ($collection_terms as $term) {
-		wp_delete_term($term->term_id, 'waymark_collection');
-	}
-}
-
-// Demo attachments (identified by their fixed upload subdir) and their files.
-$attachment_ids = $wpdb->get_col($wpdb->prepare(
-	"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wp_attached_file' AND meta_value LIKE %s",
-	$wpdb->esc_like($upload_subdir . '/') . '%'
-));
-foreach ($attachment_ids as $attachment_id) {
-	wp_delete_attachment((int) $attachment_id, true);
-}
-
-// Any leftover files in the fixed subdir.
-$uploads = wp_upload_dir();
-waymark_demo_rrmdir($uploads['basedir'] . '/' . $upload_subdir);
-
-// Free the reserved demo post IDs so import_id inserts are safe. The tests
-// instance is disposable, so it is fine to force-delete whatever holds them.
-for ($id = 100; $id <= 119; $id++) {
-	if (get_post($id)) {
-		wp_delete_post($id, true);
-	}
-}
-
-// Deterministic admin screens: the activation redirect is the only persistent
-// plugin state that disturbs the admin UI, so drop it. Waymark's other notices
-// are either transient (the "Settings Updated" notice only renders on
-// ?settings-updated=true) or non-dismissible informational cards.
-delete_option('waymark_activation_redirect');
 
 // ---------------------------------------------------------------------------
 // 4. Media: sideload the referenced photos into a fixed upload subdir.

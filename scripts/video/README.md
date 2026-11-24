@@ -247,7 +247,7 @@ After an anonymous `goto` to a same-origin URL outside `/wp-admin`, the recorder
 
 ## Ports
 
-The video instance runs on **11000**. Ports **8888** and **8889** are the project's development and tests instances respectively. Video recording and seeding never target them. `record.mjs` and `doctor.mjs` refuse a `WP_BASE_URL` on either port; the Playwright config and the demo seeder's tests mode also guard 8888. Dev mode (`npm run seed:dev`) may seed an untouched development instance during `npm run dev`; that is separate from video work. The 8889 tests instance is off-limits to video work by policy, not just by code.
+The video instance runs on **11000**. Ports **8888** and **8889** are the project's development and tests instances respectively. Video recording and seeding never target them. `record.mjs` and `doctor.mjs` refuse a `WP_BASE_URL` on either port; the Playwright config and the demo seeder's tests mode also guard 8888. Dev mode (`npm run seed:dev`) may seed an untouched development instance during `npm run dev`; that is separate from video work. Force mode (`npm run seed:dev:force`) is development-instance tooling too: it refuses the tests instance and any environment that is not `local` or `development`, and it must not be pointed at the video instance during recording. The 8889 tests instance is off-limits to video work by policy, not just by code.
 
 > [!WARNING]
 > For video work, never start, seed or record against 8888 or 8889. Recording mutates seed data and authentication state, and a tests-mode seed rewrites the `seed-output.json` fixture used by the test suite. Dev mode never writes that fixture, but it belongs to the development instance, not the video pipeline. Always pass `--config=scripts/video/wp-env.video.json`, which pins the video instance to port 11000.
@@ -274,7 +274,7 @@ npx wp-env --config=scripts/video/wp-env.video.json run cli \
 ```
 
 > [!WARNING]
-> The command above runs the demo seeder in tests mode, which writes `tests/fixtures/demo/seed-output.json` with URLs built from the target instance's home URL. Running it against the video instance overwrites the fixture used by the tests instance. Restore the file from version control or reseed the tests instance afterwards. Dev mode — `npm run seed:dev` for the development instance, or the `dev` argument to a manual `wp eval-file` run — never writes `seed-output.json`, but it seeds only an untouched instance.
+> The command above runs the demo seeder in tests mode, which writes `tests/fixtures/demo/seed-output.json` with URLs built from the target instance's home URL. Running it against the video instance overwrites the fixture used by the tests instance. Restore the file from version control or reseed the tests instance afterwards. Dev mode — `npm run seed:dev` for the development instance, or the `dev` argument to a manual `wp eval-file` run — never writes `seed-output.json`, but it seeds only an untouched instance. For an already-used development instance, `npm run seed:dev:force` resets the demo artefacts and reseeds; it is development-instance tooling and must not be used for video work.
 
 ### Seeded content
 

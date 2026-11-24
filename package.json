@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "wp-env start && npm run --silent seed:dev && printf '\\n────────────────────────────────────\\n MySQL  127.0.0.1  root / password\\n Admin  http://localhost:8888/wp-admin  admin / password\\n────────────────────────────────────\\n' && npm run grunt:watch",
     "seed:dev": "wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev",
+    "seed:dev:force": "wp-env run cli wp eval-file wp-content/plugins/waymark-wp/tests/fixtures/demo/seed.php dev force",
     "grunt": "grunt build",
     "grunt:watch": "grunt watch",
     "fixtures:exif": "node scripts/fixtures/demo-exif.mjs",
