@@ -3740,6 +3740,12 @@ Copyright (c) 2016 Dominik Moritz */
         opts.hoverNumber.decimalsX,
       );
 
+      // Zero (or missing) elevation: show distance instead
+      const noElevation = !isFinite(item.z) || item.z === 0;
+      const labelText = noElevation
+        ? numX + " " + this._xLabel
+        : numY + " " + this._yLabel;
+
       //A flat profile has no vertical scale to measure against
       let maxElevation = this._maxElevation;
       let normalizedAlt =
@@ -3758,7 +3764,7 @@ Copyright (c) 2016 Dominik Moritz */
       this._mouseHeightFocusLabel
         .attr("x", item.x)
         .attr("y", normalizedY)
-        .text(numY + " " + this._yLabel)
+        .text(labelText)
         .style("visibility", "visible");
     },
 
