@@ -403,7 +403,7 @@ Lines with elevation data.
 
 ::settings
 :::setting{title="Elevation Profile" type="select" default="2"}
-Display an interactive elevation profile graph below the Map for Lines that have elevation data. A track whose elevation values are all zero gets a flat profile; Lines without usable elevation values get no profile. Pro Tip! You can choose to show/hide the elevation graph of an individual Map through the shortcode: `[Waymark map_id="1234" show_elevation="1"]`
+Display an interactive elevation profile graph below the Map for Lines that have elevation data. Readouts lead with distance: hovering the profile shows distance on the map and in the chart, adding elevation only when the track has meaningful elevation data, and the summary always shows Total Length and adds Max Elevation, Min Elevation, Total Ascent and Total Descent only when elevation is available. A track whose elevation values are all zero gets a flat profile; Lines without usable elevation values get no profile. Pro Tip! You can choose to show/hide the elevation graph of an individual Map through the shortcode: `[Waymark map_id="1234" show_elevation="1"]`
 :::
 
 :::setting{title="Elevation Units" type="select" default="metric"}

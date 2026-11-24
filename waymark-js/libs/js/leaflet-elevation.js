@@ -1859,6 +1859,8 @@
         numY = opts.hoverNumber.formatter(alt, opts.hoverNumber.decimalsY),
         numX = opts.hoverNumber.formatter(dist, opts.hoverNumber.decimalsX);
 
+      let hasElevation = this._hasElevation() && isFinite(item.z);
+
       this._focuslabeltext
         // .attr("x", xCoordinate)
         .attr("y", this._y(item.z))
@@ -1866,11 +1868,13 @@
 
       this._focuslabelX
         .text(numX + " " + this._xLabel)
-        .attr("x", xCoordinate + 10);
+        .attr("x", xCoordinate + 10)
+        .attr("dy", hasElevation ? "2em" : "0em");
 
       this._focuslabelY
-        .text(numY + " " + this._yLabel)
-        .attr("x", xCoordinate + 10);
+        .text(hasElevation ? numY + " " + this._yLabel : "")
+        .attr("x", xCoordinate + 10)
+        .attr("dy", hasElevation ? "-1em" : "0em");
 
       let focuslabeltext = this._focuslabeltext.node();
       if (this._isDomVisible(focuslabeltext)) {
@@ -1963,6 +1967,19 @@
       this._appendYaxis(this._axis);
     },
 
+    /*
+     * Whether the track carries meaningful elevation data.
+     * Exporters commonly write 0 for every point when no elevation source
+     * exists, so an all-zero range is treated as no elevation at all.
+     */
+    _hasElevation: function () {
+      return (
+        Number.isFinite(this._maxElevation) &&
+        Number.isFinite(this._minElevation) &&
+        (this._maxElevation !== 0 || this._minElevation !== 0)
+      );
+    },
+
     /**
      * Update distance and altitude level ("leaflet-marker").
      */
@@ -1990,10 +2007,15 @@
         .attr("y2", normalizedY)
         .style("visibility", "visible");
 
+      let label = numX + " " + this._xLabel;
+      if (this._hasElevation() && isFinite(item.z)) {
+        label += " · " + numY + " " + this._yLabel;
+      }
+
       this._mouseHeightFocusLabel
         .attr("x", item.x)
         .attr("y", normalizedY)
-        .text(numY + " " + this._yLabel)
+        .text(label)
         .style("visibility", "visible");
     },
 
@@ -2069,31 +2091,36 @@
           Waymark_L.formatNumber(this.track_info.distance, 2) +
           " " +
           this._xLabel +
-          '</span></span><span class="maxele"><span class="summarylabel">' +
-          Waymark_L._("Max Elevation: ") +
-          '</span><span class="summaryvalue">' +
-          Waymark_L.formatNumber(this.track_info.elevation_max, 2) +
-          " " +
-          this._yLabel +
-          '</span></span><span class="minele"><span class="summarylabel">' +
-          Waymark_L._("Min Elevation: ") +
-          '</span><span class="summaryvalue">' +
-          Waymark_L.formatNumber(this.track_info.elevation_min, 2) +
-          " " +
-          this._yLabel +
-          '</span></span><span class="totasc"><span class="summarylabel">' +
-          Waymark_L._("Total Ascent: ") +
-          '</span><span class="summaryvalue">' +
-          Waymark_L.formatNumber(this.track_info.ascent, 0) +
-          " " +
-          this._yLabel +
-          '</span></span><span class="totdesc"><span class="summarylabel">' +
-          Waymark_L._("Total Descent: ") +
-          '</span><span class="summaryvalue">' +
-          Waymark_L.formatNumber(this.track_info.descent, 0) +
-          " " +
-          this._yLabel +
           "</span></span>";
+
+        if (this._hasElevation()) {
+          this.summaryDiv.innerHTML +=
+            '<span class="maxele"><span class="summarylabel">' +
+            Waymark_L._("Max Elevation: ") +
+            '</span><span class="summaryvalue">' +
+            Waymark_L.formatNumber(this.track_info.elevation_max, 2) +
+            " " +
+            this._yLabel +
+            '</span></span><span class="minele"><span class="summarylabel">' +
+            Waymark_L._("Min Elevation: ") +
+            '</span><span class="summaryvalue">' +
+            Waymark_L.formatNumber(this.track_info.elevation_min, 2) +
+            " " +
+            this._yLabel +
+            '</span></span><span class="totasc"><span class="summarylabel">' +
+            Waymark_L._("Total Ascent: ") +
+            '</span><span class="summaryvalue">' +
+            Waymark_L.formatNumber(this.track_info.ascent, 0) +
+            " " +
+            this._yLabel +
+            '</span></span><span class="totdesc"><span class="summarylabel">' +
+            Waymark_L._("Total Descent: ") +
+            '</span><span class="summaryvalue">' +
+            Waymark_L.formatNumber(this.track_info.descent, 0) +
+            " " +
+            this._yLabel +
+            "</span></span>";
+        }
       }
       if (this.options.downloadLink && this._downloadURL) {
         // TODO: generate dynamically file content instead of using static file urls.

@@ -37,12 +37,14 @@ The specs in this directory include:
   the Settings Default Centre/Zoom. Both must finish with zero console and page
   errors. It stubs every basemap tile transparently because the fallback view
   sits outside the frozen pack. It imports the harness.
-- `elevation-profile.spec.js` — regression coverage for elevation detection:
-  the all-zero `flat-elevation` track shows a flat profile with a centred
-  transform origin and a finite height indicator on hover, and the
+- `elevation-profile.spec.js` — regression coverage for elevation detection and
+  readouts: the all-zero `flat-elevation` track shows a flat profile with a
+  centred transform origin, a finite height indicator on hover, and
+  distance-only map hover, chart tooltip and summary readouts, while the
   real-elevation `cape-scott-trail` track shows its profile without the
-  `zero-elevation` class. It stubs every basemap tile transparently because
-  neither Map is part of the frozen pack. It imports the harness.
+  `zero-elevation` class and adds elevation to the same three readouts. It
+  stubs every basemap tile transparently because neither Map is part of the
+  frozen pack. It imports the harness.
 - `map-editor-height.spec.js` — regression coverage for the admin Map editor
   height. It proves the editor renders at the configured Map Height, follows a
   non-default setting, never drops below the 450px floor, and keeps its height

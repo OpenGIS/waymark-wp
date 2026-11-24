@@ -22,6 +22,14 @@ const TILE_URL_PATTERN =
 // from the map.
 const PANE_TOLERANCE_PX = 80;
 
+// Readouts are formatted as a number, a space and a unit. Distance always
+// appears; elevation appears after a middle dot only when the track has
+// elevation.
+const DISTANCE_PATTERN = /^[\d.,]+\s+(?:km|mi)$/i;
+const ELEVATION_PATTERN = /^-?[\d.,]+\s+(?:m|ft)$/i;
+const DISTANCE_AND_ELEVATION_PATTERN =
+  /^[\d.,]+\s+(?:km|mi)\s+·\s+-?[\d.,]+\s+(?:m|ft)$/i;
+
 // 1x1 transparent PNG.
 const TRANSPARENT_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
@@ -173,6 +181,75 @@ function readHeightIndicator(page) {
 }
 
 /**
+ * Read the chart's hover tooltip. Distance is always written to the X tspan;
+ * the Y tspan carries elevation only when the track has elevation.
+ *
+ * @param {import("@playwright/test").Page} page
+ */
+function readChartTooltip(page) {
+  return page.evaluate(() => {
+    const container = document.querySelector(".waymark-elevation-container");
+    const x = container.querySelector(".mouse-focus-label-x");
+    const y = container.querySelector(".mouse-focus-label-y");
+
+    return {
+      xText: x.textContent.trim(),
+      yText: y.textContent.trim(),
+      xDy: x.getAttribute("dy"),
+      yDy: y.getAttribute("dy"),
+    };
+  });
+}
+
+/**
+ * Read the inline elevation summary: its rendered text, the count of each
+ * readout, and each readout's value. Distance is always present; the elevation
+ * readouts appear only when the track has elevation.
+ *
+ * @param {import("@playwright/test").Page} page
+ * @returns {Promise<null | {
+ *   text: string,
+ *   counts: Record<string, number>,
+ *   values: Record<string, string>
+ * }>}
+ */
+function readSummary(page) {
+  return page.evaluate(() => {
+    const summary = document.querySelector(
+      ".waymark-elevation-container .elevation-summary.inline-summary",
+    );
+
+    if (!summary) {
+      return null;
+    }
+
+    const count = (selector) => summary.querySelectorAll(selector).length;
+    const value = (selector) => {
+      const element = summary.querySelector(selector);
+      return element ? element.textContent.trim() : "";
+    };
+
+    return {
+      text: summary.textContent.replace(/\s+/g, " ").trim(),
+      counts: {
+        totlen: count(".totlen"),
+        maxele: count(".maxele"),
+        minele: count(".minele"),
+        totasc: count(".totasc"),
+        totdesc: count(".totdesc"),
+      },
+      values: {
+        totlen: value(".totlen .summaryvalue"),
+        maxele: value(".maxele .summaryvalue"),
+        minele: value(".minele .summaryvalue"),
+        totasc: value(".totasc .summaryvalue"),
+        totdesc: value(".totdesc .summaryvalue"),
+      },
+    };
+  });
+}
+
+/**
  * Measure the map container, the elevation pane SVG and the SVG's computed
  * transform origin.
  *
@@ -301,7 +378,10 @@ test("all-zero elevation track shows a flat, correctly positioned profile", asyn
   );
 
   expect(indicator.visibility).toBe("visible");
-  expect(indicator.text).toMatch(/^0(?:\.0+)?\s+(?:m|ft)$/i);
+
+  // An all-zero track has no elevation, so the map label shows distance only.
+  expect(indicator.text).toMatch(DISTANCE_PATTERN);
+  expect(indicator.text).not.toMatch(/·/);
 
   for (const [name, value] of Object.entries({
     labelY: indicator.labelY,
@@ -314,6 +394,33 @@ test("all-zero elevation track shows a flat, correctly positioned profile", asyn
 
   // A flat profile's indicator has no vertical extent.
   expect(Number(indicator.lineY2)).toBeCloseTo(Number(indicator.lineY1), 5);
+
+  // The chart tooltip drops the elevation line entirely: the Y tspan is empty
+  // and both tspans share one baseline.
+  const tooltip = await readChartTooltip(page);
+  console.log(
+    `[elevation-profile] flat chart tooltip: ${JSON.stringify(tooltip)}`,
+  );
+
+  expect(tooltip.xText).toMatch(DISTANCE_PATTERN);
+  expect(tooltip.yText).toBe("");
+  expect(tooltip.xDy).toBe("0em");
+  expect(tooltip.yDy).toBe("0em");
+
+  // The summary keeps the total length and nothing elevation-related.
+  const summary = await readSummary(page);
+  console.log(`[elevation-profile] flat summary: ${JSON.stringify(summary)}`);
+
+  expect(summary).not.toBeNull();
+  expect(summary.text).toMatch(/^Total Length:\s*[\d.,]+\s+(?:km|mi)$/i);
+  expect(summary.counts).toEqual({
+    totlen: 1,
+    maxele: 0,
+    minele: 0,
+    totasc: 0,
+    totdesc: 0,
+  });
+  expect(summary.values.totlen).toMatch(DISTANCE_PATTERN);
 
   // The pane stays anchored to the map with a centred transform origin. This
   // is the defect: with Leaflet's top-left origin, a scaled flat profile flies
@@ -380,6 +487,52 @@ test("real elevation track still shows the elevation profile", async ({
   await expect(mapContainer).not.toHaveClass(/zero-elevation/);
 
   await hoverElevationChart(page);
+
+  // Distance and elevation both appear in the map hover label, separated by a
+  // middle dot.
+  const indicator = await readHeightIndicator(page);
+  console.log(
+    `[elevation-profile] real-elevation height indicator: ${JSON.stringify(indicator)}`,
+  );
+
+  expect(indicator.visibility).toBe("visible");
+  expect(indicator.text).toMatch(DISTANCE_AND_ELEVATION_PATTERN);
+
+  // The chart tooltip keeps its two-line layout: distance on the X line and
+  // elevation on the Y line.
+  const tooltip = await readChartTooltip(page);
+  console.log(
+    `[elevation-profile] real-elevation chart tooltip: ${JSON.stringify(tooltip)}`,
+  );
+
+  expect(tooltip.xText).toMatch(DISTANCE_PATTERN);
+  expect(tooltip.yText).toMatch(ELEVATION_PATTERN);
+
+  // The summary reports all five readouts with populated values.
+  const summary = await readSummary(page);
+  console.log(
+    `[elevation-profile] real-elevation summary: ${JSON.stringify(summary)}`,
+  );
+
+  expect(summary).not.toBeNull();
+  expect(summary.text).toMatch(/Total Length:/i);
+  expect(summary.counts).toEqual({
+    totlen: 1,
+    maxele: 1,
+    minele: 1,
+    totasc: 1,
+    totdesc: 1,
+  });
+  expect(summary.values.totlen).toMatch(DISTANCE_PATTERN);
+
+  for (const name of ["maxele", "minele", "totasc", "totdesc"]) {
+    expect(
+      summary.values[name],
+      `${name} must show an elevation value`,
+    ).toMatch(ELEVATION_PATTERN);
+  }
+
+  await expect(mapContainer).not.toHaveClass(/zero-elevation/);
 
   const measurement = await measureElevationPane(page);
   console.log(
