@@ -182,5 +182,25 @@
     "narrationVoice": "flux-kit-en",
     "narrationRate": 175,
     "generatedAt": "2026-10-28T21:14:18.204Z"
+  },
+  "orca-demo-1": {
+    "id": "orca-demo-1",
+    "title": "Building Waymark with an AI agent",
+    "file": "/assets/video/orca-demo-1.mp4",
+    "duration": 1885.467,
+    "width": 1280,
+    "height": 720,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "size": 100082771,
+    "sha256": "e659cf84a2862ec220c4d4d08e6b0e0f1e3f6546fc5cf2be07840f079b59e6ff",
+    "poster": "/assets/video/posters/orca-demo-1.jpg",
+    "posterSource": "video",
+    "captions": "/assets/video/captions/orca-demo-1.en.vtt",
+    "transcript": "/assets/video/transcripts/orca-demo-1.md",
+    "narrationProvider": null,
+    "narrationVoice": null,
+    "narrationRate": null,
+    "generatedAt": "2026-11-25T01:44:05.334Z"
   }
 }
